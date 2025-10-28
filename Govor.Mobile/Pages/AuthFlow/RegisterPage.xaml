@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Govor.Mobile.Pages.Auth_Flow.RegisterPage"
+             BackgroundColor="#282A37"
+             BackgroundImageSource="background_girls.png"
+             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
+    <Grid RowDefinitions="*,Auto,*"
+      BackgroundColor="Transparent">
+
+        <!-- Верхний блок: аватар -->
+        <Grid Grid.Row="0">
+            <Border StrokeThickness="0"
+                HeightRequest="200" WidthRequest="160"
+                HorizontalOptions="Center"
+                BackgroundColor="Transparent"
+                StrokeShape="Ellipse">
+                <Image Source="icon_of_user.png"
+                   Aspect="Fill"
+                   Margin="0"/>
+            </Border>
+        </Grid>
+
+        <!-- Средний блок: поля ввода -->
+        <Grid Grid.Row="1">
+            <VerticalStackLayout Padding="30,0,30,30"
+                             Spacing="20"
+                             MaximumWidthRequest="600"
+                             VerticalOptions="Start"
+                             HorizontalOptions="FillAndExpand">
+
+                <!-- Поле Имя -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="ФИО"
+                       TextColor="White"
+                       FontSize="16"
+                       Padding="10,0,0,0"/>
+                    <Frame BackgroundColor="#33000000"
+                       CornerRadius="15"
+                       HasShadow="True"
+                       Padding="0"
+                       HeightRequest="60">
+                        <Entry x:Name="NameEntry"
+                               Placeholder="Имя"
+                               Text="{Binding Name}"
+                               TextColor="White"
+                               PlaceholderColor="White"
+                               Margin="15,5"
+                               FontSize="18"
+                               BackgroundColor="Transparent"
+                               Completed="NameEntry_Completed">
+                            <Entry.Behaviors>
+                                <toolkit:EventToCommandBehavior 
+                                    EventName="Completed"
+                                    Command="{Binding NameCompletedCommand}" />
+                            </Entry.Behaviors>
+                        </Entry>
+                    </Frame>
+                </VerticalStackLayout>
+
+                <!-- Поле Пароль -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Пароль"
+                       TextColor="White"
+                       FontSize="16"
+                       Padding="10,0,0,0"/>
+                    <Frame BackgroundColor="#33000000"
+                       CornerRadius="15"
+                       HasShadow="True"
+                       Padding="0"
+                       HeightRequest="60">
+                        <Grid>
+                            <Entry x:Name="PasswordEntry"
+                                   Placeholder="Пароль"
+                                   Text="{Binding Password}"
+                                   TextColor="White"
+                                   PlaceholderColor="White"
+                                   Margin="15,5"
+                                   FontSize="18"
+                                   IsPassword="True"
+                                   BackgroundColor="Transparent"
+                                   ReturnType="Go">
+                                <Entry.Behaviors>
+                                    <toolkit:EventToCommandBehavior 
+                                            EventName="Completed"
+                                            Command="{Binding PasswordCompletedCommand}" />
+                                </Entry.Behaviors>
+                            </Entry>
+                            <ImageButton Source="close_eye.png"
+                                     Padding="7"
+                                     HeightRequest="20"
+                                     WidthRequest="20"
+                                     BackgroundColor="Transparent"
+                                     HorizontalOptions="End"
+                                     VerticalOptions="Center"/>
+                        </Grid>
+                    </Frame>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Нижний блок: кнопка + регистрация -->
+        <VerticalStackLayout Grid.Row="2"
+                         Padding="30,0,30,70"
+                         Spacing="20"
+                         MaximumWidthRequest="600"
+                         VerticalOptions="End">
+
+            <!-- Кнопка Входа -->
+            <Frame BackgroundColor="#33000000"
+               CornerRadius="25"
+               HasShadow="True"
+               Padding="0">
+                <Button x:Name="NextButton"
+                        Text="Дальше"
+                        Command="{Binding NextCommand}" 
+                        TextColor="White"
+                        BackgroundColor="Transparent"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill"/>
+            </Frame>
+
+            <!-- Ссылка на регистрацию -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                <Label Text="Есть аккаунт?" TextColor="White" FontSize="16"/>
+                <Label Text="Войди!" TextColor="#917EEC" FontSize="16">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer 
+                            Command="{Binding GoToLoginCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+
+    </Grid>
+</ContentPage>

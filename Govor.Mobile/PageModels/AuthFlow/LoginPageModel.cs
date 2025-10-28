@@ -1,0 +1,120 @@
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Govor.Mobile.Pages.Auth_Flow;
+using Govor.Mobile.Services.Interfaces;
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Govor.Mobile.PageModels.AuthFlow
+{
+    public partial class LoginPageModel : ObservableObject
+    {
+        private readonly IAuthService _authService;
+        private readonly IServiceProvider _serviceProvider;
+
+        [ObservableProperty]
+        private string name;
+
+        [ObservableProperty]
+        private string password;
+
+        [ObservableProperty]
+        private bool isBusy;
+
+        [ObservableProperty]
+        private bool isPasswordHidden = true;
+
+        public string EyeIcon => IsPasswordHidden ? "close_eye.png" : "open_eye.png";
+
+        public LoginPageModel(IAuthService authService, IServiceProvider serviceProvider)
+        {
+            _authService = authService;
+            _serviceProvider = serviceProvider;
+        }
+
+        [RelayCommand]
+        private void NameCompleted(Entry entry)
+        {
+            entry?.FindByName<Entry>("PasswordEntry")?.Focus();
+        }
+
+        [RelayCommand]
+        private async Task PasswordCompleted()
+        {
+            if (LoginCommand.CanExecute(null))
+                await LoginAsync();
+        }
+
+        [RelayCommand(CanExecute = nameof(CanLogin))]
+        private async Task LoginAsync()
+        {
+            if (IsBusy)
+                return;
+
+            IsBusy = true;
+
+            try
+            {
+                var result = await _authService.LoginAsync(Name, Password);
+
+                if (result.IsSuccess)
+                {
+                    // Навигация при успешном входе
+                    Application.Current.MainPage = _serviceProvider.GetRequiredService<SomePage>();
+                }
+                else //TODO
+                {
+                    await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+                    //ErrorMessage = "Неверные имя или пароль";
+                }
+            }
+            catch (Exception ex)
+            {
+                // TODO
+                await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+
+            LoginCommand.NotifyCanExecuteChanged();
+        }
+
+        private bool CanLogin()
+        {
+            return !string.IsNullOrWhiteSpace(Name)
+                && !string.IsNullOrWhiteSpace(Password)
+                && !IsBusy;
+        }
+
+        partial void OnNameChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+        partial void OnPasswordChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+        partial void OnIsBusyChanged(bool value) => LoginCommand.NotifyCanExecuteChanged();
+
+        [RelayCommand]
+        private async Task GoToRegisterAsync()
+        {
+            var registerPage = _serviceProvider.GetRequiredService<RegisterPage>();
+            if (registerPage.BindingContext is RegisterPageModel vm)
+            {
+                vm.Name = Name;
+                vm.Password = Password;
+            }
+
+            Application.Current.MainPage = registerPage;
+        }
+
+        [RelayCommand]
+        private async Task TogglePasswordVisibilityAsync()
+        {
+            IsPasswordHidden = !IsPasswordHidden;
+        }
+
+        partial void OnIsPasswordHiddenChanged(bool value)
+        {
+            OnPropertyChanged(nameof(EyeIcon));
+        }
+    }
+}

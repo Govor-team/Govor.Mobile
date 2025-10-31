@@ -1,89 +1,98 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Pages.Auth_Flow;
 using Govor.Mobile.Pages.AuthFlow;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Govor.Mobile.PageModels.AuthFlow
+
+namespace Govor.Mobile.PageModels.AuthFlow;
+
+[QueryProperty(nameof(Name), "Name")]
+[QueryProperty(nameof(Password), "Password")]
+public partial class RegisterPageModel : ObservableObject
 {
-    public partial class RegisterPageModel : ObservableObject
+    private readonly IServiceProvider _serviceProvider;
+
+    [ObservableProperty]
+    private string name;
+
+    [ObservableProperty]
+    private string password;
+
+    [ObservableProperty]
+    private bool isBusy;
+
+    [ObservableProperty]
+    private bool isPasswordHidden = true;
+
+    public string EyeIcon => IsPasswordHidden ? "close_eye.png" : "open_eye.png";
+    public RegisterPageModel(IServiceProvider serviceProvider)
     {
-        private readonly IServiceProvider _serviceProvider;
+        _serviceProvider = serviceProvider;
+    }
 
-        [ObservableProperty]
-        private string name;
+    [RelayCommand]
+    private void NameCompleted(Entry entry)
+    {
+        entry?.FindByName<Entry>("PasswordEntry")?.Focus();
+    }
 
-        [ObservableProperty]
-        private string password;
+    [RelayCommand]
+    private async Task PasswordCompleted()
+    {
+        if (NextCommand.CanExecute(null))
+            await NextAsync();
+    }
 
-        [ObservableProperty]
-        private bool isBusy;
+    [RelayCommand(CanExecute = nameof(CanNext))]
+    private async Task NextAsync()
+    {
+        if (IsBusy)
+            return;
 
-        public RegisterPageModel(IServiceProvider serviceProvider)
+        IsBusy = true;
+
+        var navParams = new Dictionary<string, object>
         {
-            _serviceProvider = serviceProvider;
-        }
+            { "Name", Name },
+            { "Password", Password }
+        };
 
-        [RelayCommand]
-        private void NameCompleted(Entry entry)
+        await Shell.Current.GoToAsync(nameof(CodeInputPage), false, navParams);
+
+        IsBusy = false;
+
+        NextCommand.NotifyCanExecuteChanged();
+    }
+    partial void OnNameChanged(string value) => NextCommand.NotifyCanExecuteChanged();
+    partial void OnPasswordChanged(string value) => NextCommand.NotifyCanExecuteChanged();
+    partial void OnIsBusyChanged(bool value) => NextCommand.NotifyCanExecuteChanged();
+
+    private bool CanNext()
+    {
+        return !string.IsNullOrWhiteSpace(Name)
+            && !string.IsNullOrWhiteSpace(Password)
+            && !IsBusy;
+    }
+
+    [RelayCommand]
+    private async Task GoToLoginAsync()
+    {
+        var navParams = new Dictionary<string, object>
         {
-            entry?.FindByName<Entry>("PasswordEntry")?.Focus();
-        }
+            { "Name", Name },
+            { "Password", Password }
+        };
 
-        [RelayCommand]
-        private async Task PasswordCompleted()
-        {
-            if (NextCommand.CanExecute(null))
-                await NextAsync();
-        }
+        await Shell.Current.GoToAsync("..", false, navParams);
+    }
 
-        [RelayCommand(CanExecute = nameof(CanNext))]
-        private async Task NextAsync()
-        {
-            if (IsBusy)
-                return;
+    [RelayCommand]
+    private async Task TogglePasswordVisibilityAsync()
+    {
+        IsPasswordHidden = !IsPasswordHidden;
+    }
 
-            IsBusy = true;
-
-            var registerPage = _serviceProvider.GetRequiredService<CodeInputPage>();
-
-            if (registerPage.BindingContext is CodeInputModel vm)
-            {
-                vm.SetData(Name, Password);
-            }
-
-            Application.Current.MainPage = registerPage;
-
-            IsBusy = false;
-
-            NextCommand.NotifyCanExecuteChanged();
-        }
-        partial void OnNameChanged(string value) => NextCommand.NotifyCanExecuteChanged();
-        partial void OnPasswordChanged(string value) => NextCommand.NotifyCanExecuteChanged();
-        partial void OnIsBusyChanged(bool value) => NextCommand.NotifyCanExecuteChanged();
-
-        private bool CanNext()
-        {
-            return !string.IsNullOrWhiteSpace(Name)
-                && !string.IsNullOrWhiteSpace(Password)
-                && !IsBusy;
-        }
-
-        [RelayCommand]
-        private async Task GoToLoginAsync()
-        {
-            var loginPage = _serviceProvider.GetRequiredService<LoginPage>();
-            
-            if (loginPage.BindingContext is LoginPageModel vm)
-            {
-                vm.Name = Name;
-                vm.Password = Password;
-            }
-
-            Application.Current.MainPage = loginPage;
-        }
+    partial void OnIsPasswordHiddenChanged(bool value)
+    {
+        OnPropertyChanged(nameof(EyeIcon));
     }
 }

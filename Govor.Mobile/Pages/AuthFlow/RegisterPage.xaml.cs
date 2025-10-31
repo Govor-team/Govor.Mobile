@@ -1,4 +1,4 @@
-namespace Govor.Mobile.Pages.Auth_Flow;
+namespace Govor.Mobile.Pages.AuthFlow;
 
 public partial class RegisterPage : ContentPage
 {

@@ -1,22 +1,102 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using CommunityToolkit.Mvvm.Input;
+using Govor.Mobile.Services.Interfaces;
 
-namespace Govor.Mobile.PageModels.AuthFlow
+namespace Govor.Mobile.PageModels.AuthFlow;
+
+[QueryProperty(nameof(Name), "Name")]
+[QueryProperty(nameof(Password), "Password")]
+public partial class CodeInputModel : ObservableObject
 {
-    public partial class CodeInputModel : ObservableObject
+    [ObservableProperty]
+    private string name;
+
+    [ObservableProperty]
+    private string password;
+
+    [ObservableProperty]
+    private string code;
+
+    [ObservableProperty]
+    private bool isBusy;
+
+    [ObservableProperty]
+    private bool isCodeHidden = true;
+
+    public string EyeIcon => IsCodeHidden ? "close_eye.png" : "open_eye.png";
+
+    private readonly IAuthService _authService;
+    private readonly IServiceProvider _serviceProvider;
+
+    public CodeInputModel(IAuthService authService, IServiceProvider serviceProvider)
     {
-        private string _username;
-        private string _password;
+        _authService = authService;
+        _serviceProvider = serviceProvider;
+    }
 
-        [ObservableProperty]
-        private string code;
+    [RelayCommand]
+    private async Task PasswordCompleted()
+    {
+        if (RegisterCommand.CanExecute(null))
+            await RegisterAsync();
+    }
 
-        public void SetData(string username, string password)
+    [RelayCommand(CanExecute = nameof(CanNext))]
+    private async Task RegisterAsync()
+    {
+        if (IsBusy)
+            return;
+
+        IsBusy = true;
+
+        var result = await _authService.RegisterAsync(Name, Password, Code);
+
+        IsBusy = false;
+
+        RegisterCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnCodeChanged(string value) => RegisterCommand.NotifyCanExecuteChanged();
+
+    private bool CanNext()
+    {
+        return !string.IsNullOrWhiteSpace(Code)
+            && !IsBusy;
+    }
+
+    [RelayCommand]
+    private async Task OpenWikiAsync()
+    {
+        var url = "https://nas-3.gitbook.io/govor-api/";
+        try
         {
-            _username = username;
-            _password = password;
+#if ANDROID || IOS
+            // Открываем во встроенной странице с WebView
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Shell.Current.Navigation.PushAsync(new WebBrowserPage(url));
+            });
+#else
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Browser.Default.OpenAsync(url, BrowserLaunchMode.External);
+            });
+#endif
         }
+        catch (Exception ex)
+        {
+            await AppShell.DisplaySnackbarAsync("Не удалось открыть документацию!");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleCodeVisibilityAsync()
+    {
+        IsCodeHidden = !IsCodeHidden;
+    }
+
+    partial void OnIsCodeHiddenChanged(bool value)
+    {
+        OnPropertyChanged(nameof(EyeIcon));
     }
 }

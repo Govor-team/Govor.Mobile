@@ -1,120 +1,117 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Pages.Auth_Flow;
+using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Govor.Mobile.PageModels.AuthFlow
+namespace Govor.Mobile.PageModels.AuthFlow;
+
+[QueryProperty(nameof(Name), "Name")]
+[QueryProperty(nameof(Password), "Password")]
+public partial class LoginPageModel : ObservableObject
 {
-    public partial class LoginPageModel : ObservableObject
+    private readonly IAuthService _authService;
+    private readonly IServiceProvider _serviceProvider;
+
+    [ObservableProperty]
+    private string name;
+
+    [ObservableProperty]
+    private string password;
+
+    [ObservableProperty]
+    private bool isBusy;
+
+    [ObservableProperty]
+    private bool isPasswordHidden = true;
+
+    public string EyeIcon => IsPasswordHidden ? "close_eye.png" : "open_eye.png";
+
+    public LoginPageModel(IAuthService authService, IServiceProvider serviceProvider)
     {
-        private readonly IAuthService _authService;
-        private readonly IServiceProvider _serviceProvider;
+        _authService = authService;
+        _serviceProvider = serviceProvider;
+    }
 
-        [ObservableProperty]
-        private string name;
+    [RelayCommand]
+    private void NameCompleted(Entry entry)
+    {
+        entry?.FindByName<Entry>("PasswordEntry")?.Focus();
+    }
 
-        [ObservableProperty]
-        private string password;
+    [RelayCommand]
+    private async Task PasswordCompleted()
+    {
+        if (LoginCommand.CanExecute(null))
+            await LoginAsync();
+    }
 
-        [ObservableProperty]
-        private bool isBusy;
+    [RelayCommand(CanExecute = nameof(CanLogin))]
+    private async Task LoginAsync()
+    {
+        if (IsBusy)
+            return;
 
-        [ObservableProperty]
-        private bool isPasswordHidden = true;
+        IsBusy = true;
 
-        public string EyeIcon => IsPasswordHidden ? "close_eye.png" : "open_eye.png";
-
-        public LoginPageModel(IAuthService authService, IServiceProvider serviceProvider)
+        try
         {
-            _authService = authService;
-            _serviceProvider = serviceProvider;
-        }
+            var result = await _authService.LoginAsync(Name, Password);
 
-        [RelayCommand]
-        private void NameCompleted(Entry entry)
-        {
-            entry?.FindByName<Entry>("PasswordEntry")?.Focus();
-        }
-
-        [RelayCommand]
-        private async Task PasswordCompleted()
-        {
-            if (LoginCommand.CanExecute(null))
-                await LoginAsync();
-        }
-
-        [RelayCommand(CanExecute = nameof(CanLogin))]
-        private async Task LoginAsync()
-        {
-            if (IsBusy)
-                return;
-
-            IsBusy = true;
-
-            try
+            if (result.IsSuccess)
             {
-                var result = await _authService.LoginAsync(Name, Password);
-
-                if (result.IsSuccess)
-                {
-                    // Навигация при успешном входе
-                    Application.Current.MainPage = _serviceProvider.GetRequiredService<SomePage>();
-                }
-                else //TODO
-                {
-                    await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
-                    //ErrorMessage = "Неверные имя или пароль";
-                }
+                // Навигация при успешном входе
+                Application.Current.MainPage = _serviceProvider.GetRequiredService<SomePage>();
             }
-            catch (Exception ex)
+            else //TODO
             {
-                // TODO
                 await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+                //ErrorMessage = "Неверные имя или пароль";
             }
-            finally
+        }
+        catch (Exception ex)
+        {
+            // TODO
+            await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        LoginCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanLogin()
+    {
+        return !string.IsNullOrWhiteSpace(Name)
+            && !string.IsNullOrWhiteSpace(Password)
+            && !IsBusy;
+    }
+
+    partial void OnNameChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+    partial void OnPasswordChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
+    partial void OnIsBusyChanged(bool value) => LoginCommand.NotifyCanExecuteChanged();
+
+    [RelayCommand]
+    private async Task GoToRegisterAsync()
+    {
+        var navigationParameter = new Dictionary<string, object>
             {
-                IsBusy = false;
-            }
+                { "Name", Name },
+                { "Password", Password }
+            };
 
-            LoginCommand.NotifyCanExecuteChanged();
-        }
+        await Shell.Current.GoToAsync(nameof(RegisterPage), false, navigationParameter);
+    }
 
-        private bool CanLogin()
-        {
-            return !string.IsNullOrWhiteSpace(Name)
-                && !string.IsNullOrWhiteSpace(Password)
-                && !IsBusy;
-        }
+    [RelayCommand]
+    private async Task TogglePasswordVisibilityAsync()
+    {
+        IsPasswordHidden = !IsPasswordHidden;
+    }
 
-        partial void OnNameChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
-        partial void OnPasswordChanged(string value) => LoginCommand.NotifyCanExecuteChanged();
-        partial void OnIsBusyChanged(bool value) => LoginCommand.NotifyCanExecuteChanged();
-
-        [RelayCommand]
-        private async Task GoToRegisterAsync()
-        {
-            var registerPage = _serviceProvider.GetRequiredService<RegisterPage>();
-            if (registerPage.BindingContext is RegisterPageModel vm)
-            {
-                vm.Name = Name;
-                vm.Password = Password;
-            }
-
-            Application.Current.MainPage = registerPage;
-        }
-
-        [RelayCommand]
-        private async Task TogglePasswordVisibilityAsync()
-        {
-            IsPasswordHidden = !IsPasswordHidden;
-        }
-
-        partial void OnIsPasswordHiddenChanged(bool value)
-        {
-            OnPropertyChanged(nameof(EyeIcon));
-        }
+    partial void OnIsPasswordHiddenChanged(bool value)
+    {
+        OnPropertyChanged(nameof(EyeIcon));
     }
 }

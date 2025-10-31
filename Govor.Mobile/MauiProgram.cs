@@ -1,9 +1,7 @@
 ﻿using CommunityToolkit.Maui;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Sharpnado.MaterialFrame;
 using Syncfusion.Maui.Toolkit.Hosting;
-using System.Reflection;
 
 namespace Govor.Mobile
 {
@@ -30,7 +28,7 @@ namespace Govor.Mobile
                 .RegisterAppPages();
 
 #if DEBUG
-    		builder.Logging.AddDebug();
+            builder.Logging.AddDebug();
     		builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
             //builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");

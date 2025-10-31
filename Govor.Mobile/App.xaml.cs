@@ -40,7 +40,7 @@ namespace Govor.Mobile
             {
                 MainPage = _authService.IsAuthenticated
                     ? _serviceProvider.GetRequiredService<SomePage>()
-                    : _serviceProvider.GetRequiredService<LoginPage>();
+                    : _serviceProvider.GetRequiredService<AuthShell>();
             });
         }
 

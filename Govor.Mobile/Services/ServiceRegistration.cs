@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.Pages.Auth_Flow;
+﻿using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Services.Api.Base;
 using Govor.Mobile.Services.Implementations;
@@ -36,6 +36,7 @@ namespace Govor.Mobile.Services
             builder.Services.AddTransient<CodeInputModel>();
 
             builder.Services.AddSingleton<AppShell>();
+            builder.Services.AddSingleton<AuthShell>();
             return builder;
         } 
     }

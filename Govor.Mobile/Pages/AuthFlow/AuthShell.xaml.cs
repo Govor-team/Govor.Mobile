@@ -8,5 +8,6 @@ public partial class AuthShell : Shell
 
         Routing.RegisterRoute(nameof(RegisterPage), typeof(RegisterPage));
         Routing.RegisterRoute(nameof(CodeInputPage), typeof(CodeInputPage));
+        Routing.RegisterRoute(nameof(WebBrowserPage), typeof(WebBrowserPage));
     }
 }

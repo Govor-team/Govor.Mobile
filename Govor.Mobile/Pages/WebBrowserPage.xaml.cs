@@ -1,4 +1,7 @@
+ï»¿using Microsoft.Maui.Platform;
+
 namespace Govor.Mobile.Pages;
+
 
 public partial class WebBrowserPage : ContentPage
 {
@@ -6,13 +9,14 @@ public partial class WebBrowserPage : ContentPage
     {
         InitializeComponent();
 
-        var vm = new WebBrowserPageModel();
-        BindingContext = vm;
-
-        // ïîäïèñêà íà ñîáûòèÿ WebView
-        Web.Navigated += vm.OnNavigated;
-
+        var vm = BindingContext as WebBrowserPageModel;
         vm.CurrentUrl = url;
+        // ÐŸÐµÑ€ÐµÐ´Ð°Ñ‘Ð¼ WebView Ð² ViewModel
+        vm.SetWebView(Web);
+
+        // Ð¿Ð¾Ð´Ð¿Ð¸ÑÐºÐ° Ð½Ð° ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ñ WebView
+        Web.Navigated += vm.OnNavigated;
+        Web.Navigating += (s, e) => vm.UpdateNavigationState();
     }
 
     private void OnUrlEntered(object sender, EventArgs e)

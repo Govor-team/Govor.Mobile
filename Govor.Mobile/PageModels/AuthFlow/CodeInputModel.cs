@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Govor.Mobile.Services.Interfaces;
+using System;
 
 namespace Govor.Mobile.PageModels.AuthFlow;
 
@@ -50,6 +51,11 @@ public partial class CodeInputModel : ObservableObject
         IsBusy = true;
 
         var result = await _authService.RegisterAsync(Name, Password, Code);
+        
+        if (!result.IsSuccess)
+        {
+            await AppShell.DisplaySnackbarAsync(result.ErrorMessage);
+        }
 
         IsBusy = false;
 
@@ -71,11 +77,8 @@ public partial class CodeInputModel : ObservableObject
         try
         {
 #if ANDROID || IOS
-            // Открываем во встроенной странице с WebView
-            await MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await Shell.Current.Navigation.PushAsync(new WebBrowserPage(url));
-            });
+
+            await Shell.Current.Navigation.PushAsync(new WebBrowserPage(url));
 #else
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {

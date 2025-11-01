@@ -2,24 +2,24 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Govor.Mobile.Pages.WebBrowserPage"
-              xmlns:vm="clr-namespace:Govor.Mobile.PageModels"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
+             xmlns:material="http://sharpnado.com"
              Title="Встроенный браузер"
-             BackgroundColor="{AppThemeBinding Light=#F9F9F9, Dark=#121212}">
+             BackgroundColor="#131313">
 
     <ContentPage.BindingContext>
         <vm:WebBrowserPageModel />
     </ContentPage.BindingContext>
 
-    <Grid RowDefinitions="Auto, *"
-          BackgroundColor="{AppThemeBinding Light=#f7f7f7, Dark=#1c1c1e}">
-
+    <Grid RowDefinitions="Auto, *, Auto" 
+          BackgroundColor="#1c1c1e">
         <!-- Верхняя панель -->
-        <Grid Padding="12"
-              BackgroundColor="{AppThemeBinding Light=#ffffff, Dark=#2c2c2e}"
-              VerticalOptions="Start"
-              ColumnDefinitions="*, Auto"
-              Row="0">
 
+        <Grid Padding="12" 
+              BackgroundColor="#2c2c2e" 
+              VerticalOptions="Start"
+              ColumnDefinitions="*, Auto" Row="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -27,7 +27,7 @@
 
             <!-- Краткий адрес и заголовок -->
             <VerticalStackLayout Grid.Row="0"
-                                 Spacing="2">
+                         Spacing="2">
                 <Label Text="{Binding Title}"
                        FontAttributes="Bold"
                        FontSize="16" />
@@ -35,8 +35,7 @@
                        FontSize="13"
                        TextColor="Gray" />
             </VerticalStackLayout>
-            
-            <!-- Иконка справа -->
+
             <ImageButton Grid.Column="1"
                      Source="cheburnet.jpg"
                      BackgroundColor="Transparent"
@@ -44,14 +43,14 @@
                      WidthRequest="100"
                      Padding="4"
                      Command="{Binding RefreshCommand}" />
-            
+
             <!-- Поле ввода адреса -->
             <Entry x:Name="UrlEntry"
-                   Grid.Row="1"
-                   IsVisible="{Binding IsSearchVisible}"
-                   Placeholder="Введите адрес или запрос"
-                   Text="{Binding Url, Mode=TwoWay}"
-                   Completed="OnUrlEntered" />
+                       Grid.Row="1"
+                       IsVisible="{Binding IsSearchVisible}"
+                       Placeholder="Введите адрес или запрос"
+                       Text="{Binding Url, Mode=TwoWay}"
+                    Completed="OnUrlEntered" />
 
             <!-- Клик по заголовку -->
             <Grid.GestureRecognizers>
@@ -63,7 +62,49 @@
         <WebView x:Name="Web"
                  Grid.Row="1"
                  Source="{Binding CurrentUrl}"
-                 Navigated="WebView_Navigated" />
+                 HorizontalOptions="Fill"
+                 VerticalOptions="Fill" />
+
+        <!-- Нижняя панель навигации -->
+        <Grid Grid.Row="2"
+              BackgroundColor="#131313"
+              Padding="0,4">
+
+            <Grid ColumnDefinitions="Auto, *, Auto"
+                  HorizontalOptions="Center"
+                  ColumnSpacing="50">
+
+                <!-- Назад -->
+                <ImageButton Grid.Column="0"
+                     Source="back_icon.png"
+                     HeightRequest="10"
+                     WidthRequest="10"
+                     BackgroundColor="Transparent"
+                     Padding="0"
+                     Command="{Binding GoBackCommand}"
+                     IsEnabled="{Binding CanGoBack}" />
+
+                <!-- Домой -->
+                <ImageButton Grid.Column="1"
+                     Source="home_icon.png"
+                     HeightRequest="22"
+                     WidthRequest="22"
+                     BackgroundColor="Transparent"
+                     HorizontalOptions="Center"
+                     Padding="0"
+                     Command="{Binding GoHomeCommand}" />
+
+                <!-- Вперёд -->
+                <ImageButton Grid.Column="2"
+                     Source="forward_icon.png"
+                     HeightRequest="10"
+                     WidthRequest="10"
+                     BackgroundColor="Transparent"
+                     Padding="0"
+                     Command="{Binding GoForwardCommand}"
+                     IsEnabled="{Binding CanGoForward}" />
+            </Grid>
+        </Grid>
     </Grid>
 
 </ContentPage>

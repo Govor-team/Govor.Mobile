@@ -13,6 +13,9 @@ namespace Govor.Mobile
 
             Window.SetFlags(Android.Views.WindowManagerFlags.LayoutNoLimits,
                             Android.Views.WindowManagerFlags.LayoutNoLimits);
+
+            Window.SetFlags(Android.Views.WindowManagerFlags.HardwareAccelerated,
+                  Android.Views.WindowManagerFlags.HardwareAccelerated);
         }
     }
 }

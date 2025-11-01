@@ -1,8 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Xml.Linq;
 
 namespace Govor.Mobile.PageModels;
 
+[QueryProperty(nameof(Url), "Url")]
 public partial class WebBrowserPageModel : ObservableObject
 {
     [ObservableProperty]
@@ -20,6 +22,37 @@ public partial class WebBrowserPageModel : ObservableObject
     [ObservableProperty]
     private bool isSearchVisible = false;
 
+    [ObservableProperty]
+    private bool canGoBack;
+
+    [ObservableProperty]
+    private bool canGoForward;
+
+    public const string HomePage = "https://www.google.com/";
+
+    private WeakReference<WebView> _webViewRef;
+
+    // Метод для установки WebView из кода
+    public void SetWebView(WebView webView)
+    {
+        _webViewRef = new WeakReference<WebView>(webView);
+        UpdateNavigationState();
+    }
+
+    public void UpdateNavigationState()
+    {
+        if (_webViewRef.TryGetTarget(out var webView))
+        {
+            CanGoBack = webView.CanGoBack;
+            CanGoForward = webView.CanGoForward;
+        }
+        else
+        {
+            CanGoBack = false;
+            CanGoForward = false;
+        }
+    }
+
     [RelayCommand]
     private void ToggleSearch()
     {
@@ -29,7 +62,10 @@ public partial class WebBrowserPageModel : ObservableObject
     [RelayCommand]
     private void Refresh()
     {
-        CurrentUrl = CurrentUrl;
+        if (_webViewRef?.TryGetTarget(out var webView) == true)
+        {
+            webView.Reload();
+        }
     }
 
     public void OnUrlEntered()
@@ -65,5 +101,39 @@ public partial class WebBrowserPageModel : ObservableObject
             string url when url.Contains("govor-api/") => "Документация Govor",
             _ => "Браузер"
         };
+
+        UpdateNavigationState();
+    }
+
+    [RelayCommand]
+    private async Task GoBackAsync()
+    {
+        if (_webViewRef?.TryGetTarget(out var webView) == true && webView.CanGoBack)
+        {
+            webView.GoBack();
+            await Task.Delay(100); // Даем время на обновление
+            UpdateNavigationState();
+        }
+    }
+
+    [RelayCommand]
+    private async Task GoForwardAsync()
+    {
+        if (_webViewRef?.TryGetTarget(out var webView) == true && webView.CanGoForward)
+        {
+            webView.GoForward();
+            await Task.Delay(100);
+            UpdateNavigationState();
+        }
+    }
+
+    [RelayCommand]
+    private async Task GoHomeAsync()
+    {
+        CurrentUrl = "";
+        CurrentUrl = HomePage;
+        IsSearchVisible = false;
+        await Task.Delay(300);
+        UpdateNavigationState();
     }
 }

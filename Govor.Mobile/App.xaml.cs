@@ -15,8 +15,6 @@ namespace Govor.Mobile
             _authService = authService;
             _serviceProvider = serviceProvider;
 
-            _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-
             MainPage = new ContentPage
             {
                 Content = new ActivityIndicator
@@ -55,7 +53,7 @@ namespace Govor.Mobile
                 }
                 else
                 {
-                    MainPage = _serviceProvider.GetRequiredService<LoginPage>();
+                    MainPage = _serviceProvider.GetRequiredService<AuthShell>();
                 }
             });
         }

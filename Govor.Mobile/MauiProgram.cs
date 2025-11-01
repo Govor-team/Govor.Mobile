@@ -17,6 +17,7 @@ namespace Govor.Mobile
                     options.SetShouldEnableSnackbarOnWindows(false);
                 })
                 .ConfigureSyncfusionToolkit()
+                .UseSharpnadoMaterialFrame(false)
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -29,8 +30,9 @@ namespace Govor.Mobile
 
 #if DEBUG
             builder.Logging.AddDebug();
-    		builder.Services.AddLogging(configure => configure.AddDebug());
+            builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
+
             //builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
             //builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
 

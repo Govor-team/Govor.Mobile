@@ -57,21 +57,15 @@ public partial class LoginPageModel : ObservableObject
         {
             var result = await _authService.LoginAsync(Name, Password);
 
-            if (result.IsSuccess)
-            {
-                // Навигация при успешном входе
-                Application.Current.MainPage = _serviceProvider.GetRequiredService<SomePage>();
-            }
-            else //TODO
+            if (!result.IsSuccess)
             {
                 await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
-                //ErrorMessage = "Неверные имя или пароль";
             }
         }
         catch (Exception ex)
         {
             // TODO
-            await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+            await AppShell.DisplaySnackbarAsync("Что-то случилось!");
         }
         finally
         {
@@ -95,13 +89,20 @@ public partial class LoginPageModel : ObservableObject
     [RelayCommand]
     private async Task GoToRegisterAsync()
     {
-        var navigationParameter = new Dictionary<string, object>
+        try
+        {
+            var navigationParameter = new Dictionary<string, object>
             {
                 { "Name", Name },
                 { "Password", Password }
             };
 
-        await Shell.Current.GoToAsync(nameof(RegisterPage), false, navigationParameter);
+            await Shell.Current.GoToAsync(nameof(RegisterPage), false, navigationParameter);
+        }
+        catch(Exception ex)
+        {
+            await AppShell.DisplaySnackbarAsync($"{ex.Message}");
+        }
     }
 
     [RelayCommand]

@@ -34,9 +34,10 @@ namespace Govor.Mobile.Services
 
             builder.Services.AddTransient<CodeInputPage>();
             builder.Services.AddTransient<CodeInputModel>();
-
+            
+            builder.Services.AddTransient<AuthShell>();
             builder.Services.AddSingleton<AppShell>();
-            builder.Services.AddSingleton<AuthShell>();
+            
             return builder;
         } 
     }

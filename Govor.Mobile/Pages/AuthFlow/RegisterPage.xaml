@@ -48,8 +48,7 @@
                                PlaceholderColor="White"
                                Margin="15,5"
                                FontSize="18"
-                               BackgroundColor="Transparent"
-                               Completed="NameEntry_Completed">
+                               BackgroundColor="Transparent">
                             <Entry.Behaviors>
                                 <toolkit:EventToCommandBehavior 
                                     EventName="Completed"

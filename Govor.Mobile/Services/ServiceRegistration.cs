@@ -1,8 +1,11 @@
-﻿using Govor.Mobile.Pages.AuthFlow;
+﻿using CommunityToolkit.Maui;
+using Govor.Mobile.PageModels.MainFlow;
 using Govor.Mobile.Pages.AuthFlow;
+using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api.Base;
 using Govor.Mobile.Services.Implementations;
 using Govor.Mobile.Services.Interfaces;
+using MainPage = Govor.Mobile.Pages.MainFlow.MainPage;
 
 namespace Govor.Mobile.Services
 {
@@ -16,6 +19,9 @@ namespace Govor.Mobile.Services
            
             builder.Services.AddSingleton<ITokenStorageService, TokenStorageService>();
             builder.Services.AddSingleton<IBuilderDeviceInfoString, BuilderDeviceInfoString>();
+            builder.Services.AddSingleton<IDeviceInfoParserService, DeviceInfoParserService>();
+
+            builder.Services.AddSingleton<ISessionsService, SessionsService>();
             return builder;
         }
 
@@ -34,8 +40,16 @@ namespace Govor.Mobile.Services
 
             builder.Services.AddTransient<CodeInputPage>();
             builder.Services.AddTransient<CodeInputModel>();
-            
+
+            builder.Services.AddTransient<MainPage>();
+            builder.Services.AddTransient<Govor.Mobile.PageModels.MainFlow.MainPageModel>();
+
+            builder.Services.AddTransient<SettingsPage>();
+            builder.Services.AddTransient<SettingsPageModel>();
+
             builder.Services.AddTransient<AuthShell>();
+            builder.Services.AddSingleton<MainShell>();
+
             builder.Services.AddSingleton<AppShell>();
             
             return builder;

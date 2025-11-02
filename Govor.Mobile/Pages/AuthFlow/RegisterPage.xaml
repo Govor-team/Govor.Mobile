@@ -4,7 +4,7 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="Govor.Mobile.Pages.AuthFlow.RegisterPage"
              BackgroundColor="#282A37"
-             BackgroundImageSource="background_girls.png"
+             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
     <Grid RowDefinitions="*,Auto,*"
       BackgroundColor="Transparent">
@@ -12,10 +12,10 @@
         <!-- Верхний блок: аватар -->
         <Grid Grid.Row="0">
             <Border StrokeThickness="0"
-                HeightRequest="200" WidthRequest="160"
-                HorizontalOptions="Center"
-                BackgroundColor="Transparent"
-                StrokeShape="Ellipse">
+                    HeightRequest="220" WidthRequest="180"
+                    HorizontalOptions="Center"
+                    StrokeShape="Ellipse"
+                    Background="Transparent">
                 <Image Source="icon_of_user.png"
                    Aspect="Fill"
                    Margin="0"/>
@@ -28,7 +28,7 @@
                              Spacing="20"
                              MaximumWidthRequest="600"
                              VerticalOptions="Start"
-                             HorizontalOptions="FillAndExpand">
+                             HorizontalOptions="Fill">
 
                 <!-- Поле Имя -->
                 <VerticalStackLayout Spacing="5">
@@ -48,12 +48,9 @@
                                PlaceholderColor="White"
                                Margin="15,5"
                                FontSize="18"
+                               Completed="NameEntry_Completed"
+                               ReturnType="Go"
                                BackgroundColor="Transparent">
-                            <Entry.Behaviors>
-                                <toolkit:EventToCommandBehavior 
-                                    EventName="Completed"
-                                    Command="{Binding NameCompletedCommand}" />
-                            </Entry.Behaviors>
                         </Entry>
                     </Frame>
                 </VerticalStackLayout>
@@ -79,12 +76,7 @@
                                    FontSize="18"
                                    IsPassword="{Binding IsPasswordHidden}"
                                    BackgroundColor="Transparent"
-                                   ReturnType="Go">
-                                <Entry.Behaviors>
-                                    <toolkit:EventToCommandBehavior 
-                                            EventName="Completed"
-                                            Command="{Binding PasswordCompletedCommand}" />
-                                </Entry.Behaviors>
+                                   Completed="PasswordEntry_Completed">
                             </Entry>
                             <ImageButton Source="{Binding EyeIcon}"
                                      Padding="7"
@@ -102,8 +94,8 @@
 
         <!-- Нижний блок: кнопка + регистрация -->
         <VerticalStackLayout Grid.Row="2"
-                         Padding="30,0,30,70"
-                         Spacing="20"
+                         Padding="30,0,30,50"
+                         Spacing="35"
                          MaximumWidthRequest="600"
                          VerticalOptions="End">
 

@@ -1,7 +1,4 @@
-﻿using Microsoft.Maui.Platform;
-
-namespace Govor.Mobile.Pages;
-
+﻿namespace Govor.Mobile.Pages;
 
 public partial class WebBrowserPage : ContentPage
 {

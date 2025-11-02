@@ -29,19 +29,6 @@ public partial class RegisterPageModel : ObservableObject
         _serviceProvider = serviceProvider;
     }
 
-    [RelayCommand]
-    private void NameCompleted(Entry entry)
-    {
-        entry?.FindByName<Entry>("PasswordEntry")?.Focus();
-    }
-
-    [RelayCommand]
-    private async Task PasswordCompleted()
-    {
-        if (NextCommand.CanExecute(null))
-            await NextAsync();
-    }
-
     [RelayCommand(CanExecute = nameof(CanNext))]
     private async Task NextAsync()
     {

@@ -32,19 +32,6 @@ public partial class LoginPageModel : ObservableObject
         _serviceProvider = serviceProvider;
     }
 
-    [RelayCommand]
-    private void NameCompleted(Entry entry)
-    {
-        entry?.FindByName<Entry>("PasswordEntry")?.Focus();
-    }
-
-    [RelayCommand]
-    private async Task PasswordCompleted()
-    {
-        if (LoginCommand.CanExecute(null))
-            await LoginAsync();
-    }
-
     [RelayCommand(CanExecute = nameof(CanLogin))]
     private async Task LoginAsync()
     {

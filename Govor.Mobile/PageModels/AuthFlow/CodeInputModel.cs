@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Govor.Mobile.Services.Interfaces;
 using System;
+using static Govor.Mobile.Pages.AuthFlow.CodeInputPage;
 
 namespace Govor.Mobile.PageModels.AuthFlow;
 
@@ -29,7 +31,7 @@ public partial class CodeInputModel : ObservableObject
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
 
-    public CodeInputModel(IAuthService authService, IServiceProvider serviceProvider)
+    public CodeInputModel(IAuthService authService,IServiceProvider serviceProvider)
     {
         _authService = authService;
         _serviceProvider = serviceProvider;

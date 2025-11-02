@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Microsoft.Extensions.Logging;
 using Sharpnado.MaterialFrame;
+using SkiaSharp.Views.Maui.Controls.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
 
 namespace Govor.Mobile
@@ -18,6 +19,7 @@ namespace Govor.Mobile
                 })
                 .ConfigureSyncfusionToolkit()
                 .UseSharpnadoMaterialFrame(false)
+                .UseSkiaSharp()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

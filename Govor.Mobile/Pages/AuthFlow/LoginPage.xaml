@@ -2,9 +2,10 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
+             xmlns:sharp="http://sharpnado.com"
              x:Class="Govor.Mobile.Pages.AuthFlow.LoginPage"
              BackgroundColor="#282A37"
-             BackgroundImageSource="background_girls.png"
+             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
     <Grid RowDefinitions="*,Auto,*"
       BackgroundColor="Transparent">
@@ -12,10 +13,10 @@
         <!-- Верхний блок: аватар -->
         <Grid Grid.Row="0">
             <Border StrokeThickness="0"
-                HeightRequest="200" WidthRequest="160"
-                HorizontalOptions="Center"
-                BackgroundColor="Transparent"
-                StrokeShape="Ellipse">
+                    HeightRequest="220" WidthRequest="180"
+                    HorizontalOptions="Center"
+                    StrokeShape="Ellipse"
+                    Background="Transparent">
                 <Image Source="icon_of_user.png"
                    Aspect="Fill"
                    Margin="0"/>
@@ -25,52 +26,52 @@
         <!-- Средний блок: поля ввода -->
         <Grid Grid.Row="1">
             <VerticalStackLayout Padding="30,0,30,30"
-                             Spacing="20"
-                             MaximumWidthRequest="600"
-                             VerticalOptions="Start"
-                             HorizontalOptions="FillAndExpand">
-
+                                 Spacing="20"
+                                 MaximumWidthRequest="600"
+                                 VerticalOptions="Start"
+                                 HorizontalOptions="Fill">
                 <!-- Поле Имя -->
                 <VerticalStackLayout Spacing="5">
                     <Label Text="ФИО"
-                       TextColor="White"
-                       FontSize="16"
-                       Padding="10,0,0,0"/>
-                    <Frame BackgroundColor="#33000000"
-                       CornerRadius="15"
-                       HasShadow="True"
-                       Padding="0"
-                       HeightRequest="60">
+                           TextColor="White"
+                           FontSize="16"
+                           Padding="10,0,0,0"/>
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="15"
+                        Padding="0"
+                        HeightRequest="60">
                         <Entry x:Name="NameEntry"
-                               Placeholder="Имя"
-                               Text="{Binding Name}"
-                               TextColor="White"
-                               PlaceholderColor="White"
-                               Margin="15,5"
-                               FontSize="18"
-                               BackgroundColor="Transparent">
-                            <Entry.Behaviors>
-                                <toolkit:EventToCommandBehavior 
-                                    EventName="Completed"
-                                    Command="{Binding NameCompletedCommand}" />
-                            </Entry.Behaviors>
-                        </Entry>
-                    </Frame>
+                                   Placeholder="Имя"
+                                   Text="{Binding Name}"
+                                   TextColor="White"
+                                   PlaceholderColor="White"
+                                   FontSize="18"
+                                   Margin="15,5"
+                                   Completed="NameEntry_Completed"
+                                   ReturnType="Go"
+                                   BackgroundColor="Transparent">
+                            </Entry>
+                    </sharp:MaterialFrame>
                 </VerticalStackLayout>
 
                 <!-- Поле Пароль -->
                 <VerticalStackLayout Spacing="5">
                     <Label Text="Пароль"
-                       TextColor="White"
-                       FontSize="16"
-                       Padding="10,0,0,0"/>
-                    <Frame BackgroundColor="#33000000"
-                       CornerRadius="15"
-                       HasShadow="True"
-                       Padding="0"
-                       HeightRequest="60">
+                           TextColor="White"
+                           FontSize="16"
+                           Padding="10,0,0,0"/>
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                                         MaterialBlurStyle="Dark"
+                                         Elevation="4"
+                                         CornerRadius="15"
+                                         Padding="0"
+                                         AndroidBlurRadius="50"
+                                         HeightRequest="60">
                         <Grid>
-                            <Entry x:Name="PasswordEntry"
+                            <Entry x:Name="PasswordEntry" Grid.Column="0"
                                    Placeholder="Пароль"
                                    Text="{Binding Password}"
                                    TextColor="White"
@@ -79,51 +80,47 @@
                                    FontSize="18"
                                    IsPassword="{Binding IsPasswordHidden}"
                                    BackgroundColor="Transparent"
-                                   ReturnType="Go">
-                                   <Entry.Behaviors>
-                                        <toolkit:EventToCommandBehavior 
-                                            EventName="Completed"
-                                            Command="{Binding PasswordCompletedCommand}" />
-                                    </Entry.Behaviors>
+                                   Completed="PasswordEntry_Completed">
                             </Entry>
                             <ImageButton x:Name="eye"
-                                     Source="{Binding EyeIcon}"
-                                     Padding="7"
-                                     HeightRequest="20"
-                                     WidthRequest="20"
-                                     BackgroundColor="Transparent"
-                                     HorizontalOptions="End"
-                                     VerticalOptions="Center"
-                                     Command="{Binding TogglePasswordVisibilityCommand}"
-                                     />
+                                         Source="{Binding EyeIcon}"
+                                         Padding="7"
+                                         HeightRequest="20"
+                                         WidthRequest="20"
+                                         BackgroundColor="Transparent"
+                                         HorizontalOptions="End"
+                                         VerticalOptions="Center"
+                                         Command="{Binding TogglePasswordVisibilityCommand}"/>
                         </Grid>
-                    </Frame>
+                    </sharp:MaterialFrame>
                 </VerticalStackLayout>
             </VerticalStackLayout>
         </Grid>
 
         <!-- Нижний блок: кнопка + регистрация -->
         <VerticalStackLayout Grid.Row="2"
-                         Padding="30,0,30,70"
-                         Spacing="20"
-                         MaximumWidthRequest="600"
-                         VerticalOptions="End">
-
+                             Padding="30,0,30,50"
+                             Spacing="35"
+                             MaximumWidthRequest="600"
+                             VerticalOptions="End">
             <!-- Кнопка Входа -->
-            <Frame BackgroundColor="#33000000"
-               CornerRadius="25"
-               HasShadow="True"
-               Padding="0">
+            <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                     MaterialBlurStyle="Dark"
+                     Elevation="4"
+                     CornerRadius="15"
+                     AndroidBlurRadius="35"                                                     
+                     Padding="0"
+                     HeightRequest="60">
                 <Button x:Name="LoginButton"
                         Text="Вход"
-                        Command="{Binding LoginCommand}" 
+                        Command="{Binding LoginCommand}"
                         TextColor="White"
-                        BackgroundColor="Transparent"
+                        BackgroundColor="#10ffffff"
                         FontSize="18"
                         FontAttributes="Bold"
                         HorizontalOptions="Fill"
                         VerticalOptions="Fill"/>
-            </Frame>
+            </sharp:MaterialFrame>
 
             <!-- Ссылка на регистрацию -->
             <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">

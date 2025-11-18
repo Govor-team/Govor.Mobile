@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using System.Collections.ObjectModel;
 
@@ -21,26 +22,40 @@ public partial class SettingsPageModel : ObservableObject
 
     private readonly ISessionsService _sessionsService;
     private readonly IDeviceInfoParserService _infoParserService;
+    private readonly IUserProfileDonloaderSerivce _profileDonloaderSerivce;
+    private readonly IMediaLoaderService _mediaLoaderService;
 
-    public SettingsPageModel(ISessionsService userSession, IDeviceInfoParserService infoParserService)
+    public SettingsPageModel(
+        ISessionsService userSession,
+        IUserProfileDonloaderSerivce userProfile,
+        IDeviceInfoParserService infoParserService,
+        IMediaLoaderService mediaLoader)
+
     {
         _sessionsService = userSession;
         _infoParserService = infoParserService;
+        _profileDonloaderSerivce = userProfile;
+        _mediaLoaderService = mediaLoader;
     }
 
     public async Task Init()
     {
-        var result = await _sessionsService.GetAllSessionsAsync();
-        
-        if (!result.IsSuccess)
+        await InitSessions();
+    }
+
+    private async Task InitSessions()
+    {
+        var sessionResult = await _sessionsService.GetAllSessionsAsync();
+
+        if (!sessionResult.IsSuccess)
         {
-            await AppShell.DisplaySnackbarAsync(result.ErrorMessage);
+            await AppShell.DisplaySnackbarAsync(sessionResult.ErrorMessage);
             return;
         }
 
         sessions?.Clear();
 
-        foreach (var session in result.Value)
+        foreach (var session in sessionResult.Value)
         {
             try
             {
@@ -66,7 +81,7 @@ public partial class SettingsPageModel : ObservableObject
     private async Task RemoveSessionAsync(DeviceSession session)
     {
         var result = await _sessionsService.CloseSessionAsync(session.Id);
-       
+
         if (!result.IsSuccess)
         {
             await AppShell.DisplaySnackbarAsync(result.ErrorMessage);
@@ -87,7 +102,6 @@ public partial class SettingsPageModel : ObservableObject
 
         return "default_device.png";
     }
-
 
     public class DeviceSession
     {

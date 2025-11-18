@@ -1,6 +1,6 @@
 ﻿using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.MainFlow;
-using Govor.Mobile.Services.Interfaces;
+using Govor.Mobile.Services.Api;
 
 namespace Govor.Mobile
 {
@@ -37,13 +37,13 @@ namespace Govor.Mobile
 
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                /*
+                
                 MainPage = _authService.IsAuthenticated
                      ? _serviceProvider.GetRequiredService<MainShell>()
                      : _serviceProvider.GetRequiredService<AuthShell>();
                 
-                */
-                MainPage = _serviceProvider.GetRequiredService<MainShell>();
+                
+                //MainPage = _serviceProvider.GetRequiredService<MainShell>();
             });
         }
 
@@ -58,8 +58,8 @@ namespace Govor.Mobile
                 }
                 else
                 {
-                    //MainPage = _serviceProvider.GetRequiredService<AuthShell>();
-                    MainPage = _serviceProvider.GetRequiredService<MainShell>();
+                    MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+                    // = _serviceProvider.GetRequiredService<MainShell>();
                 }
             });
         }

@@ -1,9 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using Govor.Mobile.Services.Interfaces;
-using System;
-using static Govor.Mobile.Pages.AuthFlow.CodeInputPage;
+using Govor.Mobile.Services.Api;
 
 namespace Govor.Mobile.PageModels.AuthFlow;
 
@@ -31,7 +28,7 @@ public partial class CodeInputModel : ObservableObject
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
 
-    public CodeInputModel(IAuthService authService,IServiceProvider serviceProvider)
+    public CodeInputModel(IAuthService authService, IServiceProvider serviceProvider)
     {
         _authService = authService;
         _serviceProvider = serviceProvider;
@@ -53,7 +50,7 @@ public partial class CodeInputModel : ObservableObject
         IsBusy = true;
 
         var result = await _authService.RegisterAsync(Name, Password, Code);
-        
+
         if (!result.IsSuccess)
         {
             await AppShell.DisplaySnackbarAsync(result.ErrorMessage);

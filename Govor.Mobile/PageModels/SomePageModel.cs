@@ -1,9 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Services.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Govor.Mobile.Services.Api;
 
 namespace Govor.Mobile.PageModels
 {

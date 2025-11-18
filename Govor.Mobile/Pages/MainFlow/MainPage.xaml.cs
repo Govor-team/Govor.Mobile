@@ -11,6 +11,15 @@ public partial class MainPage : AdaptivePage
         BindingContext = vm;
     }
 
+    protected override void OnAppearing()
+    {
+        if(BindingContext is MainPageModel vm)
+        {
+            
+        }
+
+        base.OnAppearing();
+    }
 
     // For pc
     protected override void OnSwitchToWide()

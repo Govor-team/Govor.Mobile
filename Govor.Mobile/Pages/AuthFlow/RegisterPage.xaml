@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="Govor.Mobile.Pages.AuthFlow.RegisterPage"
+             xmlns:sharp="http://sharpnado.com"
              BackgroundColor="#282A37"
              BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
@@ -36,11 +37,13 @@
                        TextColor="White"
                        FontSize="16"
                        Padding="10,0,0,0"/>
-                    <Frame BackgroundColor="#33000000"
-                       CornerRadius="15"
-                       HasShadow="True"
-                       Padding="0"
-                       HeightRequest="60">
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="15"
+                        Padding="0"
+                        HeightRequest="60">
                         <Entry x:Name="NameEntry"
                                Placeholder="Имя"
                                Text="{Binding Name}"
@@ -52,7 +55,7 @@
                                ReturnType="Go"
                                BackgroundColor="Transparent">
                         </Entry>
-                    </Frame>
+                    </sharp:MaterialFrame>
                 </VerticalStackLayout>
 
                 <!-- Поле Пароль -->
@@ -61,11 +64,13 @@
                        TextColor="White"
                        FontSize="16"
                        Padding="10,0,0,0"/>
-                    <Frame BackgroundColor="#33000000"
-                       CornerRadius="15"
-                       HasShadow="True"
-                       Padding="0"
-                       HeightRequest="60">
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="15"
+                        Padding="0"
+                        HeightRequest="60">
                         <Grid>
                             <Entry x:Name="PasswordEntry"
                                    Placeholder="Пароль"
@@ -87,7 +92,7 @@
                                      VerticalOptions="Center"
                                      Command="{Binding TogglePasswordVisibilityCommand}"/>
                         </Grid>
-                    </Frame>
+                    </sharp:MaterialFrame>
                 </VerticalStackLayout>
             </VerticalStackLayout>
         </Grid>
@@ -100,11 +105,14 @@
                          VerticalOptions="End">
 
             <Grid HeightRequest="50">
-                <Frame BackgroundColor="#33000000"
-                       CornerRadius="25"
-                       HasShadow="True"
-                       Padding="0">
-                    <Grid>
+                <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                     MaterialBlurStyle="Dark"
+                     Elevation="4"
+                     CornerRadius="15"
+                     AndroidBlurRadius="35"                                                     
+                     Padding="0"
+                     HeightRequest="60">
+                    <Grid BackgroundColor="#10ffffff">
                         <Label Text="Дальше"
                                TextColor="White"
                                VerticalOptions="Center"
@@ -121,7 +129,7 @@
                             <TapGestureRecognizer Command="{Binding NextCommand}" />
                         </Grid.GestureRecognizers>
                     </Grid>
-                </Frame>
+                </sharp:MaterialFrame>
             </Grid>
 
             <!-- Ссылка на регистрацию -->

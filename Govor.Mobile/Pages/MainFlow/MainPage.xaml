@@ -4,6 +4,7 @@
              xmlns:sharp="http://sharpnado.com"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
              xmlns:tabView="clr-namespace:Syncfusion.Maui.Toolkit.TabView;assembly=Syncfusion.Maui.Toolkit"
+             xmlns:button="clr-namespace:Syncfusion.Maui.Toolkit;assembly=Syncfusion.Maui.Toolkit"
              xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
              xmlns:cvs="clr-namespace:Govor.Mobile.Pages.MainFlow.ContentViews"
              x:Class="Govor.Mobile.Pages.MainFlow.MainPage"
@@ -12,12 +13,13 @@
              BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
     <Grid>
+       
         <!-- Основной стеклянный контейнер -->
         <Grid x:Name="RootGrid"
               Padding="16"
               RowDefinitions="Auto, *, Auto"
               >
-            
+
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="LeftCol" Width="*" />
                 <ColumnDefinition x:Name="RightCol" Width="0" />
@@ -25,7 +27,7 @@
 
             <!-- Верхняя панель -->
             <Grid ColumnDefinitions="*, Auto, Auto" Row="0" Margin="0,0,0,16">
-                <Label Text="Your name"
+                <Label Text="{Binding Name}"
                        FontSize="28"
                        FontAttributes="Bold"
                        TextColor="White"
@@ -61,11 +63,11 @@
                              Command="{Binding SettingsCommand}"
                              />
             </Grid>
-            
+
             <Grid Grid.Row="1">
                 <Border Grid.Row="0" Background="#3fffffff" Margin="0,0,0,10" StrokeShape="10">
                     <!-- Переключатель вкладок -->
-                <tabView:SfTabView 
+                    <tabView:SfTabView 
                             EnableSwiping="True"
                             TabBarPlacement="Top"
                             TabBarHeight="30"
@@ -73,34 +75,34 @@
                             IndicatorPlacement="Fill"
                             IndicatorCornerRadius="25" 
                             >
-                    <!-- Вкладка 1 -->
-                    <tabView:SfTabItem Header="Друзья" TextColor="White">
-                        <tabView:SfTabItem.Content>
-                            <Label Text="Список друзей"
+                        <!-- Вкладка 1 -->
+                        <tabView:SfTabItem Header="Друзья" TextColor="White">
+                            <tabView:SfTabItem.Content>
+                                <Label Text="Список друзей"
                                        TextColor="White"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
-                        </tabView:SfTabItem.Content>
-                    </tabView:SfTabItem>
+                            </tabView:SfTabItem.Content>
+                        </tabView:SfTabItem>
 
-                    <!-- Вкладка 2 -->
+                        <!-- Вкладка 2 -->
                         <tabView:SfTabItem Header="Каналы" TextColor="White">
-                        <tabView:SfTabItem.Content>
-                            <Label Text="Список групп"
+                            <tabView:SfTabItem.Content>
+                                <Label Text="Список групп"
                                        TextColor="White"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
-                        </tabView:SfTabItem.Content>
-                    </tabView:SfTabItem>
+                            </tabView:SfTabItem.Content>
+                        </tabView:SfTabItem>
                         <tabView:SfTabItem Header="Лента" TextColor="White">
-                        <tabView:SfTabItem.Content>
-                            <Label Text="Лента"
+                            <tabView:SfTabItem.Content>
+                                <Label Text="Лента"
                                        TextColor="White"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
-                        </tabView:SfTabItem.Content>
-                    </tabView:SfTabItem>
-                </tabView:SfTabView>
+                            </tabView:SfTabItem.Content>
+                        </tabView:SfTabItem>
+                    </tabView:SfTabView>
                 </Border>
             </Grid>
 

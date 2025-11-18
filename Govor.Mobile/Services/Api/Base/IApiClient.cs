@@ -10,5 +10,7 @@ namespace Govor.Mobile.Services.Api.Base
         Task<HttpResult<T>> PostAsync<T>(string endpoint, object data);
         Task<HttpResult<T>> PutAsync<T>(string endpoint, object data);
         Task<HttpResult<bool>> DeleteAsync(string endpoint);
+        Task<HttpResult<string>> PostMultipartAsync(string endpoint, MultipartFormDataContent form);
+        Task<HttpResult<Utilities.FileResult>> GetFileStreamAsync(string endpoint);
     }
 }

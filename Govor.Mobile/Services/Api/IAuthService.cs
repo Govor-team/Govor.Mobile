@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Govor.Mobile.Services.Interfaces
+namespace Govor.Mobile.Services.Api
 {
     public interface IAuthService
     {

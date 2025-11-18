@@ -27,17 +27,13 @@ namespace Govor.Mobile
                     fonts.AddFont("SegoeUI-Semibold.ttf", "SegoeSemibold");
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
                 })
+                .RegisterDatabaseContext()
                 .RegisterAppServices()
                 .RegisterAppPages();
-
 #if DEBUG
             builder.Logging.AddDebug();
             builder.Services.AddLogging(configure => configure.AddDebug());
 #endif
-
-            //builder.Services.AddTransientWithShellRoute<ProjectDetailPage, ProjectDetailPageModel>("project");
-            //builder.Services.AddTransientWithShellRoute<TaskDetailPage, TaskDetailPageModel>("task");
-
             return builder.Build();
         }
     }

@@ -1,11 +1,7 @@
-﻿using Govor.Mobile.Services.Interfaces;
+﻿using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.Extensions.Logging;
-using Microsoft.Maui.Essentials;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace Govor.Mobile.Services.Implementations
+namespace Govor.Mobile.Services.Implementations.JwtServices
 {
     public class TokenStorageService : ITokenStorageService
     {

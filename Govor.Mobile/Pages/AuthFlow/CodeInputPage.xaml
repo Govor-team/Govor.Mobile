@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
+             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.Toolkit.BottomSheet;assembly=Syncfusion.Maui.Toolkit"
+             xmlns:broser="clr-namespace:Govor.Mobile.Pages"
+             xmlns:sharp="http://sharpnado.com"
+             x:Class="Govor.Mobile.Pages.AuthFlow.CodeInputPage"
+             BackgroundColor="#282A37"
+             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             Title="CodeInputPage"
+             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
+    <Grid RowDefinitions="*,Auto,*"
+            BackgroundColor="Transparent">
+
+        <!-- Верхний блок: аватар -->
+        <Grid Grid.Row="0">
+            <Border StrokeThickness="0"
+                    HeightRequest="220" WidthRequest="180"
+                    HorizontalOptions="Center"
+                    StrokeShape="Ellipse"
+                    Background="Transparent">
+                <Image Source="icon_of_user.png"
+                   Aspect="Fill"
+                   Margin="0"/>
+            </Border>
+        </Grid>
+
+        <!-- Средний блок: поля ввода -->
+        <Grid Grid.Row="1">
+            <VerticalStackLayout Padding="30,0,30,30"
+                         Spacing="20"
+                         MaximumWidthRequest="600"
+                         VerticalOptions="Start"
+                         HorizontalOptions="Fill">
+
+                <!-- Поле Пароль -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Введите код приглашения"
+                           TextColor="White"
+                           FontSize="16"
+                           Padding="10,0,0,0"/>
+                    <Frame BackgroundColor="#33000000"
+                           CornerRadius="15"
+                           HasShadow="True"
+                           Padding="0"
+                           HeightRequest="60">
+                        <Grid>
+                            <Entry x:Name="InvitationEntry"
+                               Placeholder="Код"
+                               Text="{Binding Code}"
+                               TextColor="White"
+                               PlaceholderColor="White"
+                               Margin="15,5"
+                               FontSize="18"
+                               IsPassword="{Binding IsCodeHidden}"
+                               BackgroundColor="Transparent"
+                               Completed="InvitationCode_Completed">
+                            </Entry>
+                            <ImageButton Source="{Binding EyeIcon}"
+                                 Padding="7"
+                                 HeightRequest="20"
+                                 WidthRequest="20"
+                                 BackgroundColor="Transparent"
+                                 HorizontalOptions="End"
+                                 VerticalOptions="Center"
+                                 Command="{Binding ToggleCodeVisibilityCommand}"/>
+                        </Grid>
+                    </Frame>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Нижний блок: кнопка + регистрация -->
+        <VerticalStackLayout Grid.Row="2"
+                     Padding="30,0,30,50"
+                     Spacing="35"
+                     MaximumWidthRequest="600"
+                     VerticalOptions="End">
+
+            <sharp:MaterialFrame 
+                        MaterialTheme="AcrylicBlur"
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="30"
+                        Padding="0"
+                        HeightRequest="60">
+                <Button
+                            Text="Создать аккаунт"
+                            Command="{Binding RegisterCommand}"
+                            TextColor="White"
+                            BackgroundColor="#10ffffff"
+                            FontSize="18"
+                            FontAttributes="Bold"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill"
+                            Padding="0"
+                            CornerRadius="15" />
+            </sharp:MaterialFrame>
+
+
+            <!-- Ссылка на регистрацию -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                <Label Text="Что это такое?" TextColor="#917EEC" FontSize="16"/>
+                <Label Text="Как получит?" TextColor="#917EEC" FontSize="16">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer 
+                        Command="{Binding OpenWikiCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

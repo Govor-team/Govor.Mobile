@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Govor.Mobile.Pages.AuthFlow.RegisterPage"
+             xmlns:sharp="http://sharpnado.com"
+             BackgroundColor="#282A37"
+             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
+    <Grid RowDefinitions="*,Auto,*"
+      BackgroundColor="Transparent">
+
+        <!-- Верхний блок: аватар -->
+        <Grid Grid.Row="0">
+            <Border StrokeThickness="0"
+                    HeightRequest="220" WidthRequest="180"
+                    HorizontalOptions="Center"
+                    StrokeShape="Ellipse"
+                    Background="Transparent">
+                <Image Source="icon_of_user.png"
+                   Aspect="Fill"
+                   Margin="0"/>
+            </Border>
+        </Grid>
+
+        <!-- Средний блок: поля ввода -->
+        <Grid Grid.Row="1">
+            <VerticalStackLayout Padding="30,0,30,30"
+                             Spacing="20"
+                             MaximumWidthRequest="600"
+                             VerticalOptions="Start"
+                             HorizontalOptions="Fill">
+
+                <!-- Поле Имя -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="ФИО"
+                       TextColor="White"
+                       FontSize="16"
+                       Padding="10,0,0,0"/>
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="15"
+                        Padding="0"
+                        HeightRequest="60">
+                        <Entry x:Name="NameEntry"
+                               Placeholder="Имя"
+                               Text="{Binding Name}"
+                               TextColor="White"
+                               PlaceholderColor="White"
+                               Margin="15,5"
+                               FontSize="18"
+                               Completed="NameEntry_Completed"
+                               ReturnType="Go"
+                               BackgroundColor="Transparent">
+                        </Entry>
+                    </sharp:MaterialFrame>
+                </VerticalStackLayout>
+
+                <!-- Поле Пароль -->
+                <VerticalStackLayout Spacing="5">
+                    <Label Text="Пароль"
+                       TextColor="White"
+                       FontSize="16"
+                       Padding="10,0,0,0"/>
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                        MaterialBlurStyle="Dark"
+                        Elevation="4"
+                        AndroidBlurRadius="50"
+                        CornerRadius="15"
+                        Padding="0"
+                        HeightRequest="60">
+                        <Grid>
+                            <Entry x:Name="PasswordEntry"
+                                   Placeholder="Пароль"
+                                   Text="{Binding Password}"
+                                   TextColor="White"
+                                   PlaceholderColor="White"
+                                   Margin="15,5"
+                                   FontSize="18"
+                                   IsPassword="{Binding IsPasswordHidden}"
+                                   BackgroundColor="Transparent"
+                                   Completed="PasswordEntry_Completed">
+                            </Entry>
+                            <ImageButton Source="{Binding EyeIcon}"
+                                     Padding="7"
+                                     HeightRequest="20"
+                                     WidthRequest="20"
+                                     BackgroundColor="Transparent"
+                                     HorizontalOptions="End"
+                                     VerticalOptions="Center"
+                                     Command="{Binding TogglePasswordVisibilityCommand}"/>
+                        </Grid>
+                    </sharp:MaterialFrame>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </Grid>
+
+        <!-- Нижний блок: кнопка + регистрация -->
+        <VerticalStackLayout Grid.Row="2"
+                         Padding="30,0,30,50"
+                         Spacing="35"
+                         MaximumWidthRequest="600"
+                         VerticalOptions="End">
+
+            <Grid HeightRequest="50">
+                <sharp:MaterialFrame MaterialTheme="AcrylicBlur" 
+                     MaterialBlurStyle="Dark"
+                     Elevation="4"
+                     CornerRadius="15"
+                     AndroidBlurRadius="35"                                                     
+                     Padding="0"
+                     HeightRequest="60">
+                    <Grid BackgroundColor="#10ffffff">
+                        <Label Text="Дальше"
+                               TextColor="White"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"
+                               FontSize="18"
+                               FontAttributes="Bold" />
+                        <Image Source="line.png"
+                               WidthRequest="100"
+                               HeightRequest="40"
+                               VerticalOptions="Center"
+                               HorizontalOptions="End"
+                               Margin="0,0,0,0"/>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding NextCommand}" />
+                        </Grid.GestureRecognizers>
+                    </Grid>
+                </sharp:MaterialFrame>
+            </Grid>
+
+            <!-- Ссылка на регистрацию -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
+                <Label Text="Есть аккаунт?" TextColor="White" FontSize="16"/>
+                <Label Text="Войди!" TextColor="#917EEC" FontSize="16">
+                    <Label.GestureRecognizers>
+                        <TapGestureRecognizer 
+                            Command="{Binding GoToLoginCommand}" />
+                    </Label.GestureRecognizers>
+                </Label>
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

@@ -1,3 +1,5 @@
 <Solution>
   <Project Path="Govor.Mobile/Govor.Mobile.csproj" />
+  <Project Path="Govor.Mobile.Application/Govor.Mobile.Application.csproj" />
+  <Project Path="Govor.Mobile.Tests/Govor.Mobile.Tests.csproj" />
 </Solution>

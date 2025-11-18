@@ -1,6 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Services.Api;
+using Govor.Mobile.Application.Services.Api;
 
 namespace Govor.Mobile.PageModels.AuthFlow;
 

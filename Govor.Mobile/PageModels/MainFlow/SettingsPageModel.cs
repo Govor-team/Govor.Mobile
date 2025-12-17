@@ -1,113 +1,171 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Services.Api;
-using Govor.Mobile.Services.Interfaces;
 using System.Collections.ObjectModel;
+using CommunityToolkit.Maui.Extensions;
+using Govor.Mobile.ContentViews;
+using Govor.Mobile.Models.Results;
+using Govor.Mobile.Services.Interfaces.Profiles;
+using Govor.Mobile.PageModels.ContentViewsModel;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
-public partial class SettingsPageModel : ObservableObject
+public partial class SettingsPageModel : ObservableObject, IDisposable
 {
+    [ObservableProperty]
+    private AvatarViewModel avatarViewModel;
+    
     [ObservableProperty]
     private ObservableCollection<DeviceSession> sessions = new();
 
     [ObservableProperty]
-    private string userName = "Your name";
+    private string userName = "Гость";
 
     [ObservableProperty]
     private string about = "";
+    
+    [ObservableProperty]
+    private bool hasChanges = false;
+    private string _originalAbout = ""; 
 
     [ObservableProperty]
-    private string avatarIcon = "default_avatar.png";
+    private ImageSource avatarImage;
 
-    private readonly ISessionsService _sessionsService;
-    private readonly IDeviceInfoParserService _infoParserService;
-    private readonly IUserProfileDonloaderSerivce _profileDonloaderSerivce;
-    private readonly IMediaLoaderService _mediaLoaderService;
+    [ObservableProperty]
+    private string descriptionCounter = "0/500";
 
+    [ObservableProperty]
+    private Color descriptionCounterColor = Colors.White;
+
+    [ObservableProperty]
+    private bool isDescriptionValid = true;
+
+    private readonly IUserProfileService _profileService; 
+    private readonly IDescriptionService _descriptionService;
+    private readonly IDeviceSessionManagerService _sessionsService;
+    private readonly int MaxLength;
+
+    private Guid _currentUserId;
+    
     public SettingsPageModel(
-        ISessionsService userSession,
-        IUserProfileDonloaderSerivce userProfile,
-        IDeviceInfoParserService infoParserService,
-        IMediaLoaderService mediaLoader)
-
+        IUserProfileService profileService,
+        IDescriptionService descriptionService,
+        IDeviceSessionManagerService sessionsService,
+        IMaxDescriptionLengthProvider  maxDescriptionLengthProvider,
+        AvatarViewModel avatarModel)
     {
-        _sessionsService = userSession;
-        _infoParserService = infoParserService;
-        _profileDonloaderSerivce = userProfile;
-        _mediaLoaderService = mediaLoader;
+        _profileService = profileService;
+        _descriptionService = descriptionService;
+        _sessionsService = sessionsService;
+        MaxLength = maxDescriptionLengthProvider.MaxDescriptionLength;
+        avatarViewModel = avatarModel;
     }
-
-    public async Task Init()
+    
+    public async Task InitAsync()
     {
+        var profile = await _profileService.GetCurrentProfile();
+        
+        _profileService.OnProfileUpdated += userProfile =>
+        {
+            if (userProfile?.Id == _currentUserId)
+                OnProfileUpdated(userProfile);
+        };
+        
+        InitProfile(profile);
         await InitSessions();
     }
 
-    private async Task InitSessions()
+    private void OnProfileUpdated(UserProfile obj)
     {
-        var sessionResult = await _sessionsService.GetAllSessionsAsync();
-
-        if (!sessionResult.IsSuccess)
+        Application.Current.Dispatcher.Dispatch(() =>
         {
-            await AppShell.DisplaySnackbarAsync(sessionResult.ErrorMessage);
-            return;
-        }
-
-        sessions?.Clear();
-
-        foreach (var session in sessionResult.Value)
-        {
-            try
-            {
-                var info = _infoParserService.Parse(session.deviceInfo);
-                var icon = GetPlatformIcon(info.Platform);
-
-                sessions?.Add(new DeviceSession
-                {
-                    CreatedAt = session.createdAt,
-                    Icon = icon,
-                    DeviceName = info.DeviceName,
-                    Id = session.id,
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Ошибка парсинга сессии: {session.deviceInfo} - {ex.Message}");
-            }
-        }
+            InitProfile(obj);
+        });
     }
 
+    private void InitProfile(UserProfile profile)
+    {
+        if (profile is null) return;
+
+        _currentUserId = profile.Id;
+
+        UserName = profile.Username;
+        About = profile.Description;
+
+        _originalAbout = About;
+        UpdateDescriptionCounter();
+        UpdateHasChanges();
+
+        AvatarViewModel.InitializeAsync(profile.Username, profile.IconId);
+    }
+
+    
+    private async Task InitSessions()
+    {
+        var sessionModels = await _sessionsService.LoadSessionsAsync();
+
+        Sessions.Clear();
+        foreach (var model in sessionModels)
+        {
+            Sessions.Add(model); 
+        }
+    }
+    
     [RelayCommand]
     private async Task RemoveSessionAsync(DeviceSession session)
     {
-        var result = await _sessionsService.CloseSessionAsync(session.Id);
+        bool success = await _sessionsService.CloseSessionAsync(session.Id);
 
-        if (!result.IsSuccess)
+        if (success)
         {
-            await AppShell.DisplaySnackbarAsync(result.ErrorMessage);
-            return;
+            Sessions.Remove(session);
+        }
+    }
+
+
+    [RelayCommand]
+    private async Task SwipedToCloseAsync()
+    {
+        await Shell.Current.GoToAsync("..");
+    }
+    
+    partial void OnAboutChanged(string oldValue, string newValue)
+    {
+        UpdateDescriptionCounter();
+        UpdateHasChanges();
+    }
+
+    private void UpdateHasChanges()
+    {
+        HasChanges = (_originalAbout != About);
+    }
+
+    private void UpdateDescriptionCounter()
+    {
+        int length = About?.Length ?? 0;
+
+        DescriptionCounter = $"{length}/{MaxLength}";
+        IsDescriptionValid = length <= MaxLength;
+
+        DescriptionCounterColor = IsDescriptionValid ? Colors.White : Colors.Red;
+    }
+    
+    [RelayCommand]
+    private async Task UpdateDescriptionAsync()
+    {
+        if (!HasChanges)
+        {
+            return; 
         }
 
-        Sessions.Remove(session);
+        if (await _descriptionService.UpdateDescriptionAsync(About))
+        {
+            _originalAbout = About;
+            UpdateHasChanges();
+        }
     }
-
-    private string GetPlatformIcon(string info)
+    
+    public void Dispose()
     {
-        if (info.StartsWith("Win", StringComparison.OrdinalIgnoreCase))
-            return "windows_icon.png";
-        if (info.StartsWith("Android", StringComparison.OrdinalIgnoreCase))
-            return "android_icon.png";
-        if (info.StartsWith("iOS", StringComparison.OrdinalIgnoreCase))
-            return "ios_icon.png";
-
-        return "default_device.png";
-    }
-
-    public class DeviceSession
-    {
-        public string DeviceName { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public string Icon { get; set; } = string.Empty;
-        public Guid Id { get; set; }
+        _profileService.OnProfileUpdated -= OnProfileUpdated;
     }
 }

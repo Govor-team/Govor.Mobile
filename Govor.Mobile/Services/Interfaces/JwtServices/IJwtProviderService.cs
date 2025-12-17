@@ -4,12 +4,13 @@ namespace Govor.Mobile.Services.Interfaces.JwtServices;
 
 public interface IJwtProviderService
 {
-    public bool HasValidRefreshToken => !string.IsNullOrEmpty(RefreshToken);
-    public string? AccessToken { get; }
-    public string? RefreshToken { get; }
+    bool HasRefreshToken { get; }
+    public event Action WasClearTokens;
+    Task<string> GetAccessTokenAsync();
 
-    Task<Result<RefreshResponse>> RefreshAsync();
-    Task SetTokensAsync(string accessToken, string refreshToken);
     Task InitializeAsync();
+    
+    Task InitializeWithTokensAsync(string accessToken, string refreshToken);
+    
     Task ClearAsync();
 }

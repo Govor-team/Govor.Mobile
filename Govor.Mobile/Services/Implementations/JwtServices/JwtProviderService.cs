@@ -1,30 +1,39 @@
-﻿using Govor.Mobile.Models.Responses;
+﻿using System.IdentityModel.Tokens.Jwt;
+using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.Json;
+using Govor.Mobile.Services.Interfaces;
 
 namespace Govor.Mobile.Services.Implementations.JwtServices;
 
-public class JwtProviderService : IJwtProviderService
+public sealed class JwtProviderService : IJwtProviderService
 {
+    public bool HasRefreshToken => !string.IsNullOrWhiteSpace(_refreshToken);
+    public event Action WasClearTokens;
+
     private readonly ILogger<JwtProviderService> _logger;
     private readonly ITokenStorageService _storageService;
+    private readonly IServerIpProvader _ipProvider;
     private readonly HttpClient _httpClient;
+
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     private string? _accessToken;
     private string? _refreshToken;
+    private DateTimeOffset _accessTokenExpiration;
 
-    public string? AccessToken => _accessToken;
-    public string? RefreshToken => _refreshToken;
+    private static readonly TimeSpan ExpirationBuffer = TimeSpan.FromSeconds(30);
 
     public JwtProviderService(
         ILogger<JwtProviderService> logger,
+        IServerIpProvader serverIpProvader,
         ITokenStorageService tokenStorage)
     {
         _logger = logger;
         _storageService = tokenStorage;
-
+        _ipProvider = serverIpProvader;
         _httpClient = new HttpClient();
     }
 
@@ -33,53 +42,118 @@ public class JwtProviderService : IJwtProviderService
         _refreshToken = await _storageService.GetRefreshTokenAsync();
     }
 
-    public async Task<Result<RefreshResponse>> RefreshAsync()
+    public async Task<string> GetAccessTokenAsync()
     {
+        if (HasValidAccessToken())
+            return _accessToken!;
+
+        await _refreshLock.WaitAsync();
         try
         {
-            // отправляем refresh запрос на сервер
-            var body = JsonSerializer.Serialize(new { refreshToken = _refreshToken });
-            var response = await _httpClient.PostAsync("https://localhost:7155/api/auth/token/refresh", // ip
-                new StringContent(body, Encoding.UTF8, "application/json"));
+            // повторная проверка после ожидания
+            if (HasValidAccessToken())
+                return _accessToken!;
 
-            if (!response.IsSuccessStatusCode)
-                return Result<RefreshResponse>.Failure(await response.Content.ReadAsStringAsync());
+            if (string.IsNullOrWhiteSpace(_refreshToken))
+                throw new InvalidOperationException("Refresh token is missing.");
 
-            var json = await response.Content.ReadAsStringAsync();
-            var data = JsonSerializer.Deserialize<RefreshResponse>(json)!;
+            var result = await RefreshInternalAsync();
+            if (!result.IsSuccess)
+                throw new InvalidOperationException(result.ErrorMessage);
 
-            await SetTokensAsync(data.accessToken, data.refreshToken);
-
-            return Result<RefreshResponse>.Success(data);
+            return _accessToken!;
         }
-        catch (Exception ex)
+        finally
         {
-            _logger.LogError(ex, "Error refreshing JWT tokens.");
-            return Result<RefreshResponse>.Failure(ex.Message);
+            _refreshLock.Release();
         }
-    }
-
-    public async Task SetTokensAsync(string accessToken, string refreshToken)
-    {
-        if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
-            throw new ArgumentException("Tokens cannot be null or empty.");
-
-        await _storageService.SaveRefreshTokenAsync(refreshToken);
-
-        _refreshToken = refreshToken;
-        _accessToken = accessToken;
-
-        _logger.LogInformation("Tokens successfully saved.");
     }
 
     public async Task ClearAsync()
     {
         _storageService.DeleteRefreshToken();
 
-        _refreshToken = default;
-        _accessToken = default;
+        _accessToken = null;
+        _refreshToken = null;
+        _accessTokenExpiration = default;
+        
+        WasClearTokens?.Invoke();
+        _logger.LogInformation("JWT tokens cleared.");
+    }
+    
+    private bool HasValidAccessToken()
+    {
+        return !string.IsNullOrEmpty(_accessToken) &&
+               DateTimeOffset.UtcNow < _accessTokenExpiration - ExpirationBuffer;
+    }
 
-        _logger.LogInformation("Tokens cleared.");
-        await Task.CompletedTask;
+    private async Task<Result<RefreshResponse>> RefreshInternalAsync()
+    {
+        try
+        {
+            var body = JsonSerializer.Serialize(new
+            {
+                refreshToken = _refreshToken
+            });
+
+            var response = await _httpClient.PostAsync(
+                $"{_ipProvider.IP}/api/auth/token/refresh",
+                new StringContent(body, Encoding.UTF8, "application/json"));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                await ClearAsync();
+                
+                return Result<RefreshResponse>.Failure(
+                    await response.Content.ReadAsStringAsync());
+            }
+            
+            var json = await response.Content.ReadAsStringAsync();
+            var data = JsonSerializer.Deserialize<RefreshResponse>(json)!;
+
+            await SetTokensInternalAsync(data.accessToken, data.refreshToken);
+
+            return Result<RefreshResponse>.Success(data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "JWT refresh failed.");
+            return Result<RefreshResponse>.Failure(ex.Message);
+        }
+    }
+
+    private async Task SetTokensInternalAsync(string accessToken, string refreshToken)
+    {
+        _accessToken = accessToken;
+        _refreshToken = refreshToken;
+
+        _accessTokenExpiration = ExtractExpiration(accessToken);
+
+        await _storageService.SaveRefreshTokenAsync(refreshToken);
+        _logger.LogInformation("JWT tokens updated successfully.");
+    }
+
+    private static DateTimeOffset ExtractExpiration(string accessToken)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(accessToken);
+
+        if (jwt.Payload.Exp is int exp)
+            return DateTimeOffset.FromUnixTimeSeconds(exp);
+
+        return DateTimeOffset.UtcNow.AddMinutes(5);
+    }
+    
+    public async Task InitializeWithTokensAsync(string accessToken, string refreshToken)
+    {
+        await _refreshLock.WaitAsync();
+        try
+        {
+            await SetTokensInternalAsync(accessToken, refreshToken);
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
     }
 }

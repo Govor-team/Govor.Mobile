@@ -1,10 +1,12 @@
 ﻿using CommunityToolkit.Maui;
 using Govor.Mobile.Data;
+using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.MainFlow;
 using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Api.Base;
+using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Implementations;
 using Govor.Mobile.Services.Implementations.JwtServices;
 using Govor.Mobile.Services.Implementations.Profiles;
@@ -35,11 +37,36 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IMediaLoaderService, MediaLoaderService>();
 
         builder.Services.AddSingleton<IServerIpProvader, ServerIpProvader>();
+        builder.Services.AddSingleton<IPlatformIconService, PlatformIconService>();
 
         // Profiles
+        builder.Services.AddSingleton<IProfileApiClient, ProfileApiClient>();
+        builder.Services.AddSingleton<IUserProfileService, UserProfileService>();
+        
+        builder.Services.AddScoped<ICurrentUserAvatarService, CurrentUserAvatarService>();
+    
+        builder.Services.AddSingleton<IDefaultAvatarGenerator, DefaultAvatarGenerator>();
+        builder.Services.AddSingleton<IDescriptionService, DescriptionService>();
+        builder.Services.AddSingleton<IMaxDescriptionLengthProvider, MaxDescriptionLengthProvider>();
+        builder.Services.AddSingleton<IDeviceSessionManagerService, DeviceSessionManagerService>();
+        
         builder.Services.AddScoped<IAvatarStoragePath, AvatarStoragePathService>();
-        builder.Services.AddScoped<IAvatarSaver, AvatarSaverService>();
+        builder.Services.AddScoped<IUserAvatarFileService, UserAvatarFileService>();
+        builder.Services.AddScoped<IAvatarLoader, UserAvatarFileService>();
+        builder.Services.AddScoped<IAvatarSaver, UserAvatarFileService>();
 
+        // Hubs
+        builder.Services.AddSingleton<ProfileHub>();
+        
+        builder.Services.AddSingleton<ProfileHubListener>(); 
+        
+        builder.Services.AddSingleton<IProfileHubService>(sp => sp.GetRequiredService<ProfileHub>());
+        builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<ProfileHub>());
+        builder.Services.AddSingleton<IHubInitializer, HubInitializer>();
+
+        // ViewModels 
+        builder.Services.AddScoped<AvatarViewModel>();
+        
         return builder;
     }
 
@@ -71,6 +98,9 @@ internal static class ServiceRegistration
         builder.Services.AddTransient<MainPage>();
         builder.Services.AddTransient<Govor.Mobile.PageModels.MainFlow.MainPageModel>();
 
+        builder.Services.AddTransient<FriendsSearchPage>();
+        builder.Services.AddTransient<FriendsSearchPageModel>();
+        
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<SettingsPageModel>();
 

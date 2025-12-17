@@ -63,19 +63,26 @@
 
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.10" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.10" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0-rc.1.25451.107" />
+		<PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="7.0.0" />
+		<PackageReference Include="CropperImage.MAUI" Version="1.1.0" />
+		<PackageReference Include="ImageCropper.Maui" Version="1.2.3" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.11" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+		<PackageReference Include="UraniumUI.Blurs" Version="2.14.0" />
+		<PackageReference Include="UXDivers.Popups.Maui" Version="0.9.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
-		<PackageReference Include="CommunityToolkit.Maui" Version="11.1.1" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="13.0.0" />
 		<PackageReference Include="Sharpnado.MaterialFrame.Maui" Version="3.0.2" />
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.1" />
-		<PackageReference Include="Syncfusion.Maui.Core" Version="31.2.5" />
-		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.6" />
+		<PackageReference Include="Syncfusion.Maui.Core" Version="31.2.18" />
+		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.8" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -84,6 +91,18 @@
 	  </Compile>
 	  <Compile Update="Pages\MainFlow\MainShell.xaml.cs">
 	    <DependentUpon>MainShell.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="PageModels\ContentViews\ImagePreviewView.xaml.cs">
+	    <DependentUpon>ImagePreviewView.xaml</DependentUpon>
+	    <SubType>Code</SubType>
+	  </Compile>
+	  <Compile Update="PageModels\ContentViews\ImagePreviewView.xaml.cs">
+	    <DependentUpon>ImagePreviewView.xaml</DependentUpon>
+	    <SubType>Code</SubType>
+	  </Compile>
+	  <Compile Update="Pages\MainFlow\FriendsSearchPage.xaml.cs">
+	    <DependentUpon>FriendsSearchPage.xaml</DependentUpon>
+	    <SubType>Code</SubType>
 	  </Compile>
 	</ItemGroup>
 
@@ -130,6 +149,23 @@
 	  <MauiXaml Update="Pages\WikiPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="PageModels\ContentViews\ImagePreviewView.xaml">
+	    <SubType>Designer</SubType>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\MainFlow\FriendsSearchPage.xaml">
+	    <SubType>Designer</SubType>
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <AdditionalFiles Include="Pages\ContentViews\ImagePreviewView.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Reference Include="UXDivers.Popups.Maui">
+	    <HintPath>..\..\..\..\.nuget\packages\uxdivers.popups.maui\0.9.1\lib\net10.0-ios26.0\UXDivers.Popups.Maui.dll</HintPath>
+	  </Reference>
 	</ItemGroup>
 	
 </Project>

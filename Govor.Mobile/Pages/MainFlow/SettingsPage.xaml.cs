@@ -1,27 +1,26 @@
 using Govor.Mobile.PageModels.MainFlow;
-using static Govor.Mobile.PageModels.MainFlow.SettingsPageModel;
+using Govor.Mobile.Services.Interfaces.Profiles;
 using Syncfusion.Maui.Toolkit.Buttons;
 
 namespace Govor.Mobile.Pages.MainFlow;
 
 public partial class SettingsPage : ContentPage
 {
+	private double _totalX;
+	private double _totalY;
 	public SettingsPage(SettingsPageModel vm)
 	{
 		InitializeComponent();
 		BindingContext = vm;
 	}
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
 
 		if(BindingContext is SettingsPageModel vm)
-		{
-            MainThread.InvokeOnMainThreadAsync(async () =>
-            {
-                await vm.Init(); 
-            });
+		{ 
+			await vm.InitAsync(); 
 		}
     }
 
@@ -33,5 +32,4 @@ public partial class SettingsPage : ContentPage
                 await vm.RemoveSessionCommand.ExecuteAsync(session);
         }
     }
-
 }

@@ -49,11 +49,11 @@ public partial class CodeInputModel : ObservableObject
 
         IsBusy = true;
 
-        var result = await _authService.RegisterAsync(Name, Password, Code);
+        var result = await _authService.RegisterAsync(Name.TrimEnd().TrimStart(), Password, Code);
 
         if (!result.IsSuccess)
         {
-            await AppShell.DisplaySnackbarAsync(result.ErrorMessage);
+            await AppShell.DisplayException(result.ErrorMessage);
         }
 
         IsBusy = false;
@@ -87,7 +87,7 @@ public partial class CodeInputModel : ObservableObject
         }
         catch (Exception ex)
         {
-            await AppShell.DisplaySnackbarAsync("Не удалось открыть документацию!");
+            await AppShell.DisplayException("Не удалось открыть документацию!");
         }
     }
 

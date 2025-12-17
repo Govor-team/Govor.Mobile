@@ -43,17 +43,17 @@ public partial class LoginPageModel : ObservableObject
 
         try
         {
-            var result = await _authService.LoginAsync(Name, Password);
+            var result = await _authService.LoginAsync(Name.TrimEnd().TrimStart(), Password);
 
             if (!result.IsSuccess)
             {
-                await AppShell.DisplaySnackbarAsync("Неверные имя или пароль");
+                await AppShell.DisplayException(result.ErrorMessage);
             }
         }
         catch (Exception ex)
         {
             // TODO
-            await AppShell.DisplaySnackbarAsync("Что-то случилось!");
+            await AppShell.DisplayException("Что-то случилось!");
         }
         finally
         {
@@ -89,7 +89,7 @@ public partial class LoginPageModel : ObservableObject
         }
         catch(Exception ex)
         {
-            await AppShell.DisplaySnackbarAsync($"{ex.Message}");
+            await AppShell.DisplayException($"{ex.Message}");
         }
     }
 

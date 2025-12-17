@@ -1,141 +1,232 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:sf="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
              x:Class="Govor.Mobile.Pages.MainFlow.SettingsPage"
              xmlns:sharp="http://sharpnado.com"
-             Title="Настройки"
              BackgroundColor="#282A37"
              BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             Title="Настройки"
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
-    <ScrollView Padding="16">
-        <VerticalStackLayout Spacing="20" Grid.Column="1">
-            <!-- Аватар + имя -->
-            <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
-                <Grid>
-                    <Image Source="default_avatar.png"
-                               Aspect="AspectFill"
-                               WidthRequest="120"
-                               HeightRequest="120"
-                               HorizontalOptions="Fill"
-                               VerticalOptions="Fill"/>
+    <Grid>
+        <ScrollView Padding="16">
+            <VerticalStackLayout Spacing="20">
+                <!-- Аватар + имя -->
+                <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                    <Grid>
+                        <toolkit:AvatarView
+                            WidthRequest="150"
+                            HeightRequest="150"
+                            BackgroundColor="{Binding AvatarViewModel.AvatarBackgroundColor}"
+                            TextTransform="Uppercase"
+                            FontSize="50"
+                            FontAttributes="Bold"
+                            Text="{Binding AvatarViewModel.AvatarText}"
+                            ImageSource="{Binding AvatarViewModel.AvatarImage}"
+                            CornerRadius="75"
+                            HorizontalOptions="Fill"
+                            BorderColor="Transparent"
+                            VerticalOptions="Fill">
+                            <toolkit:AvatarView.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding AvatarViewModel.OpenAvatarCommand}"
+                                    NumberOfTapsRequired="1" />
+                            </toolkit:AvatarView.GestureRecognizers>
+                        </toolkit:AvatarView>
 
-                    <!-- Иконка камеры -->
-                    <Border StrokeShape="RoundRectangle 30"
-                                Background="#43A25A"
+                        <!-- Иконка камеры -->
+                        <Border StrokeShape="RoundRectangle 30"
+                                Background="#8ACA85"
                                 StrokeThickness="1"
                                 Stroke="#3F3F3F"
                                 WidthRequest="45"
                                 HeightRequest="45"
                                 HorizontalOptions="End"
                                 VerticalOptions="End"
-                                TranslationX="10"
+                                TranslationX="0"
                                 TranslationY="0">
-                        <Image Source="camera_icon.png"
+                            <Image Source="camera_icon.png"
                                    WidthRequest="30"
                                    HeightRequest="30"
                                    HorizontalOptions="Center"
-                                   VerticalOptions="Center"/>
-                    </Border>
-                </Grid>
+                                   VerticalOptions="Center">
+                                <Image.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding AvatarViewModel.PickNewAvatarCommand}" />
+                                </Image.GestureRecognizers>
+                            </Image>
+                        </Border>
+                    </Grid>
 
-                <Label Text="{Binding UserName}"
-                           FontSize="22"
+                    <Label Text="{Binding UserName}"
+                           FontSize="24"
                            FontAttributes="Bold"
                            TextColor="White"
                            HorizontalOptions="Center">
-                    <Label.Shadow>
-                        <Shadow Brush="Black"
-                                Offset="1,3"
-                                Radius="2"
-                                Opacity="0.6" />
-                    </Label.Shadow>
-                </Label>
-            </VerticalStackLayout>
+                        <Label.Shadow>
+                            <Shadow Brush="Black"
+                                    Offset="1,3"
+                                    Radius="2"
+                                    Opacity="0.6" />
+                        </Label.Shadow>
+                    </Label>
+                </VerticalStackLayout>
 
-            <!-- О себе -->
-            <Border Background="#30FFFFFF"
-                        Stroke="#33FFFFFF"
-                        StrokeThickness="1"
-                        StrokeShape="RoundRectangle 20"
-                        Padding="10"
-                        Margin="0,0,0,10">
-                <Editor Text="{Binding About}"
-                        Placeholder="О себе"
-                        AutoSize="TextChanges"
-                        TextColor="White"
-                        PlaceholderColor="#FFFFFF"
-                        BackgroundColor="Transparent"
-                        FontSize="17"
-                        HeightRequest="120"
-                        Margin="0,0,0,0" />
-            </Border>
+                <VerticalStackLayout Spacing="5">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-            <!-- Активные сессии -->
-            <Label Text="Активные сессии"
+                        <Border
+                            Background="Transparent"
+                            Stroke="#13FFFFFF"
+                            StrokeThickness="2"
+                            StrokeShape="RoundRectangle 20"
+                            Padding="0">
+                            <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
+                                                 MaterialBlurStyle="Dark"
+                                                 Elevation="4"
+                                                 AndroidBlurRadius="30"
+                                                 CornerRadius="20"
+                                                 Padding="10"
+                                                 HeightRequest="140"
+                                                 Margin="0,0,0,0">
+                                <Editor Text="{Binding About}"
+                                        Placeholder="О себе"
+                                        AutoSize="TextChanges"
+                                        TextColor="White"
+                                        PlaceholderColor="#FFFFFF"
+                                        BackgroundColor="Transparent"
+                                        FontSize="17"
+                                        HeightRequest="120" />
+                            </sharp:MaterialFrame>
+                        </Border>
+
+                        <VerticalStackLayout Grid.Row="1" Spacing="5">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <sf:SfButton Grid.Row="0"
+                                             ImageAlignment="Default"
+                                             ImageSource="check_icon.png"
+                                             Background="Transparent"
+                                             ShowIcon="True"
+                                             HeightRequest="30"
+                                             WidthRequest="30"
+                                             BackgroundColor="#8ACA85"
+                                             HorizontalOptions="End"
+                                             VerticalOptions="Start"
+                                             TranslationX="0"
+                                             TranslationY="8"
+                                             Padding="0"
+                                             Command="{Binding  UpdateDescriptionCommand}"
+                                             IsVisible="{Binding HasChanges}" IsEnabled="{Binding IsDescriptionValid}"/>
+                                <Label Grid.Row="1"
+                                       Text="{Binding DescriptionCounter}"
+                                       TextColor="{Binding DescriptionCounterColor}"
+                                       FontSize="13"
+                                       HorizontalOptions="End"
+                                       Margin="0,4,4,0" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- Активные сессии -->
+                <Label Text="Активные сессии"
                        FontSize="18"
                        FontAttributes="Bold"
                        TextColor="White"
-                       Margin="0,10,0,0"/>
+                       Margin="0,10,0,0" />
 
-            <CollectionView ItemsSource="{Binding Sessions}"
-                    SelectionMode="None"
-                    Margin="0,5,0,0">
-                <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical"
-                           ItemSpacing="10" />
-                </CollectionView.ItemsLayout>
-                
-                <CollectionView.ItemTemplate>
-                    <DataTemplate>
-                        <Border     Background="#30FFFFFF"
-                                    Stroke="#40FFFFFF"
-                                    StrokeShape="RoundRectangle 20"
-                                    Padding="10"
-                                    Margin="0,5,0,0">
-                            <Grid ColumnDefinitions="Auto,*,Auto"
-                                      ColumnSpacing="10"
-                                      VerticalOptions="Center">
+                <CollectionView ItemsSource="{Binding Sessions}"
+                                SelectionMode="None"
+                                Margin="0,5,0,0">
+                    <CollectionView.ItemsLayout>
+                        <LinearItemsLayout Orientation="Vertical"
+                                           ItemSpacing="10" />
+                    </CollectionView.ItemsLayout>
 
-                                <!-- Иконка устройства -->
-                                <Image Source="{Binding Icon}"
-                                           WidthRequest="50"
-                                           HeightRequest="50"
-                                           VerticalOptions="Center"/>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Stroke="#13FFFFFF"
+                                    Background="Transparent"
+                                    StrokeThickness="1"
+                                    StrokeShape="RoundRectangle 20">
+                                <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
+                                                     MaterialBlurStyle="Dark"
+                                                     Elevation="4"
+                                                     AndroidBlurRadius="30"
+                                                     CornerRadius="20"
+                                                     Padding="5"
+                                                     HeightRequest="60"
+                                                     Margin="0,0,0,0">
+                                    <Grid ColumnDefinitions="Auto,*,Auto"
+                                          ColumnSpacing="10"
+                                          VerticalOptions="Center">
 
-                                <!-- Информация -->
-                                <VerticalStackLayout Grid.Column="1"
-                                                         Spacing="2"
-                                                         VerticalOptions="Center">
-                                    <Label Text="{Binding DeviceName}"
+                                        <!-- Иконка устройства + зеленый индикатор -->
+                                        <Grid WidthRequest="50" HeightRequest="50">
+                                            <Image Source="{Binding Icon}"
+                                                   WidthRequest="50"
+                                                   HeightRequest="50"
+                                                   VerticalOptions="Center"
+                                                   HorizontalOptions="Center" />
+
+                                            <!-- Зеленая точка статуса -->
+                                            <Ellipse WidthRequest="8"
+                                                     HeightRequest="8"
+                                                     Fill="#00CC42"
+                                                     Stroke="Black"
+                                                     StrokeThickness="0.5"
+                                                     VerticalOptions="End"
+                                                     HorizontalOptions="End"
+                                                     Margin="0,0,2,8"
+                                                     IsVisible="{Binding IsCurrent}" />
+                                        </Grid>
+
+                                        <!-- Информация -->
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             Spacing="2"
+                                                             VerticalOptions="Center">
+                                            <Label Text="{Binding DeviceName}"
                                                    FontAttributes="Bold"
                                                    TextColor="White"
-                                                   FontSize="16"/>
-                                    <Label Text="{Binding CreatedAt, StringFormat='Была открыта {0:yyyy.MM.dd}'}"
-                                                   TextColor="White"
-                                                   FontSize="13"
-                                                   Opacity="0.8"/>
-                                </VerticalStackLayout>
+                                                   FontSize="16" />
+                                            <Label
+                                                Text="{Binding CreatedAt, StringFormat='Была открыта {0:yyyy.MM.dd}'}"
+                                                TextColor="White"
+                                                FontSize="13"
+                                                Opacity="0.8" />
+                                        </VerticalStackLayout>
 
-                                <!-- Кнопка закрытия -->
-                                <sf:SfButton Grid.Column="2"
-                                             WidthRequest="28" 
-                                             HeightRequest="28"
-                                             CornerRadius="10"
-                                             Background="#00FFFFFF"
-                                             ImageSource="close_icon.png"
-                                             HorizontalOptions="Center"
-                                             VerticalOptions="Center"
-                                             EnableRippleEffect="True"
-                                             ImageAlignment="Bottom"
-                                             ShowIcon="True" 
-                                             Clicked="OnRemoveSessionClicked"
-                                             CommandParameter="{Binding .}"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
-        </VerticalStackLayout>
-    </ScrollView>
+                                        <!-- Кнопка закрытия -->
+                                        <sf:SfButton Grid.Column="2"
+                                                     WidthRequest="28"
+                                                     HeightRequest="28"
+                                                     CornerRadius="10"
+                                                     Background="#00FFFFFF"
+                                                     ImageSource="close_icon.png"
+                                                     HorizontalOptions="Center"
+                                                     VerticalOptions="Center"
+                                                     EnableRippleEffect="True"
+                                                     ImageAlignment="Bottom"
+                                                     ShowIcon="True"
+                                                     Clicked="OnRemoveSessionClicked"
+                                                     CommandParameter="{Binding .}" />
+                                    </Grid>
+                                </sharp:MaterialFrame>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
 </ContentPage>

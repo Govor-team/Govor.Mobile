@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Govor.Mobile.Models.Responses;
 
 namespace Govor.Mobile.Services.Api.Base;
 
@@ -33,17 +34,23 @@ public class ApiClient : IApiClient
 
     // Универсальный метод, с обработкой 401
     private async Task<HttpResult<T>> SendWithAuthRetryAsync<T>(
-        Func<Task<HttpResponseMessage>> sendRequest)
+        Func<Task<HttpResponseMessage>> sendRequest, bool authenticated = true)
     {
         async Task<HttpResponseMessage> SendAuthorizedAsync()
         {
-            var token = _jwtProvider.AccessToken;
-
-            if (!string.IsNullOrEmpty(token))
+            if (authenticated)
             {
-                // Удаляем старый заголовок, если был
+                var token = await _jwtProvider.GetAccessTokenAsync();
+
+                if (!string.IsNullOrEmpty(token))
+                {
+                    _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                }
+            }
+            else
+            {
                 _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
             }
 
             return await sendRequest();
@@ -51,19 +58,9 @@ public class ApiClient : IApiClient
 
         var response = await SendAuthorizedAsync();
 
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
         {
-            _logger.LogWarning("Access token expired. Trying to refresh JWT...");
-
-            var refresh = await _jwtProvider.RefreshAsync();
-            if (!refresh.IsSuccess)
-            {
-                _logger.LogError("Token refresh failed.");
-                await _jwtProvider.ClearAsync();
-                return new HttpResult<T>(HttpStatusCode.Unauthorized);
-            }
-
-            _logger.LogInformation("JWT refreshed successfully. Retrying request...");
+            _logger.LogInformation("Access token expired. Retrying request...");
             response = await SendAuthorizedAsync();
         }
 
@@ -87,25 +84,13 @@ public class ApiClient : IApiClient
         }
 
     }
+    
 
-
-    // Вспомогательный метод: добавляет JWT и выполняет запрос
-    private async Task<HttpResponseMessage> SendAsync(Func<Task<HttpResponseMessage>> sendRequest)
-    {
-        if (!string.IsNullOrWhiteSpace(_jwtProvider.AccessToken))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", _jwtProvider.AccessToken);
-        }
-
-        return await sendRequest();
-    }
-
-    public async Task<HttpResult<T>> GetAsync<T>(string endpoint)
+    public async Task<HttpResult<T>> GetAsync<T>(string endpoint, bool authenticated = true)
     {
         try
         {
-            return await SendWithAuthRetryAsync<T>(() => _httpClient.GetAsync(endpoint));
+            return await SendWithAuthRetryAsync<T>(() => _httpClient.GetAsync(endpoint), authenticated);
         }
         catch (Exception ex)
         {
@@ -115,7 +100,7 @@ public class ApiClient : IApiClient
     }
 
     // POST
-    public async Task<HttpResult<T>> PostAsync<T>(string endpoint, object data)
+    public async Task<HttpResult<T>> PostAsync<T>(string endpoint, object data, bool authenticated = true)
     {
         try
         {
@@ -123,7 +108,7 @@ public class ApiClient : IApiClient
             {
                 var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
                 return _httpClient.PostAsync(endpoint, content);
-            });
+            }, authenticated);
         }
         catch (Exception ex)
         {
@@ -133,7 +118,7 @@ public class ApiClient : IApiClient
     }
 
     // PUT
-    public async Task<HttpResult<T>> PutAsync<T>(string endpoint, object data)
+    public async Task<HttpResult<T>> PutAsync<T>(string endpoint, object data, bool authenticated = true)
     {
         try
         {
@@ -141,7 +126,7 @@ public class ApiClient : IApiClient
             {
                 var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
                 return _httpClient.PutAsync(endpoint, content);
-            });
+            }, authenticated);
         }
         catch (Exception ex)
         {
@@ -151,11 +136,11 @@ public class ApiClient : IApiClient
     }
 
     // DELETE
-    public async Task<HttpResult<bool>> DeleteAsync(string endpoint)
+    public async Task<HttpResult<bool>> DeleteAsync(string endpoint, bool authenticated = true)
     {
         try
         {
-            var result = await SendWithAuthRetryAsync<string>(() => _httpClient.DeleteAsync(endpoint));
+            var result = await SendWithAuthRetryAsync<string>(() => _httpClient.DeleteAsync(endpoint), authenticated);
             return result.IsSuccess ? HttpResult<bool>.Success(true) : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
         }
         catch (Exception ex)
@@ -166,50 +151,48 @@ public class ApiClient : IApiClient
     }
 
     // POST multipart/form-data (для загрузки медиа)
-    public async Task<HttpResult<string>> PostMultipartAsync(string endpoint, MultipartFormDataContent form)
+    public async Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(string endpoint, MultipartFormDataContent form, bool authenticated = true)
     {
         try
         {
-            return await SendWithAuthRetryAsync<string>(() => _httpClient.PostAsync(endpoint, form));
+            return await SendWithAuthRetryAsync<UploadMediaResponse>(() => _httpClient.PostAsync(endpoint, form),  authenticated);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while sending multipart POST request.");
-            return HttpResult<string>.FromException(ex);
+            return HttpResult<UploadMediaResponse>.FromException(ex);
         }
     }
 
+
     // GET (stream download, для скачивания медиа)
-    public async Task<HttpResult<Utilities.FileResult>> GetFileStreamAsync(string endpoint)
+    public async Task<HttpResult<Utilities.FileResult>> GetFileStreamAsync(string endpoint, bool authenticated = true)
     {
         try
         {
             async Task<HttpResponseMessage> SendAuthorizedAsync()
             {
-                var token = _jwtProvider.AccessToken;
-                if (!string.IsNullOrEmpty(token))
+                if (authenticated)
+                {
+                    var token = await _jwtProvider.GetAccessTokenAsync();
+                    if (!string.IsNullOrEmpty(token))
+                    {
+                        _httpClient.DefaultRequestHeaders.Remove("Authorization");
+                        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                    }
+                }
+                else
                 {
                     _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
                 }
-
                 return await _httpClient.GetAsync(endpoint, HttpCompletionOption.ResponseHeadersRead);
             }
-
+            
             var response = await SendAuthorizedAsync();
 
-            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
             {
-                _logger.LogWarning("Access token expired. Trying to refresh JWT...");
-                var refresh = await _jwtProvider.RefreshAsync();
-                if (!refresh.IsSuccess)
-                {
-                    _logger.LogError("Token refresh failed.");
-                    await _jwtProvider.ClearAsync();
-                    return new HttpResult<Utilities.FileResult>(HttpStatusCode.Unauthorized);
-                }
-
-                _logger.LogInformation("JWT refreshed successfully. Retrying request...");
+                _logger.LogInformation("Access token expired. Retrying request...");
                 response = await SendAuthorizedAsync();
             }
 

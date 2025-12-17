@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Sharpnado.MaterialFrame;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
+using UraniumUI;
+using UXDivers.Popups.Maui;
 
 namespace Govor.Mobile
 {
@@ -17,6 +19,8 @@ namespace Govor.Mobile
                 {
                     options.SetShouldEnableSnackbarOnWindows(false);
                 })
+                .UseMauiCommunityToolkitMediaElement()
+                .UseUXDiversPopups()
                 .ConfigureSyncfusionToolkit()
                 .UseSharpnadoMaterialFrame(false)
                 .UseSkiaSharp()

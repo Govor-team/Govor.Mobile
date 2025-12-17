@@ -6,5 +6,7 @@ namespace Govor.Mobile.Services.Interfaces.Profiles;
 
 public interface IAvatarStoragePath
 {
-    public string AvatarsFolder { get; }
+    public string UserAvatarsFolder { get; }
+    
+    string GetAvatarFilePath(Guid id, string fileExtension);
 }

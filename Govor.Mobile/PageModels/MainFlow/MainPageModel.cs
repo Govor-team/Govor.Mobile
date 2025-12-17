@@ -9,17 +9,24 @@ public partial class MainPageModel : ObservableObject
 {
     [ObservableProperty]
     private string name = "Гость";
+    
+    private readonly IUserProfileService _profileCacheService;
 
-    private readonly IProfileCacheService _profileService;
-
-    public void Init()
+    public MainPageModel(IUserProfileService profileCacheService)
     {
-        // Init user profile
-        MainThread.InvokeOnMainThreadAsync(async () =>
-        {
-            var profile = await _profileService.GetCurrentAsync();
-            Name = profile.DisplayName;
-        });
+        _profileCacheService = profileCacheService;
+    }
+
+    public async Task InitAsync()
+    {
+        var profile = await _profileCacheService.GetCurrentProfile();
+        Name = profile?.Username ?? Name;
+    }
+
+    [RelayCommand]
+    private async Task OpenFriendsAsync()
+    {
+        await Shell.Current.GoToAsync("///FriendsSearchPage");
     }
 
     [RelayCommand]
@@ -31,7 +38,7 @@ public partial class MainPageModel : ObservableObject
         }
         catch (Exception ex)
         {
-            await AppShell.DisplaySnackbarAsync($"{ex.Message}");
+            await AppShell.DisplayException($"{ex.Message}");
         }
     }
 }

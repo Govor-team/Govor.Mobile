@@ -10,15 +10,15 @@ public partial class MainPage : AdaptivePage
         InitializeComponent();
         BindingContext = vm;
     }
-
-    protected override void OnAppearing()
+    
+    protected async override void OnAppearing()
     {
+        base.OnAppearing();
+        
         if(BindingContext is MainPageModel vm)
         {
-            
+            await vm.InitAsync();
         }
-
-        base.OnAppearing();
     }
 
     // For pc

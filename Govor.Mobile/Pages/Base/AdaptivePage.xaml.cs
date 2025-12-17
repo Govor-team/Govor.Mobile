@@ -3,7 +3,7 @@ namespace Govor.Mobile.Pages.Base;
 public partial class AdaptivePage : ContentPage
 {
     /// <summary>
-    /// Минимальная ширина окна для перехода в "широкий" режим.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" пїЅпїЅпїЅпїЅпїЅ.
     /// </summary>
     protected virtual double WideThreshold => 700;
 
@@ -12,8 +12,9 @@ public partial class AdaptivePage : ContentPage
     protected override void OnSizeAllocated(double width, double height)
     {
         base.OnSizeAllocated(width, height);
-
-        // Если состояние изменилось — переключаемся
+        
+#if WINDOWS_UWP
+        // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         bool nowWide = width > WideThreshold;
 
         if (nowWide != _isWide)
@@ -24,15 +25,16 @@ public partial class AdaptivePage : ContentPage
             else
                 OnSwitchToNarrow();
         }
+#endif
     }
 
     /// <summary>
-    /// Срабатывает, когда ширина превышает WideThreshold.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ WideThreshold.
     /// </summary>
     protected virtual void OnSwitchToWide() { }
 
     /// <summary>
-    /// Срабатывает, когда ширина становится меньше WideThreshold.
+    /// пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ WideThreshold.
     /// </summary>
     protected virtual void OnSwitchToNarrow() { }
 }

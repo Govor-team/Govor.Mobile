@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<maui:PopupPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maui="clr-namespace:UXDivers.Popups.Maui;assembly=UXDivers.Popups.Maui"
+             xmlns:buttons="http://schemas.syncfusion.com/maui/toolkit"
+             BackgroundColor="{DynamicResource PopupBackdropColor}"
+             AppearingAnimation="{maui:FadeInPopupAnimation Duration=300}"
+             DisappearingAnimation="{maui:FadeOutPopupAnimation Duration=300}"
+             CloseWhenBackgroundIsClicked="True"
+             x:Class="Govor.Mobile.Pages.ContentViews.ImagePreviewPopup"
+             
+             Padding="{OnPlatform iOS='0,30,0,0', Android='5', WinUI='100'}">
+    <Border 
+        VerticalOptions="Center"
+        HorizontalOptions="Center"
+        BackgroundColor="{DynamicResource PopupBorderColor}"
+        Stroke="{DynamicResource PopupBorderColor}"
+        StrokeThickness="1">
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="16" />
+        </Border.StrokeShape>
+        
+        <Grid RowDefinitions="*,Auto">
+
+            <!-- Image container required for zoom/pan -->
+            <Grid x:Name="ImageContainer"
+                  VerticalOptions="Center"
+                  HorizontalOptions="Center">
+
+                <Image x:Name="PreviewImage"
+                       Aspect="AspectFit"
+                />
+            </Grid>
+            
+            <!-- Control buttons -->
+            <HorizontalStackLayout Grid.Row="1"
+                                   Padding="15"
+                                   Spacing="20"
+                                   HorizontalOptions="Center">
+
+                <buttons:SfButton Text="⟳ Повернуть"
+                             Clicked="RotateClicked"
+                             Background="#00FFFFFF"
+                             BackgroundColor="#333" 
+                             FontSize="24"
+                             TextColor="White" />
+            
+                <buttons:SfButton Text="Сохранить"
+                             Clicked="SaveClicked"
+                             Background="#00FFFFFF"
+                             BackgroundColor="#333" 
+                             FontSize="24"
+                             TextColor="White" />
+            </HorizontalStackLayout>
+        </Grid>
+    </Border>
+</maui:PopupPage>

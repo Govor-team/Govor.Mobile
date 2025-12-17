@@ -4,5 +4,12 @@ namespace Govor.Mobile.Services.Implementations.Profiles;
 
 public class AvatarStoragePathService : IAvatarStoragePath
 {
-    public string AvatarsFolder => Path.Combine(FileSystem.AppDataDirectory, "avatars");
+    public string UserAvatarsFolder => Path.Combine(FileSystem.AppDataDirectory, "user_avatars");
+    
+    public string GetAvatarFilePath(Guid id, string fileExtension)
+    {
+        var ext = fileExtension.StartsWith(".") ? fileExtension : $".{fileExtension}";
+        
+        return Path.Combine(UserAvatarsFolder, $"{id}{ext}");
+    }
 }

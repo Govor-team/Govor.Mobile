@@ -25,6 +25,11 @@ public class AuthService : IAuthService
         _apiClient = apiClient;
         _jwtProvider = jwtProvider;
         _deviceInfoString = deviceInfoString;
+
+        _jwtProvider.WasClearTokens += () =>
+        {
+            IsAuthenticated = false;
+        };
     }
 
     public bool IsAuthenticated
@@ -43,11 +48,13 @@ public class AuthService : IAuthService
     public async Task<Result<UserLogin>> LoginAsync(string username, string password)
     {
         var result = await _apiClient.PostAsync<AuthResponse>("/api/auth/login",
-           new LoingRequest(username, password, _deviceInfoString.Info));
+           new LoingRequest(username, password, _deviceInfoString.Info), 
+           authenticated: false);
 
         if (result.IsSuccess)
         {
-            await _jwtProvider.SetTokensAsync(result.Value.accessToken,
+            await _jwtProvider.InitializeWithTokensAsync(
+                result.Value.accessToken,
                 result.Value.refreshToken);
 
             IsAuthenticated = true;
@@ -66,11 +73,13 @@ public class AuthService : IAuthService
     public async Task<Result<UserLogin>> RegisterAsync(string username, string password, string invitation)
     {
         var result = await _apiClient.PostAsync<AuthResponse>("api/auth/register",
-            new RegisterRequest(username, password, invitation, _deviceInfoString.Info));
+            new RegisterRequest(username, password, invitation, _deviceInfoString.Info), 
+            authenticated: false);
 
         if (result.IsSuccess)
         {
-            await _jwtProvider.SetTokensAsync(result.Value.accessToken,
+            await _jwtProvider.InitializeWithTokensAsync(
+                result.Value.accessToken,
                 result.Value.refreshToken);
 
             IsAuthenticated = true;
@@ -102,7 +111,8 @@ public class AuthService : IAuthService
     public async Task InitializeAsync()
     {
         await _jwtProvider.InitializeAsync();
-        IsAuthenticated = _jwtProvider.HasValidRefreshToken;
+        IsAuthenticated = _jwtProvider.HasRefreshToken;
+        AuthenticationStateChanged?.Invoke(this, _isAuthenticated);
     }
 }
 public class LogoutException(string message) : Exception(message);

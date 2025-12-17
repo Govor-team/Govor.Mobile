@@ -1,5 +1,5 @@
-﻿using CommunityToolkit.Maui.Alerts;
-using CommunityToolkit.Maui.Core;
+﻿using UXDivers.Popups.Maui.Controls;
+using UXDivers.Popups.Services;
 using Font = Microsoft.Maui.Font;
 
 namespace Govor.Mobile
@@ -11,7 +11,7 @@ namespace Govor.Mobile
             InitializeComponent();
         }
 
-        public static async Task DisplaySnackbarAsync(string message)
+        /*public static async Task DisplaySnackbarAsync(string message)
         {
             if (OperatingSystem.IsWindows())
                 return;
@@ -31,18 +31,19 @@ namespace Govor.Mobile
             var snackbar = Snackbar.Make(message, visualOptions: snackbarOptions);
 
             await snackbar.Show(cancellationTokenSource.Token);
-        }
-
-        public static async Task DisplayToastAsync(string message)
+        }*/
+        
+        public static async Task DisplayException(string message)
         {
-            // Toast is currently not working in MCT on Windows
-            if (OperatingSystem.IsWindows())
-                return;
+            var popup = new FloaterPopup()
+            {
+                Title = "Ошибка",
+                Text = message,
+                IconColor = Colors.Red,
+                IconText = "!",
+            };
 
-            var toast = Toast.Make(message, textSize: 18);
-
-            var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            await toast.Show(cts.Token);
+            await IPopupService.Current.PushAsync(popup);
         }
 
         private void SfSegmentedControl_SelectionChanged(object sender, Syncfusion.Maui.Toolkit.SegmentedControl.SelectionChangedEventArgs e)

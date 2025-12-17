@@ -1,6 +1,7 @@
 ﻿using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
+using Govor.Mobile.Services.Hubs;
 
 namespace Govor.Mobile
 {
@@ -8,14 +9,15 @@ namespace Govor.Mobile
     {
         private readonly IAuthService _authService;
         private readonly IServiceProvider _serviceProvider;
-
-        public App(IAuthService authService, IServiceProvider serviceProvider)
+        private readonly IHubInitializer _initializer;
+        public App(IAuthService authService, IServiceProvider serviceProvider, IHubInitializer initializer)
         {
             InitializeComponent();
 
             _authService = authService;
             _serviceProvider = serviceProvider;
-
+            _initializer = initializer; 
+            
             MainPage = new ContentPage
             {
                 Content = new ActivityIndicator
@@ -26,42 +28,31 @@ namespace Govor.Mobile
                 },
                 BackgroundColor = Color.FromArgb("#282A37")
             };
-
-            InitializeAsync();
         }
 
-        private async void InitializeAsync()
+        protected override async void OnStart()
         {
-            await _authService.InitializeAsync();
             _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                
-                MainPage = _authService.IsAuthenticated
-                     ? _serviceProvider.GetRequiredService<MainShell>()
-                     : _serviceProvider.GetRequiredService<AuthShell>();
-                
-                
-                //MainPage = _serviceProvider.GetRequiredService<MainShell>();
-            });
+            await _authService.InitializeAsync();
         }
-
-
+        
         private void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
                 if (isAuthenticated)
-                {
+                { 
+                    _initializer.ConnectAllAsync();
                     MainPage = _serviceProvider.GetRequiredService<MainShell>();
                 }
                 else
                 {
+                    _initializer.DisconnectAllAsync();
                     MainPage = _serviceProvider.GetRequiredService<AuthShell>();
                     // = _serviceProvider.GetRequiredService<MainShell>();
                 }
             });
         }
+        
     }
 }

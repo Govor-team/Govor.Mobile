@@ -9,11 +9,11 @@
              xmlns:cvs="clr-namespace:Govor.Mobile.Pages.MainFlow.ContentViews"
              x:Class="Govor.Mobile.Pages.MainFlow.MainPage"
              xmlns:base="clr-namespace:Govor.Mobile.Pages.Base"
+             xmlns:buttons="http://schemas.syncfusion.com/maui/toolkit"
              BackgroundColor="#282A37"
              BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
     <Grid>
-       
         <!-- Основной стеклянный контейнер -->
         <Grid x:Name="RootGrid"
               Padding="16"
@@ -41,27 +41,22 @@
                     </Label.Shadow>
                 </Label>
 
-                <ImageButton Grid.Column="1"
-                             Padding="5"
-                             Source="search_icon.png"
-                             HeightRequest="25"
-                             WidthRequest="25"
-                             BackgroundColor="#50FFFFFF"
-                             CornerRadius="18"
-                             Margin="8,0"
-                             />
+                <HorizontalStackLayout Grid.Column="1" Grid.ColumnSpan="2" Spacing="10">
+                    <ImageButton Padding="5"
+                                 Source="search_icon.png"
+                                 HeightRequest="25"
+                                 WidthRequest="25"
+                                 BackgroundColor="#50FFFFFF"
+                                 CornerRadius="18"/>
 
-                <ImageButton
-                             Grid.Column="2"
-                             Padding="5"
-                             Source="settings_icon.png"
-                             HeightRequest="25"
-                             WidthRequest="25"
-                             BackgroundColor="#50FFFFFF"
-                             CornerRadius="18"
-                             Margin="8,0"
-                             Command="{Binding SettingsCommand}"
-                             />
+                    <ImageButton Padding="5"
+                                 Source="settings_icon.png"
+                                 HeightRequest="25"
+                                 WidthRequest="25"
+                                 BackgroundColor="#50FFFFFF"
+                                 CornerRadius="18"
+                                 Command="{Binding SettingsCommand}" />
+                </HorizontalStackLayout>
             </Grid>
 
             <Grid Grid.Row="1">
@@ -130,14 +125,12 @@
                 HeightRequest="45"
                 HorizontalOptions="Fill"
                 StrokeThickness="1"
-                Stroke="#33ffffff"
-                >
+                Stroke="#33ffffff">
                 <Grid
                     VerticalOptions="End"
                     ColumnDefinitions="*,*,*"
                     ColumnSpacing="60"
-                    Padding="0,0"
-                    >
+                    Padding="0,0">
 
                     <!-- Кнопка "Чаты" -->
                     <Grid Grid.Column="0" HorizontalOptions="Center" VerticalOptions="Center">
@@ -145,28 +138,31 @@
                             Source="chat_icon.png"
                             HeightRequest="20"
                             WidthRequest="20"
+                            CornerRadius="10"
                             BackgroundColor="Transparent"
                             Command="{Binding OpenChatsCommand}" />
                     </Grid>
 
-                    <!-- Кнопка "Звонки" -->
-                    <Grid Grid.Column="1" HorizontalOptions="Center" VerticalOptions="Center">
-                        <ImageButton
-                            Source="call_icon.png"
-                            HeightRequest="20"
-                            WidthRequest="20"
-                            BackgroundColor="Transparent"
-                            Command="{Binding OpenCallsCommand}" />
-                    </Grid>
-
                     <!-- Кнопка "Друзья" -->
-                    <Grid Grid.Column="2" HorizontalOptions="Center" VerticalOptions="Center">
+                    <Grid Grid.Column="1" HorizontalOptions="Center" VerticalOptions="Center">
                         <ImageButton
                             Source="friends_icon.png"
                             HeightRequest="20"
                             WidthRequest="20"
+                            CornerRadius="10"
                             BackgroundColor="Transparent"
                             Command="{Binding OpenFriendsCommand}" />
+                    </Grid>
+
+                    <!-- Кнопка "Звонки" -->
+                    <Grid Grid.Column="2" HorizontalOptions="Center" VerticalOptions="Center">
+                        <ImageButton
+                            Source="call_icon.png"
+                            HeightRequest="20"
+                            WidthRequest="20"
+                            CornerRadius="10"
+                            BackgroundColor="Transparent"
+                            Command="{Binding OpenCallsCommand}" />
                     </Grid>
                 </Grid>
             </Border>

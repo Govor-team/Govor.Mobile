@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<base:AdaptivePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sharp="http://sharpnado.com"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
+             xmlns:tabView="clr-namespace:Syncfusion.Maui.Toolkit.TabView;assembly=Syncfusion.Maui.Toolkit"
+             xmlns:button="clr-namespace:Syncfusion.Maui.Toolkit;assembly=Syncfusion.Maui.Toolkit"
+             xmlns:skia="clr-namespace:SkiaSharp.Views.Maui.Controls;assembly=SkiaSharp.Views.Maui.Controls"
+             xmlns:cvs="clr-namespace:Govor.Mobile.Pages.MainFlow.ContentViews"
+             x:Class="Govor.Mobile.Pages.MainFlow.FriendsSearchPage"
+             xmlns:base="clr-namespace:Govor.Mobile.Pages.Base"
+             xmlns:buttons="http://schemas.syncfusion.com/maui/toolkit"
+             BackgroundColor="#282A37"
+             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
+    <Grid>
+        <!-- Основной стеклянный контейнер -->
+        <Grid x:Name="RootGrid"
+              Padding="16"
+              RowDefinitions="Auto, *, Auto">
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftCol" Width="*" />
+                <ColumnDefinition x:Name="RightCol" Width="0" />
+            </Grid.ColumnDefinitions>
+            
+            <Grid Grid.Row="1">
+                <Border Grid.Row="0" Background="#3fffffff" Margin="0,0,0,10" StrokeShape="10">
+                    <!-- Переключатель вкладок -->
+                    <tabView:SfTabView 
+                            EnableSwiping="True"
+                            TabBarPlacement="Top"
+                            TabBarHeight="30"
+                            TabBarBackground="#00000000"
+                            IndicatorPlacement="Fill"
+                            IndicatorCornerRadius="25" 
+                            >
+                        <!-- Вкладка 1 -->
+                        <tabView:SfTabItem Header="Входящие" TextColor="White">
+                            <tabView:SfTabItem.Content>
+                                <Label Text="Список друзей"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </tabView:SfTabItem.Content>
+                        </tabView:SfTabItem>
+
+                        <!-- Вкладка 2 -->
+                        <tabView:SfTabItem Header="Исходящие" TextColor="White">
+                            <tabView:SfTabItem.Content>
+                                <Label Text="Список групп"
+                                       TextColor="White"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </tabView:SfTabItem.Content>
+                        </tabView:SfTabItem>
+                    </tabView:SfTabView>
+                </Border>
+            </Grid>
+            
+
+            <!-- Нижняя панель -->
+            <Border 
+                StrokeShape="RoundRectangle 25"
+                Grid.Row="2"
+                Background="#50FFFFFF"
+                VerticalOptions="End"
+                Padding="0,0"
+                HeightRequest="45"
+                HorizontalOptions="Fill"
+                StrokeThickness="1"
+                Stroke="#33ffffff">
+                <Grid
+                    VerticalOptions="End"
+                    ColumnDefinitions="*,*,*"
+                    ColumnSpacing="60"
+                    Padding="0,0">
+
+                    <!-- Кнопка "Чаты" -->
+                    <Grid Grid.Column="0" HorizontalOptions="Center" VerticalOptions="Center">
+                        <ImageButton
+                            Source="chat_icon.png"
+                            HeightRequest="20"
+                            WidthRequest="20"
+                            CornerRadius="10"
+                            BackgroundColor="Transparent"
+                            Command="{Binding OpenChatsCommand}" />
+                    </Grid>
+
+                    <!-- Кнопка "Друзья" -->
+                    <Grid Grid.Column="1" HorizontalOptions="Center" VerticalOptions="Center">
+                        <ImageButton
+                            Source="friends_icon.png"
+                            HeightRequest="20"
+                            WidthRequest="20"
+                            CornerRadius="10"
+                            BackgroundColor="Transparent"
+                            Command="{Binding OpenFriendsCommand}" />
+                    </Grid>
+
+                    <!-- Кнопка "Звонки" -->
+                    <Grid Grid.Column="2" HorizontalOptions="Center" VerticalOptions="Center">
+                        <ImageButton
+                            Source="call_icon.png"
+                            HeightRequest="20"
+                            WidthRequest="20"
+                            CornerRadius="10"
+                            BackgroundColor="Transparent"
+                            Command="{Binding OpenCallsCommand}" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</base:AdaptivePage>

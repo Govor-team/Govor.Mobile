@@ -10,7 +10,7 @@ namespace Govor.Mobile.Services.Implementations.Profiles;
 public class UserProfileService : IUserProfileService
 {
     private readonly IProfileApiClient _apiClient;
-    private readonly IProfileHubService _hubService;
+    private readonly IPresenceHubService _presenceHubService;
     private readonly ConcurrentDictionary<Guid, UserProfile> _cache = new();
 
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(10);
@@ -22,10 +22,25 @@ public class UserProfileService : IUserProfileService
 
     public UserProfileService(
         IProfileApiClient apiClient,
-        IProfileHubService hubService)
+        IPresenceHubService presenceHubService )
     {
         _apiClient = apiClient;
-        _hubService = hubService;
+        _presenceHubService = presenceHubService;
+
+        _presenceHubService.OnUserOnline += async userId =>
+        {
+            if (_cache.TryGetValue(userId, out var cachedProfile))
+            {
+                if ((DateTime.UtcNow - cachedProfile.LastFetched) < _cacheDuration)
+                {
+                    cachedProfile.IsOnline = true;
+                }
+                else
+                {
+                   await GetProfileAsync(userId);
+                }
+            }
+        };
     }
 
     public async Task<UserProfile> GetCurrentProfile()
@@ -85,6 +100,7 @@ public class UserProfileService : IUserProfileService
             Username = profileDto.Username,
             IconId = profileDto.IconId ?? Guid.Empty,
             Description = profileDto.Description ?? "",
+            IsOnline = profileDto.IsOnline,
             LastFetched = DateTime.UtcNow
         };
 
@@ -121,5 +137,10 @@ public class UserProfileService : IUserProfileService
         {
             OnProfileUpdated?.Invoke(await GetProfileAsync(delta.UserId));
         }
+    }
+
+    public void Dispose()
+    {
+        _currentProfileLock.Dispose();
     }
 }

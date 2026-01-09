@@ -16,23 +16,15 @@ public partial class MainPage : AdaptivePage
         base.OnAppearing();
         
         if(BindingContext is MainPageModel vm)
-        {
-            await vm.InitAsync();
+        {   
+            if(vm.IsLoaded == false)
+                await vm.InitAsync();
         }
     }
 
-    // For pc
-    protected override void OnSwitchToWide()
+    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        ChatViewPanel.IsVisible = true;
-        LeftCol.Width = new GridLength(1, GridUnitType.Star);
-        RightCol.Width = new GridLength(2, GridUnitType.Star);
-    }
-
-    protected override void OnSwitchToNarrow()
-    {
-        ChatViewPanel.IsVisible = false;
-        LeftCol.Width = new GridLength(1, GridUnitType.Star);
-        RightCol.Width = new GridLength(0);
+        if (sender is CollectionView cv)
+            cv.SelectedItem = null;
     }
 }

@@ -56,7 +56,6 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
         
         _ = Task.Run(async () =>
         {
-            // Перематываем поток для сохранения
             mem.Seek(0, SeekOrigin.Begin); 
             await _fileService.SaveAvatarAsync(avatarId,
                 $"dummy{result.Value.FileName}.{result.Value.MimeType.Split("/")[1]}", // получение имени файла и его расширения

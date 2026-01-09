@@ -5,18 +5,34 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:pages="clr-namespace:Govor.Mobile.Pages.MainFlow"
     Title="Main"
-    Shell.FlyoutBehavior="Flyout"
-    BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}"
+    Shell.FlyoutBehavior="Disabled"
+    IsVisible="True"
+    Shell.NavBarIsVisible="False"
     Shell.NavBarVisibilityAnimationEnabled="False"
-    Shell.NavBarIsVisible="False">
-
-    <ShellContent
-        Title="Главная"
-        Route="MainPage"
-        ContentTemplate="{DataTemplate pages:MainPage}" />
+    BackgroundImageSource="{DynamicResource CurrentBackground}"
+    BackgroundColor="Transparent"
+    Shell.PresentationMode="ModalNotAnimated"
+    Shell.TabBarBackgroundColor="Yellow"
+    TabBarIsVisible="True"
+    Shell.NavBarHasShadow="False">
     
-    <ShellContent 
-        Title="Друзья"
-        Route="FriendsSearchPage"
-        ContentTemplate="{DataTemplate pages:FriendsSearchPage}"/>
+    <TabBar>
+        <ShellContent 
+            Title="Chats"
+            Route="MainPage" 
+            Icon="chat_icon.png"
+            ContentTemplate="{DataTemplate pages:MainPage}" />
+
+        <ShellContent 
+            Title="Friends"
+            Route="FriendsSearchPage"
+            Icon="friends_icon.png"
+            ContentTemplate="{DataTemplate pages:FriendsSearchPage}"/>
+        
+        <ShellContent 
+            Title="Friends"
+            Route="FriendsSearchPage"
+            Icon="call_icon.png"
+            ContentTemplate="{DataTemplate pages:CallPage}"/>
+    </TabBar>
 </Shell>

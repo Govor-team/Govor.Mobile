@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:Govor.Mobile.UIKit.TabView"
+             x:Class="Govor.Mobile.UIKit.TabView.NasTabView"
+             x:Name="RootControl">
+    <Grid RowDefinitions="Auto, *">
+
+        <Grid Grid.Row="0" 
+              HeightRequest="{Binding Source={x:Reference RootControl}, Path=TabBarHeight}"
+              Margin="0,0">
+
+            <Border BackgroundColor="#30FFFFFF"
+                    StrokeShape="RoundRectangle 30"
+                    StrokeThickness="0"/>
+
+            <Border x:Name="SelectionIndicator"
+                    HorizontalOptions="Start"
+                    VerticalOptions="Fill"
+                    StrokeThickness="1"
+                    Stroke="#25FFFFFF"
+                    BackgroundColor="#6A5ACD" 
+                    StrokeShape="RoundRectangle 30"
+                    Opacity="0.8">
+                
+                <Border.Shadow>
+                    <Shadow Brush="#886A5ACD" Offset="0,0" Radius="20" Opacity="1"/>
+                </Border.Shadow>
+                
+                <Border.Background>
+                    <LinearGradientBrush EndPoint="1,1">
+                        <GradientStop Color="#7B68EE" Offset="0.1"/>
+                        <GradientStop Color="#483D8B" Offset="1.0"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+            </Border>
+
+            <Grid x:Name="HeadersGrid"
+                  ColumnDefinitions="*"
+                  BackgroundColor="Transparent"/>
+        </Grid>
+
+        <CarouselView Grid.Row="1"
+                      x:Name="ContentCarousel"
+                      IsSwipeEnabled="{Binding Source={x:Reference RootControl}, Path=EnableSwiping}"
+                      Loop="False"
+                      HorizontalScrollBarVisibility="Never"
+                      VerticalScrollBarVisibility="Never"
+                      PositionChanged="OnCarouselPositionChanged">
+            <CarouselView.ItemsLayout>
+                <LinearItemsLayout Orientation="Horizontal" 
+                                   SnapPointsAlignment="Center" 
+                                   SnapPointsType="MandatorySingle" />
+            </CarouselView.ItemsLayout>
+            
+            <CarouselView.ItemTemplate>
+                <DataTemplate x:DataType="controls:CustomTabItem">
+                    <ContentView Content="{Binding Content}" />
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+    </Grid>
+</ContentView>

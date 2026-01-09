@@ -7,7 +7,9 @@ internal class ServerIpProvader : IServerIpProvader
 #if WINDOWS
     public string IP => "http://localhost:8080";//10.0.2.2 http://localhost:5041 192.168.1.107
 #elif ANDROID
-    public string IP => "http://10.0.2.2:8080";//10.0.2.2 http://localhost:5041 192.168.1.107 
+    //public string IP => "http://10.0.2.2:8080";//10.0.2.2 http://localhost:5041 192.168.1.107 
+    // public string IP => "http://192.168.1.107:8080";
+    public string IP => "http://10.0.2.2:8080";
 #else
     public string IP => "http://localhost:8080";
 #endif

@@ -9,7 +9,6 @@
              DisappearingAnimation="{maui:FadeOutPopupAnimation Duration=300}"
              CloseWhenBackgroundIsClicked="True"
              x:Class="Govor.Mobile.Pages.ContentViews.ImagePreviewPopup"
-             
              Padding="{OnPlatform iOS='0,30,0,0', Android='5', WinUI='100'}">
     <Border 
         VerticalOptions="Center"
@@ -23,7 +22,6 @@
         
         <Grid RowDefinitions="*,Auto">
 
-            <!-- Image container required for zoom/pan -->
             <Grid x:Name="ImageContainer"
                   VerticalOptions="Center"
                   HorizontalOptions="Center">
@@ -33,7 +31,6 @@
                 />
             </Grid>
             
-            <!-- Control buttons -->
             <HorizontalStackLayout Grid.Row="1"
                                    Padding="15"
                                    Spacing="20"

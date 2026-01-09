@@ -5,7 +5,7 @@
              xmlns:sharp="http://sharpnado.com"
              x:Class="Govor.Mobile.Pages.AuthFlow.LoginPage"
              BackgroundColor="#282A37"
-             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             BackgroundImageSource="{DynamicResource CurrentBackground}"
              Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
     <Grid RowDefinitions="*,Auto,*"
       BackgroundColor="Transparent">

@@ -22,6 +22,8 @@ public partial class AvatarViewModel : ObservableObject
 
     [ObservableProperty]
     private Color avatarBackgroundColor = Colors.Gray;
+    
+    public bool HasImage => AvatarImage != null;
 
     public AvatarViewModel(
         ICurrentUserAvatarService profileService,
@@ -77,7 +79,7 @@ public partial class AvatarViewModel : ObservableObject
             return;
 
         await TryLoadAvatarAsync(newMediaId.Value);
-        await AppShell.DisplayException("Аватар успешно обновлён!");
+        await AppShell.DisplayInfo("Успешно","Аватар успешно обновлён!");
     }
 
     [RelayCommand]

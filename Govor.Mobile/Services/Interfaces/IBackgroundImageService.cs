@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Govor.Mobile.Models;
+using FileResult = Microsoft.Maui.Storage.FileResult;
 
 namespace Govor.Mobile.Services.Interfaces;
 
 public interface IBackgroundImageService
 {
-    string GetBackgroundImage();
-    void SetUserBackground(string imagePath);
-    void ClearUserBackground();
+    List<BackgroundItem> GetAvailableBackgrounds();
+    Task<BackgroundItem> AddBackgroundFromGallery(FileResult file);
+    Task<bool> RemoveBackgroundAsync(string path);
+    void ApplyBackground(string path);
+    BackgroundItem LoadCurrent();
 }
 
 

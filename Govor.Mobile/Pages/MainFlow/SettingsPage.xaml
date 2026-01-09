@@ -6,15 +6,26 @@
              xmlns:sf="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
              x:Class="Govor.Mobile.Pages.MainFlow.SettingsPage"
              xmlns:sharp="http://sharpnado.com"
+             xmlns:models="clr-namespace:Govor.Mobile.Models"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              BackgroundColor="#282A37"
-             BackgroundImageSource="{AppThemeBinding Dark=background_girls.png, Light=background_flag.png}" 
+             BackgroundImageSource="{DynamicResource CurrentBackground}"
              Title="Настройки"
-             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
-    <Grid>
-        <ScrollView Padding="16">
+             x:Name="settingspage"
+             SafeAreaEdges="None"
+             Padding="{OnPlatform iOS='0,30,0,0', Android='10'}">
+    <Grid SafeAreaEdges="None">
+        <ScrollView 
+            VerticalScrollBarVisibility="Never"
+            HorizontalScrollBarVisibility="Never"
+            SafeAreaEdges="Container, Container, Container, None"
+            Padding="16">
             <VerticalStackLayout Spacing="20">
-                <!-- Аватар + имя -->
-                <VerticalStackLayout HorizontalOptions="Center" Spacing="8">
+                <!-- Аватар + имя + Tag -->
+                <VerticalStackLayout
+                    HorizontalOptions="Center"
+                    Spacing="6">
+
                     <Grid>
                         <toolkit:AvatarView
                             WidthRequest="150"
@@ -28,204 +39,309 @@
                             CornerRadius="75"
                             HorizontalOptions="Fill"
                             BorderColor="Transparent"
+                            Shadow="{Shadow Brush=Black, Offset='0,5', Radius=10, Opacity=0.3}"
                             VerticalOptions="Fill">
+
                             <toolkit:AvatarView.GestureRecognizers>
                                 <TapGestureRecognizer
-                                    Command="{Binding AvatarViewModel.OpenAvatarCommand}"
-                                    NumberOfTapsRequired="1" />
+                                    Command="{Binding AvatarViewModel.OpenAvatarCommand}" />
                             </toolkit:AvatarView.GestureRecognizers>
                         </toolkit:AvatarView>
 
                         <!-- Иконка камеры -->
-                        <Border StrokeShape="RoundRectangle 30"
-                                Background="#8ACA85"
-                                StrokeThickness="1"
-                                Stroke="#3F3F3F"
-                                WidthRequest="45"
-                                HeightRequest="45"
-                                HorizontalOptions="End"
-                                VerticalOptions="End"
-                                TranslationX="0"
-                                TranslationY="0">
-                            <Image Source="camera_icon.png"
-                                   WidthRequest="30"
-                                   HeightRequest="30"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center">
+                        <Border
+                            StrokeShape="RoundRectangle 30"
+                            Background="#8ACA85"
+                            StrokeThickness="1"
+                            Stroke="#3F3F3F"
+                            WidthRequest="45"
+                            HeightRequest="45"
+                            HorizontalOptions="End"
+                            VerticalOptions="End">
+
+                            <Image
+                                Source="camera_icon.png"
+                                WidthRequest="30"
+                                HeightRequest="30"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center">
+
                                 <Image.GestureRecognizers>
-                                    <TapGestureRecognizer Command="{Binding AvatarViewModel.PickNewAvatarCommand}" />
+                                    <TapGestureRecognizer
+                                        Command="{Binding AvatarViewModel.PickNewAvatarCommand}" />
                                 </Image.GestureRecognizers>
                             </Image>
                         </Border>
                     </Grid>
 
-                    <Label Text="{Binding UserName}"
-                           FontSize="24"
-                           FontAttributes="Bold"
-                           TextColor="White"
-                           HorizontalOptions="Center">
-                        <Label.Shadow>
-                            <Shadow Brush="Black"
+                    <!-- Имя + Tag (inline) -->
+                    <HorizontalStackLayout
+                        HorizontalOptions="Center"
+                        Spacing="6"
+                        VerticalOptions="Center">
+
+                        <Label
+                            Text="{Binding UserName}"
+                            FontSize="24"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            VerticalTextAlignment="Center">
+
+                            <Label.Shadow>
+                                <Shadow
+                                    Brush="Black"
                                     Offset="1,3"
                                     Radius="2"
                                     Opacity="0.6" />
-                        </Label.Shadow>
-                    </Label>
+                            </Label.Shadow>
+                        </Label>
+
+                        <!-- Tag как продолжение имени -->
+                        <contentViews:TagView
+                            BindingContext="{Binding Tag}"
+                            VerticalOptions="Center"
+                            Margin="0,2,0,0"/>
+                    </HorizontalStackLayout>
                 </VerticalStackLayout>
 
-                <VerticalStackLayout Spacing="5">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <VerticalStackLayout Spacing="6">
 
-                        <Border
-                            Background="Transparent"
-                            Stroke="#13FFFFFF"
-                            StrokeThickness="2"
-                            StrokeShape="RoundRectangle 20"
-                            Padding="0">
-                            <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
-                                                 MaterialBlurStyle="Dark"
-                                                 Elevation="4"
-                                                 AndroidBlurRadius="30"
-                                                 CornerRadius="20"
-                                                 Padding="10"
-                                                 HeightRequest="140"
-                                                 Margin="0,0,0,0">
-                                <Editor Text="{Binding About}"
-                                        Placeholder="О себе"
-                                        AutoSize="TextChanges"
-                                        TextColor="White"
-                                        PlaceholderColor="#FFFFFF"
-                                        BackgroundColor="Transparent"
-                                        FontSize="17"
-                                        HeightRequest="120" />
-                            </sharp:MaterialFrame>
-                        </Border>
+                    <!-- EDITOR -->
+                    <Border
+                        Background="Transparent"
+                        Stroke="#13FFFFFF"
+                        StrokeThickness="2"
+                        StrokeShape="RoundRectangle 20"
+                        Padding="0"
+                        Shadow="{Shadow Brush=Black, Offset='0,5', Radius=10, Opacity=0.3}">
 
-                        <VerticalStackLayout Grid.Row="1" Spacing="5">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                        <sharp:MaterialFrame
+                            MaterialTheme="AcrylicBlur"
+                            MaterialBlurStyle="Dark"
+                            Elevation="4"
+                            AndroidBlurRadius="20"
+                            CornerRadius="20"
+                            Padding="10"
+                            MinimumHeightRequest="140"
+                            MaximumHeightRequest="240">
 
-                                <sf:SfButton Grid.Row="0"
-                                             ImageAlignment="Default"
-                                             ImageSource="check_icon.png"
-                                             Background="Transparent"
-                                             ShowIcon="True"
-                                             HeightRequest="30"
-                                             WidthRequest="30"
-                                             BackgroundColor="#8ACA85"
-                                             HorizontalOptions="End"
-                                             VerticalOptions="Start"
-                                             TranslationX="0"
-                                             TranslationY="8"
-                                             Padding="0"
-                                             Command="{Binding  UpdateDescriptionCommand}"
-                                             IsVisible="{Binding HasChanges}" IsEnabled="{Binding IsDescriptionValid}"/>
-                                <Label Grid.Row="1"
-                                       Text="{Binding DescriptionCounter}"
-                                       TextColor="{Binding DescriptionCounterColor}"
-                                       FontSize="13"
-                                       HorizontalOptions="End"
-                                       Margin="0,4,4,0" />
-                            </Grid>
-                        </VerticalStackLayout>
+                            <Editor
+                                Text="{Binding About}"
+                                Placeholder="О себе"
+                                AutoSize="TextChanges"
+                                TextColor="White"
+                                PlaceholderColor="#FFFFFF"
+                                BackgroundColor="Transparent"
+                                FontSize="17"
+                                VerticalOptions="Start" />
+
+                        </sharp:MaterialFrame>
+                    </Border>
+
+                    <!-- ACTIONS -->
+                    <Grid ColumnDefinitions="*,Auto"
+                          Margin="0,2,4,0">
+
+                        <!-- СЧЁТЧИК -->
+                        <Label
+                            Grid.Column="0"
+                            Text="{Binding DescriptionCounter}"
+                            TextColor="{Binding DescriptionCounterColor}"
+                            FontSize="13"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,8,0" />
+
+                        <!-- КНОПКА -->
+                        <sf:SfButton
+                            Grid.Column="1"
+                            ImageSource="check_icon.png"
+                            ShowIcon="True"
+                            HeightRequest="30"
+                            WidthRequest="30"
+                            Background="#8ACA85"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Padding="0"
+                            Command="{Binding UpdateDescriptionCommand}"
+                            IsVisible="{Binding HasChanges}"
+                            IsEnabled="{Binding IsDescriptionValid}" />
+
+                    </Grid>
+
+                </VerticalStackLayout>
+
+
+                <VerticalStackLayout Spacing="10" Padding="0,0">
+                    <Label Text="Выберите оформление"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           Margin="0,10,0,0"
+                           Shadow="{Shadow Brush=Black, Offset='0,5', Radius=10, Opacity=0.3}"/>
+
+                    <CarouselView x:Name="BackgroundCarousel"
+                                  ItemsSource="{Binding BackgroundItems}"
+                                  CurrentItem="{Binding SelectedBackground, Mode=TwoWay}"
+                                  PeekAreaInsets="60"
+                                  HeightRequest="350"
+                                  IsScrollAnimated="True"
+                                  HorizontalScrollBarVisibility="Never"
+                                  VerticalScrollBarVisibility="Never"
+                                  Loop="False">
+
+                        <CarouselView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Horizontal"
+                                               SnapPointsType="MandatorySingle"
+                                               SnapPointsAlignment="Center" />
+                        </CarouselView.ItemsLayout>
+
+                        <CarouselView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BackgroundItem">
+                                <Grid x:Name="ItemRoot"
+                                      Padding="10">
+                                    <Border StrokeShape="RoundRectangle 20"
+                                            StrokeThickness="0"
+                                            Shadow="{Shadow Brush=Black, Offset='0,5', Radius=10, Opacity=0.3}">
+                                        <Image Source="{Binding Path}"
+                                               Aspect="AspectFill" />
+                                    </Border>
+
+                                    <sf:SfButton Text="✕"
+                                                 HorizontalOptions="End"
+                                                 VerticalOptions="Start"
+                                                 Margin="15"
+                                                 WidthRequest="32"
+                                                 HeightRequest="32"
+                                                 CornerRadius="16"
+                                                 FontSize="12"
+                                                 FontAttributes="Bold"
+                                                 Background="#99000000"
+                                                 TextColor="White"
+                                                 IsVisible="{Binding CanRemove}"
+                                                 Clicked="OnDeleteBackgroundClicked"
+                                                 CommandParameter="{Binding .}" />
+                                </Grid>
+                            </DataTemplate>
+                        </CarouselView.ItemTemplate>
+                    </CarouselView>
+
+                    <VisualElement.Resources>
+                        <x:Reference x:Key="carousel" Name="BackgroundCarousel" />
+                    </VisualElement.Resources>
+
+                    <Grid ColumnDefinitions="*, Auto, *" Padding="0,10">
+                        <IndicatorView Grid.Column="1" x:Name="bgIndicator"
+                                       IndicatorColor="Gray"
+                                       SelectedIndicatorColor="{StaticResource Primary}" />
+
+                        <Button Grid.Column="2"
+                                Text="+"
+                                FontSize="24"
+                                FontAttributes="Bold"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"
+                                WidthRequest="50"
+                                HeightRequest="50"
+                                CornerRadius="25"
+                                HorizontalOptions="End"
+                                Command="{Binding PickOwnThemeFileCommand}"
+                                Shadow="{Shadow Brush=Black, Offset='0,3', Opacity=0.3}" />
                     </Grid>
                 </VerticalStackLayout>
-
+                
                 <!-- Активные сессии -->
-                <Label Text="Активные сессии"
-                       FontSize="18"
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       Margin="0,10,0,0" />
+                <VerticalStackLayout Spacing="10" Padding="0,0">
+                    <Label Text="Активные сессии"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           Margin="0,0,0,0" 
+                           Shadow="{Shadow Brush=Black, Offset='0,5', Radius=10, Opacity=0.3}" />
 
-                <CollectionView ItemsSource="{Binding Sessions}"
-                                SelectionMode="None"
-                                Margin="0,5,0,0">
-                    <CollectionView.ItemsLayout>
-                        <LinearItemsLayout Orientation="Vertical"
-                                           ItemSpacing="10" />
-                    </CollectionView.ItemsLayout>
+                    <CollectionView ItemsSource="{Binding Sessions}"
+                                    SelectionMode="None"
+                                    Margin="0,5,0,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical"
+                                               ItemSpacing="10" />
+                        </CollectionView.ItemsLayout>
 
-                    <CollectionView.ItemTemplate>
-                        <DataTemplate>
-                            <Border Stroke="#13FFFFFF"
-                                    Background="Transparent"
-                                    StrokeThickness="1"
-                                    StrokeShape="RoundRectangle 20">
-                                <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
-                                                     MaterialBlurStyle="Dark"
-                                                     Elevation="4"
-                                                     AndroidBlurRadius="30"
-                                                     CornerRadius="20"
-                                                     Padding="5"
-                                                     HeightRequest="60"
-                                                     Margin="0,0,0,0">
-                                    <Grid ColumnDefinitions="Auto,*,Auto"
-                                          ColumnSpacing="10"
-                                          VerticalOptions="Center">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Stroke="#13FFFFFF"
+                                        Background="Transparent"
+                                        StrokeThickness="1"
+                                        StrokeShape="RoundRectangle 20">
+                                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
+                                                         MaterialBlurStyle="Dark"
+                                                         Elevation="0"
+                                                         AndroidBlurRadius="30"
+                                                         WinUIHostBackdropBlur="True"
+                                                         CornerRadius="20"
+                                                         Padding="5"
+                                                         HeightRequest="60"
+                                                         Margin="0,0,0,0">
+                                        <Grid ColumnDefinitions="Auto,*,Auto"
+                                              ColumnSpacing="10"
+                                              VerticalOptions="Center">
 
-                                        <!-- Иконка устройства + зеленый индикатор -->
-                                        <Grid WidthRequest="50" HeightRequest="50">
-                                            <Image Source="{Binding Icon}"
-                                                   WidthRequest="50"
-                                                   HeightRequest="50"
-                                                   VerticalOptions="Center"
-                                                   HorizontalOptions="Center" />
+                                            <!-- Иконка устройства + зеленый индикатор -->
+                                            <Grid WidthRequest="50" HeightRequest="50">
+                                                <Image Source="{Binding Icon}"
+                                                       WidthRequest="50"
+                                                       HeightRequest="50"
+                                                       VerticalOptions="Center"
+                                                       HorizontalOptions="Center" />
 
-                                            <!-- Зеленая точка статуса -->
-                                            <Ellipse WidthRequest="8"
-                                                     HeightRequest="8"
-                                                     Fill="#00CC42"
-                                                     Stroke="Black"
-                                                     StrokeThickness="0.5"
-                                                     VerticalOptions="End"
-                                                     HorizontalOptions="End"
-                                                     Margin="0,0,2,8"
-                                                     IsVisible="{Binding IsCurrent}" />
+                                                <!-- Зеленая точка статуса -->
+                                                <Ellipse WidthRequest="8"
+                                                         HeightRequest="8"
+                                                         Fill="#00CC42"
+                                                         Stroke="Black"
+                                                         StrokeThickness="0.5"
+                                                         VerticalOptions="End"
+                                                         HorizontalOptions="End"
+                                                         Margin="0,0,2,8"
+                                                         IsVisible="{Binding IsCurrent}" />
+                                            </Grid>
+
+                                            <!-- Информация -->
+                                            <VerticalStackLayout Grid.Column="1"
+                                                                 Spacing="2"
+                                                                 VerticalOptions="Center">
+                                                <Label Text="{Binding DeviceName}"
+                                                       FontAttributes="Bold"
+                                                       TextColor="White"
+                                                       FontSize="16" />
+                                                <Label
+                                                    Text="{Binding CreatedAt, StringFormat='Была открыта {0:yyyy.MM.dd}'}"
+                                                    TextColor="White"
+                                                    FontSize="13"
+                                                    Opacity="0.8" />
+                                            </VerticalStackLayout>
+
+                                            <!-- Кнопка закрытия -->
+                                            <sf:SfButton Grid.Column="2"
+                                                         WidthRequest="28"
+                                                         HeightRequest="28"
+                                                         CornerRadius="10"
+                                                         Background="#00FFFFFF"
+                                                         ImageSource="close_icon.png"
+                                                         HorizontalOptions="Center"
+                                                         VerticalOptions="Center"
+                                                         EnableRippleEffect="True"
+                                                         ImageAlignment="Bottom"
+                                                         ShowIcon="True"
+                                                         Clicked="OnRemoveSessionClicked"
+                                                         CommandParameter="{Binding .}" />
                                         </Grid>
-
-                                        <!-- Информация -->
-                                        <VerticalStackLayout Grid.Column="1"
-                                                             Spacing="2"
-                                                             VerticalOptions="Center">
-                                            <Label Text="{Binding DeviceName}"
-                                                   FontAttributes="Bold"
-                                                   TextColor="White"
-                                                   FontSize="16" />
-                                            <Label
-                                                Text="{Binding CreatedAt, StringFormat='Была открыта {0:yyyy.MM.dd}'}"
-                                                TextColor="White"
-                                                FontSize="13"
-                                                Opacity="0.8" />
-                                        </VerticalStackLayout>
-
-                                        <!-- Кнопка закрытия -->
-                                        <sf:SfButton Grid.Column="2"
-                                                     WidthRequest="28"
-                                                     HeightRequest="28"
-                                                     CornerRadius="10"
-                                                     Background="#00FFFFFF"
-                                                     ImageSource="close_icon.png"
-                                                     HorizontalOptions="Center"
-                                                     VerticalOptions="Center"
-                                                     EnableRippleEffect="True"
-                                                     ImageAlignment="Bottom"
-                                                     ShowIcon="True"
-                                                     Clicked="OnRemoveSessionClicked"
-                                                     CommandParameter="{Binding .}" />
-                                    </Grid>
-                                </sharp:MaterialFrame>
-                            </Border>
-                        </DataTemplate>
-                    </CollectionView.ItemTemplate>
-                </CollectionView>
+                                    </sharp:MaterialFrame>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

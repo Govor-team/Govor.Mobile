@@ -3,6 +3,7 @@ using Govor.Mobile.Data;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.MainFlow;
 using Govor.Mobile.Pages.AuthFlow;
+using Govor.Mobile.Pages.ContentViews;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Api.Base;
@@ -24,6 +25,8 @@ internal static class ServiceRegistration
     {
         builder.Services.AddSingleton<IApiClient, ApiClient>();
         builder.Services.AddSingleton<IAuthService, AuthService>();
+        builder.Services.AddSingleton<IFriendsRequestQueryService, FriendsRequestQueryService>();
+        builder.Services.AddSingleton<IFriendshipApiService, FriendshipApiService>();
         builder.Services.AddSingleton<IJwtProviderService, JwtProviderService>();
 
         builder.Services.AddSingleton<ITokenStorageService, TokenStorageService>();
@@ -38,7 +41,11 @@ internal static class ServiceRegistration
 
         builder.Services.AddSingleton<IServerIpProvader, ServerIpProvader>();
         builder.Services.AddSingleton<IPlatformIconService, PlatformIconService>();
-
+        
+        builder.Services.AddSingleton<IBackgroundImageService, BackgroundService>();
+        
+        builder.Services.AddSingleton<IWasOnlineFormater, WasOnlineFormater>();
+        
         // Profiles
         builder.Services.AddSingleton<IProfileApiClient, ProfileApiClient>();
         builder.Services.AddSingleton<IUserProfileService, UserProfileService>();
@@ -57,15 +64,24 @@ internal static class ServiceRegistration
 
         // Hubs
         builder.Services.AddSingleton<ProfileHub>();
+        builder.Services.AddSingleton<PresenceHub>();
+        builder.Services.AddSingleton<FriendsHub>();
         
         builder.Services.AddSingleton<ProfileHubListener>(); 
         
         builder.Services.AddSingleton<IProfileHubService>(sp => sp.GetRequiredService<ProfileHub>());
         builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<ProfileHub>());
+        
+        builder.Services.AddSingleton<IPresenceHubService>(sp => sp.GetRequiredService<PresenceHub>());
+        builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<PresenceHub>());
+        
+        builder.Services.AddSingleton<IFriendsHubService>(sp => sp.GetRequiredService<FriendsHub>());
+        builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<FriendsHub>());
+        
         builder.Services.AddSingleton<IHubInitializer, HubInitializer>();
 
         // ViewModels 
-        builder.Services.AddScoped<AvatarViewModel>();
+        builder.Services.AddTransient<AvatarViewModel>();
         
         return builder;
     }
@@ -82,32 +98,36 @@ internal static class ServiceRegistration
 
     public static MauiAppBuilder RegisterAppPages(this MauiAppBuilder builder)
     {
-        // Login Page
-        builder.Services.AddTransient<LoginPage>();
-        builder.Services.AddTransient<LoginPageModel>();
-
-        builder.Services.AddTransient<SomePage>();
-        builder.Services.AddTransient<SomePageModel>();
-
-        builder.Services.AddTransient<RegisterPage>();
-        builder.Services.AddTransient<RegisterPageModel>();
-
-        builder.Services.AddTransient<CodeInputPage>();
-        builder.Services.AddTransient<CodeInputModel>();
-
-        builder.Services.AddTransient<MainPage>();
-        builder.Services.AddTransient<Govor.Mobile.PageModels.MainFlow.MainPageModel>();
-
-        builder.Services.AddTransient<FriendsSearchPage>();
-        builder.Services.AddTransient<FriendsSearchPageModel>();
+        // Content View
+        builder.Services.AddSingleton<BottomBar>();
         
-        builder.Services.AddTransient<SettingsPage>();
-        builder.Services.AddTransient<SettingsPageModel>();
+        // Login Page
+        builder.Services.AddSingleton<LoginPage>();
+        builder.Services.AddSingleton<LoginPageModel>();
+
+        builder.Services.AddSingleton<SomePage>();
+        builder.Services.AddSingleton<SomePageModel>();
+
+        builder.Services.AddSingleton<RegisterPage>();
+        builder.Services.AddSingleton<RegisterPageModel>();
+
+        builder.Services.AddSingleton<CodeInputPage>();
+        builder.Services.AddSingleton<CodeInputModel>();
+
+        builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddSingleton<MainPageModel>();
+
+        builder.Services.AddSingleton<FriendsSearchPage>();
+        builder.Services.AddSingleton<FriendsSearchPageModel>();
+
+        builder.Services.AddSingleton<SettingsPage>();
+        builder.Services.AddSingleton<SettingsPageModel>();
 
         builder.Services.AddTransient<AuthShell>();
         builder.Services.AddSingleton<MainShell>();
 
         builder.Services.AddSingleton<AppShell>();
+
 
         return builder;
     }

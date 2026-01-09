@@ -1,9 +1,9 @@
 using Govor.Mobile.PageModels.MainFlow;
-using Govor.Mobile.Pages.Base;
+using UraniumUI.Pages;
 
 namespace Govor.Mobile.Pages.MainFlow;
 
-public partial class FriendsSearchPage : AdaptivePage
+public partial class FriendsSearchPage : UraniumContentPage
 {
     public FriendsSearchPage(FriendsSearchPageModel vm)
     {
@@ -17,20 +17,31 @@ public partial class FriendsSearchPage : AdaptivePage
         
         if(BindingContext is FriendsSearchPageModel vm)
         {
-            await vm.InitAsync();
+            if(!vm.IsLoaded)
+                await vm.InitAsync();
         }
     }
-
-    // For pc
-    protected override void OnSwitchToWide()
+    private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        LeftCol.Width = new GridLength(1, GridUnitType.Star);
-        RightCol.Width = new GridLength(2, GridUnitType.Star);
+        if (sender is CollectionView cv)
+            cv.SelectedItem = null;
+    }
+    
+    private void OnAcceptClicked(object? sender, EventArgs e)
+    {
+        throw new NotImplementedException();
     }
 
-    protected override void OnSwitchToNarrow()
+    private void OnDeclineClicked(object? sender, EventArgs e)
     {
-        LeftCol.Width = new GridLength(1, GridUnitType.Star);
-        RightCol.Width = new GridLength(0);
+        throw new NotImplementedException();
+    }
+    
+    private void OnSearchFocused(object? sender, EventArgs e)
+    {
+        if(BindingContext is FriendsSearchPageModel vm)
+        {
+            vm.IsSearching = true;
+        }
     }
 }

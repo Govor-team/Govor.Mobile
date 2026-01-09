@@ -1,8 +1,12 @@
-﻿<?xml version = "1.0" encoding = "UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
+
 <Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:local="clr-namespace:Govor.Mobile"
              xmlns:controls="clr-namespace:UXDivers.Popups.Maui.Controls;assembly=UXDivers.Popups.Maui"
+             xmlns:sharp="http://sharpnado.com"
+             xmlns:utilities="clr-namespace:Govor.Mobile.Utilities"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              x:Class="Govor.Mobile.App">
     <Application.Resources>
         <ResourceDictionary>
@@ -10,9 +14,36 @@
                 <ResourceDictionary Source="Resources/Styles/Colors.xaml" />
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
                 <ResourceDictionary Source="Resources/Styles/AppStyles.xaml" />
+                <ResourceDictionary Source="Resources/Styles/MarkdownStyles.xaml" />
                 <controls:DarkTheme />
                 <controls:PopupStyles />
             </ResourceDictionary.MergedDictionaries>
+            
+            <utilities:NullToBoolConverter x:Key="NullToBoolConverter" />
+            <utilities:BoolInvertor x:Key="BoolInvertor"/>
+            
+            <FileImageSource x:Key="CurrentBackground" File="background_flag.png" />
+            
+            <ControlTemplate x:Key="MainPageTemplate">
+                <Grid SafeAreaEdges="None">
+                    <Image 
+                           Source="{DynamicResource CurrentBackground}"
+                           Aspect="AspectFill"
+                           HorizontalOptions="Fill"
+                           VerticalOptions="Fill" 
+                           InputTransparent="True"/>
+
+                    <Grid RowDefinitions="Auto, *, Auto">
+            
+                        <ContentPresenter Grid.Row="1" />
+
+                        <contentViews:BottomBar Grid.Row="2" 
+                                                IsVisible="False"
+                                                Margin="16,0,16,16" 
+                                                VerticalOptions="End" />
+                    </Grid>
+                </Grid>
+            </ControlTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

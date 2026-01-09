@@ -69,7 +69,7 @@ public partial class RegisterPageModel : ObservableObject
             { "Password", Password }
         };
 
-        await Shell.Current.GoToAsync("..", false, navParams);
+        await Shell.Current.GoToAsync("..", true, navParams);
     }
 
     [RelayCommand]

@@ -2,6 +2,7 @@
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
+using Govor.Mobile.Services.Interfaces;
 
 namespace Govor.Mobile
 {
@@ -10,13 +11,14 @@ namespace Govor.Mobile
         private readonly IAuthService _authService;
         private readonly IServiceProvider _serviceProvider;
         private readonly IHubInitializer _initializer;
-        public App(IAuthService authService, IServiceProvider serviceProvider, IHubInitializer initializer)
+        public App(IAuthService authService, IServiceProvider serviceProvider, IHubInitializer initializer, IBackgroundImageService backgroundService)
         {
             InitializeComponent();
-
+            
             _authService = authService;
             _serviceProvider = serviceProvider;
             _initializer = initializer; 
+            backgroundService.LoadCurrent();
             
             MainPage = new ContentPage
             {
@@ -44,6 +46,7 @@ namespace Govor.Mobile
                 { 
                     _initializer.ConnectAllAsync();
                     MainPage = _serviceProvider.GetRequiredService<MainShell>();
+                    //MainPage = _serviceProvider.GetRequiredService<RootMainPage>();
                 }
                 else
                 {

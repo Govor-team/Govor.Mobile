@@ -85,7 +85,7 @@ public partial class LoginPageModel : ObservableObject
                 { "Password", Password }
             };
 
-            await Shell.Current.GoToAsync(nameof(RegisterPage), false, navigationParameter);
+            await Shell.Current.GoToAsync(nameof(RegisterPage), true, navigationParameter);
         }
         catch(Exception ex)
         {

@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sho="http://sharpnado.com"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
+             x:Class="Govor.Mobile.Pages.ContentViews.UserItemView"
+             BackgroundColor="Transparent"
+             Background="Transparent">
+    <Border
+        Stroke="#13FFFFFF"
+        StrokeThickness="1"
+        StrokeShape="RoundRectangle 20"
+        Margin="0,0,0,10"
+        Background="Transparent"
+        Shadow="{Shadow Brush=#8484FF, Offset='0,5', Radius=10, Opacity=0.3}">
+
+        <sho:MaterialFrame
+            MaterialTheme="AcrylicBlur"
+            MaterialBlurStyle="Dark"
+            AndroidBlurRadius="0"
+            WinUIHostBackdropBlur="True"
+            CornerRadius="3"
+            Padding="12,8"
+            Elevation="0"
+            HeightRequest="72">
+
+            <Grid
+                ColumnDefinitions="Auto,*,Auto"
+                ColumnSpacing="12"
+                VerticalOptions="Center">
+                
+                <Grid WidthRequest="55" HeightRequest="55">
+                    
+                    <!-- Avatar -->
+                    <toolkit:AvatarView
+                        WidthRequest="53"
+                        HeightRequest="53"
+                        CornerRadius="30"
+                        BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                        Text="{Binding Avatar.AvatarText}"
+                        ImageSource="{Binding Avatar.AvatarImage}"
+                        FontAttributes="Bold"
+                        FontSize="18"
+                        BorderColor="Transparent"
+                        VerticalOptions="Center"/>
+
+                    <!-- Зеленая точка статуса -->
+                    <Ellipse 
+                        WidthRequest="10"
+                        HeightRequest="10"
+                        Fill="#00CC42"
+                        Stroke="Black"
+                        StrokeThickness="0.5"
+                        VerticalOptions="End"
+                        HorizontalOptions="End"
+                        Margin="0,0,2,8"
+                        IsVisible="{Binding IsOnline}" />
+                </Grid>
+
+
+                <!-- Title + Subtitle + Tag -->
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    Spacing="2"
+                    VerticalOptions="Center">
+
+                    <HorizontalStackLayout Spacing="6">
+                        <Label
+                            Text="{Binding Title}"
+                            FontSize="15"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            LineBreakMode="TailTruncation"/>
+
+                        <!-- Tag -->
+                        <contentViews:TagView
+                            BindingContext="{Binding Tag}" 
+                            Margin="4,0,0,0"/>
+                    </HorizontalStackLayout>
+                    
+                    <Label
+                        Text="{Binding Subtitle}"
+                        FontSize="12"
+                        TextColor="#B0FFFFFF"
+                        IsVisible="True"
+                        LineBreakMode="TailTruncation"/>
+                </VerticalStackLayout>
+
+                <!-- Date + Other content-->
+                <VerticalStackLayout
+                        Grid.Column="2"
+                        Spacing="6"
+                        HorizontalOptions="End"
+                        VerticalOptions="Center">
+
+                    <Label
+                        Text="{Binding DateTime}"
+                        FontSize="11"
+                        Opacity="0.6"
+                        TextColor="White"
+                        HorizontalTextAlignment="End"/>
+                    
+                    <ContentPresenter />
+                </VerticalStackLayout>
+            </Grid>
+        </sho:MaterialFrame>
+    </Border>
+</ContentView>

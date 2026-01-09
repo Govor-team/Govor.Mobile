@@ -45,7 +45,20 @@ namespace Govor.Mobile
 
             await IPopupService.Current.PushAsync(popup);
         }
-
+    
+        public static async Task DisplayInfo(string title, string message)
+        {
+            var popup = new FloaterPopup()
+            {
+                Title = title,
+                Text = message,
+                IconColor = Colors.Green,
+                IconText = "!",
+            };
+            
+            await IPopupService.Current.PushAsync(popup);
+        }
+        
         private void SfSegmentedControl_SelectionChanged(object sender, Syncfusion.Maui.Toolkit.SegmentedControl.SelectionChangedEventArgs e)
         {
             Application.Current!.UserAppTheme = e.NewIndex == 0 ? AppTheme.Light : AppTheme.Dark;

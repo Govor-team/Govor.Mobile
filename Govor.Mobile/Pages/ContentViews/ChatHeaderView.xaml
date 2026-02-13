@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:contentViewsModel="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="Govor.Mobile.Pages.ContentViews.ChatHeaderView"
+             x:DataType="contentViewsModel:ChatHeaderViewModel">
+
+    <Grid ColumnDefinitions="Auto, Auto, *, Auto" Padding="10,5" HeightRequest="60">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <GradientStop Color="#4c669f" Offset="0.0" />
+                <GradientStop Color="#3b5998" Offset="1.0" />
+            </LinearGradientBrush>
+        </Grid.Background>
+
+        <ImageButton Source="back_icon.png" Command="{Binding GoBackCommand}" />
+
+        <Grid Grid.Column="1" Margin="0,0,10,0">
+            <toolkit:AvatarView
+                Grid.Column="0"
+                HeightRequest="48" WidthRequest="48"
+                Margin="0,0,6,0" VerticalOptions="Center"
+                CornerRadius="30"
+                BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                Text="{Binding Avatar.AvatarText}"
+                ImageSource="{Binding Avatar.AvatarImage}"
+                BorderColor="Transparent" />
+            
+            <Border BackgroundColor="#4CAF50" 
+                    IsVisible="{Binding IsOnline}" 
+                    HorizontalOptions="End" 
+                    VerticalOptions="End" />
+        </Grid>
+
+        <VerticalStackLayout Grid.Column="2" VerticalOptions="Center">
+            <Label Text="{Binding Title}" TextColor="White" FontAttributes="Bold" />
+            <Label Text="{Binding Subtitle}" TextColor="#E0E0E0" FontSize="12" />
+        </VerticalStackLayout>
+
+        <HorizontalStackLayout Grid.Column="3" Spacing="10">
+            <ImageButton Source="phone_icon.png" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" />
+            <ImageButton Source="dots_vertical.png" />
+        </HorizontalStackLayout>
+    </Grid>
+</ContentView>

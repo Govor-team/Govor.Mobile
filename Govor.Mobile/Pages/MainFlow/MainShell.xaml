@@ -7,16 +7,20 @@
     Title="Main"
     Shell.FlyoutBehavior="Disabled"
     IsVisible="True"
+    BackgroundImageSource="{DynamicResource CurrentBackground}"
     Shell.NavBarIsVisible="False"
     Shell.NavBarVisibilityAnimationEnabled="False"
-    BackgroundImageSource="{DynamicResource CurrentBackground}"
     BackgroundColor="Transparent"
     Shell.PresentationMode="ModalNotAnimated"
-    Shell.TabBarBackgroundColor="Yellow"
-    TabBarIsVisible="True"
+    TabBarIsVisible="False"
     Shell.NavBarHasShadow="False">
     
-    <TabBar>
+    <ShellContent 
+        Title="Root"
+        Route="root" 
+        Icon="chat_icon.png"
+        ContentTemplate="{DataTemplate pages:RootPage}" />
+    <!--
         <ShellContent 
             Title="Chats"
             Route="MainPage" 
@@ -34,5 +38,5 @@
             Route="FriendsSearchPage"
             Icon="call_icon.png"
             ContentTemplate="{DataTemplate pages:CallPage}"/>
-    </TabBar>
+            -->
 </Shell>

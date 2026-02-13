@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Maui;
 using CropperImage.MAUI;
+using Indiko.Maui.Controls.Markdown;
 
 #if ANDROID
 using Govor.Mobile.FloatingTabBar;
@@ -7,10 +8,12 @@ using Govor.Mobile.FloatingTabBar;
 
 using Microsoft.Extensions.Logging;
 using Sharpnado.MaterialFrame;
+using Sharpnado.Tabs;
 using SkiaSharp.Views.Maui.Controls.Hosting;
 using Syncfusion.Maui.Toolkit.Hosting;
 using UraniumUI;
 using UXDivers.Popups.Maui;
+using Govor.Mobile.Data;
 
 namespace Govor.Mobile
 {
@@ -19,23 +22,19 @@ namespace Govor.Mobile
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
-#pragma warning disable CA1416
+            
+            builder.Services.AddMemoryCache(options =>
+            {
+                options.SizeLimit = 1024; // лимит
+            });
+            
             builder
                 .UseMauiApp<App>()
                 .UseMauiCommunityToolkit(options =>
                 {
                     options.SetShouldEnableSnackbarOnWindows(false);
                 })
-
-                .ConfigureMauiHandlers(handlers =>
-                {
-#if ANDROID 
-                    handlers.AddHandler<Shell, RoundedFloatingTabBarHandler>();
-#endif
-                })
-
                 .UseMauiCommunityToolkitMediaElement()
-#pragma warning restore CA1416
                 .UseUraniumUI()
                 .UseUraniumUIMaterial()
                 .UseUraniumUIBlurs() 
@@ -43,7 +42,9 @@ namespace Govor.Mobile
                 .UseImageCropper()
                 .ConfigureSyncfusionToolkit()
                 .UseSharpnadoMaterialFrame(false)
+                .UseSharpnadoTabs(loggerEnable: false)
                 .UseSkiaSharp()
+                .UseMarkdownView()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

@@ -14,7 +14,7 @@ using UXDivers.Popups.Services;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
-public partial class FriendsSearchPageModel : ObservableObject, IDisposable
+public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IInitializableViewModel
 {
     private IServiceProvider _provider;
     
@@ -39,7 +39,7 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _searchText;
 
-    public bool IsLoaded { private set; get; } = false;
+    public bool IsLoaded { set; get; } = false;
 
     private Dictionary<Guid, UserListItemViewModel> _initedUsers = new();
     
@@ -160,7 +160,9 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable
             
             var vm = GetOrBuildProfile(profile);
             vm.FriendshipId = Id;
-            IncomingRequests.Add(vm);
+            
+            SearchResults.Remove(vm);
+            OutgoingRequests.Add(vm);
         }
     }
 
@@ -202,7 +204,9 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable
             {
                 var vm = GetOrBuildProfile(profile);
                 vm.FriendshipId = friendshipId;
-                IncomingRequests.Add(vm);
+
+                if(!IncomingRequests.Contains(vm))
+                    IncomingRequests.Add(vm);
             }
         }
         
@@ -223,7 +227,9 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable
             {
                 var vm = GetOrBuildProfile(profile);
                 vm.FriendshipId = friendshipId;
-                OutgoingRequests.Add(vm);
+                
+                if (!OutgoingRequests.Contains(vm))
+                    OutgoingRequests.Add(vm);
             }
         }
     }
@@ -312,6 +318,7 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable
         var popup = new UserAddNewFriendPopup(model);
         
         await IPopupService.Current.PushAsync(popup, waitUntilClosed: true);
+        
     }
     
 

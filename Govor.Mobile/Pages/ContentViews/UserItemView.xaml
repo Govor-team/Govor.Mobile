@@ -18,7 +18,8 @@
         Shadow="{Shadow Brush=#8484FF, Offset='0,5', Radius=10, Opacity=0.3}">
 
         <sho:MaterialFrame
-            MaterialTheme="AcrylicBlur"
+            MaterialTheme="Acrylic"
+            Background="Transparent"
             MaterialBlurStyle="Dark"
             AndroidBlurRadius="0"
             WinUIHostBackdropBlur="True"

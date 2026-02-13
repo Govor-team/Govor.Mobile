@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="..\..\..\RiderProjects\BetterUIKit\BetterUIKit\BetterUIKit.csproj" Type="Classic C#" />
+  <Project Path="Govor.Mobile.Tests\Govor.Mobile.Tests.csproj" Type="Classic C#" />
   <Project Path="Govor.Mobile.UIKit\Govor.Mobile.UIKit.csproj" Type="Classic C#" />
-  <Project Path="Govor.Mobile/Govor.Mobile.csproj" />
+  <Project Path="Govor.Mobile\Govor.Mobile.csproj" Type="Classic C#" />
 </Solution>

@@ -1,0 +1,221 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:buttons="clr-namespace:Syncfusion.Maui.Toolkit.Buttons;assembly=Syncfusion.Maui.Toolkit"
+             xmlns:uranium="http://schemas.enisn-projects.io/dotnet/maui/uraniumui"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:better="clr-namespace:BetterUIKit.TabView;assembly=BetterUIKit"
+             xmlns:sho="http://sharpnado.com"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:viewModels="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+             x:Class="Govor.Mobile.Pages.MainFlow.Layouts.FriendsView">
+    <Grid SafeAreaEdges="None"
+          RowDefinitions="Auto, Auto, *" Padding="16,0,16,10" RowSpacing="15">
+
+        <Grid Grid.Row="2">
+            <better:BetterTabView
+                TabBarHeight="35"
+                EnableSwiping="True"
+                Margin="0,0,0,10">
+                <better:BetterTabView.TabItems>
+                    <!-- Входящие заявки -->
+                    <better:BetterTabItem Header="Входящие">
+                        <CollectionView
+                            SelectionMode="Single"
+                            SelectionChangedCommand="{Binding BindingContext.OpenIncomingProfileCommand, Source={x:Reference RootControl}}"
+                            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}"
+                            VerticalScrollBarVisibility="Never"
+                            ItemsSource="{Binding BindingContext.IncomingRequests, Source={x:Reference RootControl}}"
+                            SelectionChanged="OnSelectionChanged"
+                            Margin="0">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:UserListItemViewModel">
+                                    <contentViews:UserItemView />
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    Spacing="10"
+                                    Padding="30">
+                                    <Label Text="Пока нет новых заявок"
+                                           TextColor="#80FFFFFF"
+                                           HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+                        </CollectionView>
+                    </better:BetterTabItem>
+
+                    <!-- Ожидаение -->
+                    <better:BetterTabItem Header="Ожидание">
+                        <CollectionView
+                            SelectionMode="Single"
+                            SelectionChangedCommand="{Binding BindingContext.OpenOutgoingProfileCommand, Source={x:Reference RootControl}}"
+                            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}"
+                            VerticalScrollBarVisibility="Never"
+                            ItemsSource="{Binding BindingContext.OutgoingRequests, Source={x:Reference RootControl}}"
+                            SelectionChanged="OnSelectionChanged"
+                            Margin="0">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="viewModels:UserListItemViewModel">
+                                    <contentViews:UserItemView />
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+
+                            <CollectionView.EmptyView>
+                                <VerticalStackLayout
+                                    HorizontalOptions="Center"
+                                    VerticalOptions="Center"
+                                    Spacing="10"
+                                    Padding="30">
+                                    <Label Text="Пока нет новых заявок"
+                                           TextColor="#80FFFFFF"
+                                           HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                            </CollectionView.EmptyView>
+                        </CollectionView>
+                    </better:BetterTabItem>
+
+                    <!-- Поиск -->
+                    <better:BetterTabItem Header="Поиск">
+                        <Grid RowDefinitions="Auto, *" Padding="0,0,0,0">
+
+                            <Border Grid.Row="0"
+                                    StrokeThickness="1"
+                                    Background="#20ffffff"
+                                    Margin="0,5">
+                                <sho:MaterialFrame
+                                    MaterialTheme="AcrylicBlur"
+                                    MaterialBlurStyle="Dark"
+                                    Elevation="0"
+                                    AndroidBlurRadius="40"
+                                    CornerRadius="20"
+                                    Padding="12,0"
+                                    HeightRequest="60">
+
+                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto" ColumnSpacing="5">
+
+                                        <Label Grid.Column="0"
+                                               Text="🔍"
+                                               VerticalOptions="Center"
+                                               FontSize="18"
+                                               Margin="5,0,5,0"
+                                               Opacity="0.7" />
+
+                                        <Entry Grid.Column="1"
+                                               x:Name="FriendSearchEntry"
+                                               Placeholder="Никнейм или ID пользователя..."
+                                               PlaceholderColor="#80FFFFFF"
+                                               TextColor="White"
+                                               FontFamily="Bold"
+                                               Text="{Binding BindingContext.SearchText, Source={x:Reference RootControl}}"
+                                               FontSize="17"                                        
+                                               VerticalOptions="Center"
+                                               BackgroundColor="Transparent">
+                                            <Entry.Behaviors>
+                                                <toolkit:UserStoppedTypingBehavior 
+                                                        Command="{Binding BindingContext.SearchFriendsCommand, Source={x:Reference RootControl}}"
+                                                        MinimumLengthThreshold="0"
+                                                        StoppedTypingTimeThreshold="500"
+                                                       />
+                                            </Entry.Behaviors>
+                                        </Entry>
+
+
+                                        <ImageButton Grid.Column="2"
+                                                     x:Name="ScanQrButton"
+                                                     Source="scan_icon.png"
+                                                     WidthRequest="50"
+                                                     HeightRequest="50"
+                                                     Padding="8"
+                                                     VerticalOptions="Center"
+                                                     BackgroundColor="Transparent"
+                                                     Aspect="AspectFit">
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroupList>
+                                                    <VisualStateGroup x:Name="CommonStates">
+                                                        <VisualState x:Name="Normal" />
+                                                        <VisualState x:Name="Pressed">
+                                                            <VisualState.Setters>
+                                                                <Setter Property="Opacity" Value="0.5" />
+                                                                <Setter Property="Scale" Value="0.9" />
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                    </VisualStateGroup>
+                                                </VisualStateGroupList>
+                                            </VisualStateManager.VisualStateGroups>
+                                        </ImageButton>
+
+                                        <ImageButton Grid.Column="3"
+                                                     x:Name="GenerateQrButton"
+                                                     Source="qr_icon.png"
+                                                     WidthRequest="40"
+                                                     HeightRequest="40"
+                                                     Padding="8"
+                                                     VerticalOptions="Center"
+                                                     BackgroundColor="Transparent"
+                                                     Aspect="AspectFit">
+                                            <VisualStateManager.VisualStateGroups>
+                                                <VisualStateGroupList>
+                                                    <VisualStateGroup x:Name="CommonStates">
+                                                        <VisualState x:Name="Normal" />
+                                                        <VisualState x:Name="Pressed">
+                                                            <VisualState.Setters>
+                                                                <Setter Property="Opacity" Value="0.5" />
+                                                                <Setter Property="Scale" Value="0.9" />
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                    </VisualStateGroup>
+                                                </VisualStateGroupList>
+                                            </VisualStateManager.VisualStateGroups>
+                                        </ImageButton>
+
+                                    </Grid>
+                                </sho:MaterialFrame>
+                            </Border>
+                            
+                            <CollectionView Grid.Row="1"
+                                            ItemsSource="{Binding BindingContext.SearchResults, Source={x:Reference RootControl}}"
+                                            Margin="0"
+                                            SelectionMode="Single"
+                                            SelectionChangedCommand="{Binding BindingContext.OpenProfileCommand, Source={x:Reference RootControl}}"
+                                            SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}"
+                                            VerticalScrollBarVisibility="Never"
+                                            SelectionChanged="OnSelectionChanged">
+
+                                <CollectionView.Header>
+                                    <Label Text="Возможно вы знакомы"
+                                           TextColor="#B0FFFFFF"
+                                           FontSize="13"
+                                           Margin="5,0,0,10" />
+                                </CollectionView.Header>
+
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:UserListItemViewModel">
+                                        <contentViews:UserItemView />
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+
+                                <CollectionView.EmptyView>
+                                    <VerticalStackLayout HorizontalOptions="Center"
+                                                         VerticalOptions="Center"
+                                                         Margin="0,60">
+
+                                        <Label Text="🔎" FontSize="50" HorizontalOptions="Center" />
+                                        <Label Text="Введите имя друга, чтобы начать поиск"
+                                               TextColor="#60FFFFFF"
+                                               HorizontalTextAlignment="Center"
+                                               Margin="0,10" />
+                                    </VerticalStackLayout>
+                                </CollectionView.EmptyView>
+                            </CollectionView>
+                        </Grid>
+                    </better:BetterTabItem>
+                </better:BetterTabView.TabItems>
+            </better:BetterTabView>
+        </Grid>
+    </Grid>
+</ContentView>

@@ -17,9 +17,9 @@ public class UserProfileService : IUserProfileService
     private readonly SemaphoreSlim _currentProfileLock = new(1, 1);
 
     public event Action<UserProfile>? OnProfileUpdated;
-    
-    private Guid _currentId;
 
+    private Guid _currentId;
+    
     public UserProfileService(
         IProfileApiClient apiClient,
         IPresenceHubService presenceHubService )

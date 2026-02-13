@@ -23,25 +23,18 @@
             <utilities:BoolInvertor x:Key="BoolInvertor"/>
             
             <FileImageSource x:Key="CurrentBackground" File="background_flag.png" />
-            
+
             <ControlTemplate x:Key="MainPageTemplate">
                 <Grid SafeAreaEdges="None">
-                    <Image 
-                           Source="{DynamicResource CurrentBackground}"
-                           Aspect="AspectFill"
-                           HorizontalOptions="Fill"
-                           VerticalOptions="Fill" 
-                           InputTransparent="True"/>
+                    <Image
+                        Source="{DynamicResource CurrentBackground}"
+                        Aspect="AspectFill"
+                        IsAnimationPlaying="True"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill"
+                        InputTransparent="True" />
 
-                    <Grid RowDefinitions="Auto, *, Auto">
-            
-                        <ContentPresenter Grid.Row="1" />
-
-                        <contentViews:BottomBar Grid.Row="2" 
-                                                IsVisible="False"
-                                                Margin="16,0,16,16" 
-                                                VerticalOptions="End" />
-                    </Grid>
+                    <ContentPresenter Padding="0, 0, 0, 0"/>
                 </Grid>
             </ControlTemplate>
         </ResourceDictionary>

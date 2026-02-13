@@ -15,6 +15,8 @@ public partial class FriendsSearchPage : UraniumContentPage
     {
         base.OnAppearing();
         
+        BetterTabView.SelectedIndex = 0;
+        
         if(BindingContext is FriendsSearchPageModel vm)
         {
             if(!vm.IsLoaded)

@@ -57,7 +57,8 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     private readonly int MaxLength;
 
     private Guid _currentUserId;
-    
+    private Action<UserProfile>? _profileUpdatedHandler;
+
     public SettingsPageModel(
         IUserProfileService profileService,
         IDescriptionService descriptionService,
@@ -76,18 +77,28 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     
     public async Task InitAsync()
     {
-        var profile = await _profileService.GetCurrentProfile();
-        
-        _profileService.OnProfileUpdated += userProfile =>
+        try
         {
-            if (userProfile?.Id == _currentUserId)
-                OnProfileUpdated(userProfile);
-        };
-        
-        InitProfile(profile);
-        
-        await InitBackgrounds();
-        await InitSessions();
+            var profile = await _profileService.GetCurrentProfile();
+
+            _profileUpdatedHandler = userProfile =>
+            {
+                if (userProfile?.Id == _currentUserId)
+                    OnProfileUpdated(userProfile);
+            };
+
+            _profileService.OnProfileUpdated += _profileUpdatedHandler;
+
+
+            InitProfile(profile);
+
+            await InitBackgrounds();
+            await InitSessions();
+        }
+        catch (Exception ex)
+        {
+            await AppShell.DisplayException("In init of settings page model:" + ex.Message);
+        }
     }
     
     public async Task RefreshInit()
@@ -116,7 +127,7 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
         UpdateDescriptionCounter();
         UpdateHasChanges();
 
-        AvatarViewModel.InitializeAsync(profile.Username, profile.IconId);
+        _ = AvatarViewModel.InitializeAsync(profile.Username, profile.IconId);
         
         Tag = new TagViewModel()
         {
@@ -171,7 +182,7 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
         
         selectedItem ??= newItems.FirstOrDefault();
         
-        MainThread.BeginInvokeOnMainThread(() =>
+        await MainThread.InvokeOnMainThreadAsync(() =>
         {
             SelectedBackground = null; 
             
@@ -214,6 +225,9 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     
     partial void OnSelectedBackgroundChanged(BackgroundItem value)
     {
+        if (value is null)
+            return;
+
         if (!string.IsNullOrEmpty(value.Path))
         {
             _backgroundImageService.ApplyBackground(value.Path);
@@ -282,7 +296,13 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
             var result = await FilePicker.Default.PickAsync(new PickOptions
             {
                 PickerTitle = "Выберите фоновое изображение",
-                FileTypes = FilePickerFileType.Images
+                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.Android, new[] { "image/*" } },              
+                    { DevicePlatform.iOS, new[] { "public.image" } },              
+                    { DevicePlatform.WinUI, new[] { ".png", ".jpg", ".jpeg", ".gif" } },
+                    { DevicePlatform.MacCatalyst, new[] { "public.image" } }
+                })
             });
 
             if (result != null)
@@ -342,6 +362,6 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     
     public void Dispose()
     {
-        _profileService.OnProfileUpdated -= OnProfileUpdated;
+        _profileService.OnProfileUpdated -= _profileUpdatedHandler;
     }
 }

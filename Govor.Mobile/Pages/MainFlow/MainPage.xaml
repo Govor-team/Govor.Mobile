@@ -1,15 +1,16 @@
-<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8"?>
+
 <base:AdaptivePage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:base="clr-namespace:Govor.Mobile.Pages.Base"
-             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
-             xmlns:better="clr-namespace:BetterUIKit.TabView;assembly=BetterUIKit"
-             xmlns:sho="http://sharpnado.com"
-             x:Class="Govor.Mobile.Pages.MainFlow.MainPage"
-             SafeAreaEdges="None"
-             BackgroundColor="#282A37"
-             Padding="0"
-             ControlTemplate="{StaticResource MainPageTemplate}">
+                   xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                   xmlns:base="clr-namespace:Govor.Mobile.Pages.Base"
+                   xmlns:better="clr-namespace:BetterUIKit.TabView;assembly=BetterUIKit"
+                   xmlns:sho="http://sharpnado.com"
+                   xmlns:viewModels="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+                   x:Class="Govor.Mobile.Pages.MainFlow.MainPage"
+                   SafeAreaEdges="None"
+                   BackgroundColor="#282A37"
+                   Padding="0"
+                   ControlTemplate="{StaticResource MainPageTemplate}">
 
     <Grid SafeAreaEdges="None"
           RowDefinitions="Auto, *" Padding="16,16,16,0">
@@ -39,10 +40,10 @@
                         CornerRadius="30"
                         Elevation="2">
                         <ImageButton Padding="5" Source="search_icon.png" HeightRequest="35" WidthRequest="35"
-                                     BackgroundColor="#00ffffff" CornerRadius="18"/>
+                                     BackgroundColor="#00ffffff" CornerRadius="18" />
                     </sho:MaterialFrame>
                 </Border>
-                
+
                 <Border
                     Background="#11ffffff"
                     StrokeShape="RoundRectangle 30"
@@ -61,8 +62,8 @@
                 </Border>
             </HorizontalStackLayout>
         </Grid>
-        
-        <Grid  Grid.Row="1">
+
+        <Grid Grid.Row="1">
             <better:BetterTabView
                 TabBarHeight="35"
                 EnableSwiping="True"
@@ -71,20 +72,43 @@
                 <better:BetterTabView.TabItems>
                     <better:BetterTabItem Header="Друзья">
                         <better:BetterTabItem.Content>
-                            <ScrollView>
+                            <CollectionView
+                                SelectionMode="Single"
+                                SelectionChangedCommand="{Binding BindingContext.OpenChatWithUserCommand, Source={x:Reference RootControl}}"
+                                SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}"
+                                VerticalScrollBarVisibility="Never"
+                                ItemsSource="{Binding BindingContext.Friends, Source={x:Reference RootControl}}"
+                                SelectionChanged="OnSelectionChanged"
+                                Margin="0">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="viewModels:UserListItemViewModel">
+                                        <Label Text="{Binding Id}" />
+                                        <!-- <contentViews:UserItemView /> -->
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+
+                                <CollectionView.EmptyView>
+                                    <VerticalStackLayout
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"
+                                        Spacing="10"
+                                        Padding="30">
+                                        <Label Text="Пока нет новых заявок"
+                                               TextColor="#80FFFFFF"
+                                               HorizontalTextAlignment="Center" />
+                                    </VerticalStackLayout>
+                                </CollectionView.EmptyView>
+                            </CollectionView>
+                        </better:BetterTabItem.Content>
+                    </better:BetterTabItem>
+
+                    <better:BetterTabItem Header="Группы">
+                        <better:BetterTabItem.Content>
                                 <CollectionView
                                     SelectionMode="Single"
-                                    SelectionChangedCommand="{Binding BindingContext.OpenChatWithUserCommand, Source={x:Reference RootControl}}"
-                                    SelectionChangedCommandParameter="{Binding SelectedItem, Source={RelativeSource Self}}"
                                     VerticalScrollBarVisibility="Never"
-                                    ItemsSource="{Binding BindingContext.Friends, Source={x:Reference RootControl}}"
-                                    SelectionChanged="OnSelectionChanged"
                                     Margin="0">
-                                    <CollectionView.ItemTemplate>
-                                        <DataTemplate x:DataType="contentViews:UserItemView">
-                                            <contentViews:UserItemView />
-                                        </DataTemplate>
-                                    </CollectionView.ItemTemplate>
+                                    <CollectionView.ItemTemplate />
 
                                     <CollectionView.EmptyView>
                                         <VerticalStackLayout
@@ -92,18 +116,14 @@
                                             VerticalOptions="Center"
                                             Spacing="10"
                                             Padding="30">
-                                            <Label Text="Пока нет новых заявок"
+                                            <Label Text="Пока нет групп"
                                                    TextColor="#80FFFFFF"
                                                    HorizontalTextAlignment="Center" />
                                         </VerticalStackLayout>
                                     </CollectionView.EmptyView>
                                 </CollectionView>
-                            </ScrollView>
                         </better:BetterTabItem.Content>
-
                     </better:BetterTabItem>
-
-                    <better:BetterTabItem Header="Группы" />
                 </better:BetterTabView.TabItems>
             </better:BetterTabView>
         </Grid>

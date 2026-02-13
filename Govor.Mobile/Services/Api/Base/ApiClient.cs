@@ -34,30 +34,28 @@ public class ApiClient : IApiClient
 
     // Универсальный метод, с обработкой 401
     private async Task<HttpResult<T>> SendWithAuthRetryAsync<T>(
-        Func<Task<HttpResponseMessage>> sendRequest, bool authenticated = true)
+        Func<HttpRequestMessage> createRequest, bool authenticated = true)
     {
         async Task<HttpResponseMessage> SendAuthorizedAsync()
         {
+            using var request = createRequest();
+
             if (authenticated)
             {
                 var token = await _jwtProvider.GetAccessTokenAsync();
-
                 if (!string.IsNullOrEmpty(token))
                 {
-                    _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                    request.Headers.Authorization =
+                        new AuthenticationHeaderValue("Bearer", token);
                 }
             }
-            else
-            {
-                _httpClient.DefaultRequestHeaders.Remove("Authorization");
-            }
 
-            return await sendRequest();
+            return await _httpClient.SendAsync(request);
         }
 
         var response = await SendAuthorizedAsync();
 
+        // Retry once if 401
         if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
         {
             _logger.LogInformation("Access token expired. Retrying request...");
@@ -82,15 +80,15 @@ public class ApiClient : IApiClient
         {
             return HttpResult<T>.Success(default);
         }
-
     }
+
     
 
     public async Task<HttpResult<T>> GetAsync<T>(string endpoint, bool authenticated = true)
     {
         try
         {
-            return await SendWithAuthRetryAsync<T>(() => _httpClient.GetAsync(endpoint), authenticated);
+            return await SendWithAuthRetryAsync<T>(() => new HttpRequestMessage(HttpMethod.Get, endpoint), authenticated);
         }
         catch (Exception ex)
         {
@@ -98,6 +96,7 @@ public class ApiClient : IApiClient
             return HttpResult<T>.FromException(ex);
         }
     }
+
 
     // POST
     public async Task<HttpResult<T>> PostAsync<T>(string endpoint, object data, bool authenticated = true)
@@ -107,7 +106,7 @@ public class ApiClient : IApiClient
             return await SendWithAuthRetryAsync<T>(() =>
             {
                 var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
-                return _httpClient.PostAsync(endpoint, content);
+                return new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
             }, authenticated);
         }
         catch (Exception ex)
@@ -117,6 +116,7 @@ public class ApiClient : IApiClient
         }
     }
 
+
     // PUT
     public async Task<HttpResult<T>> PutAsync<T>(string endpoint, object data, bool authenticated = true)
     {
@@ -125,7 +125,7 @@ public class ApiClient : IApiClient
             return await SendWithAuthRetryAsync<T>(() =>
             {
                 var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
-                return _httpClient.PutAsync(endpoint, content);
+                return  new HttpRequestMessage(HttpMethod.Put, endpoint) { Content = content };
             }, authenticated);
         }
         catch (Exception ex)
@@ -140,8 +140,12 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var result = await SendWithAuthRetryAsync<string>(() => _httpClient.DeleteAsync(endpoint), authenticated);
-            return result.IsSuccess ? HttpResult<bool>.Success(true) : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
+            var result = await SendWithAuthRetryAsync<string>(() =>
+                new HttpRequestMessage(HttpMethod.Delete, endpoint), authenticated);
+
+            return result.IsSuccess
+                ? HttpResult<bool>.Success(true)
+                : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
         }
         catch (Exception ex)
         {
@@ -150,12 +154,21 @@ public class ApiClient : IApiClient
         }
     }
 
+
     // POST multipart/form-data (для загрузки медиа)
-    public async Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(string endpoint, MultipartFormDataContent form, bool authenticated = true)
+    public async Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(
+        string endpoint, MultipartFormDataContent form, bool authenticated = true)
     {
         try
         {
-            return await SendWithAuthRetryAsync<UploadMediaResponse>(() => _httpClient.PostAsync(endpoint, form),  authenticated);
+            return await SendWithAuthRetryAsync<UploadMediaResponse>(() =>
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                {
+                    Content = form
+                };
+                return request;
+            }, authenticated);
         }
         catch (Exception ex)
         {
@@ -170,30 +183,29 @@ public class ApiClient : IApiClient
     {
         try
         {
-            async Task<HttpResponseMessage> SendAuthorizedAsync()
+            async Task<HttpResponseMessage> SendAuthorizedAsync(Func<HttpRequestMessage> createRequest)
             {
+                using var request = createRequest();
+
                 if (authenticated)
                 {
                     var token = await _jwtProvider.GetAccessTokenAsync();
                     if (!string.IsNullOrEmpty(token))
                     {
-                        _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                        _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+                        request.Headers.Authorization =
+                            new AuthenticationHeaderValue("Bearer", token);
                     }
                 }
-                else
-                {
-                    _httpClient.DefaultRequestHeaders.Remove("Authorization");
-                }
-                return await _httpClient.GetAsync(endpoint, HttpCompletionOption.ResponseHeadersRead);
+
+                return await _httpClient.SendAsync(request);
             }
             
-            var response = await SendAuthorizedAsync();
+            var response = await SendAuthorizedAsync( () => new HttpRequestMessage(HttpMethod.Get, endpoint));
 
             if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
             {
                 _logger.LogInformation("Access token expired. Retrying request...");
-                response = await SendAuthorizedAsync();
+                response = await SendAuthorizedAsync( () => new HttpRequestMessage(HttpMethod.Get, endpoint));
             }
 
             if (!response.IsSuccessStatusCode)

@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="Govor.Mobile">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-01-08T14:31:49.788825200Z">
+        <DropdownSelection timestamp="2026-02-11T12:38:23.687167Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\stalcker\.android\avd\pixel_8_pro_-_api_34.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=11566254AI003708" />
             </handle>
           </Target>
         </DropdownSelection>

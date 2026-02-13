@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
+             x:Class="Govor.Mobile.Pages.MainFlow.ChatPage"
+             BackgroundColor="#282A37"
+             ControlTemplate="{StaticResource MainPageTemplate}"
+             Title="Chat"
+             x:Name="chatpage"
+             Shell.NavBarVisibilityAnimationEnabled="False"
+             Padding="{OnPlatform iOS='0,0,0,0', Android='0'}">
+
+    <Grid RowDefinitions="Auto,*" SafeAreaEdges="None">
+
+        <!-- HEADER -->
+        <contentViews:ChatHeaderView Grid.Row="0" BindingContext="{Binding Header}" />
+
+        <!-- CONTENT -->
+        <Grid Grid.Row="1" SafeAreaEdges="All" HorizontalOptions="End">
+            <Grid>
+                <CollectionView
+                    x:Name="CollectionView"
+                    ItemsSource="{Binding Messages}"
+                    ItemsLayout="VerticalList"
+                    VerticalScrollBarVisibility="Never">
+
+                    <CollectionView.Footer>
+                        <Grid HeightRequest="90" />
+                    </CollectionView.Footer>
+
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MessagesViewModel">
+                            <Grid Padding="8" ColumnDefinitions="Auto,*">
+
+                                <toolkit:AvatarView
+                                    Grid.Column="0"
+                                    IsVisible="{Binding IsIncoming}"
+                                    HeightRequest="28" WidthRequest="28"
+                                    Margin="0,0,6,0" VerticalOptions="End"
+                                    CornerRadius="30"
+                                    BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                                    Text="{Binding Avatar.AvatarText}"
+                                    ImageSource="{Binding Avatar.AvatarImage}"
+                                    BorderColor="Transparent" />
+
+                                <Border Grid.Column="1"
+                                        Background="{Binding BubbleColor}"
+                                        StrokeShape="RoundRectangle 18"
+                                        Padding="8"
+                                        HorizontalOptions="{Binding BubbleAlignment}"
+                                        StrokeThickness="0">
+
+                                    <StackLayout Spacing="4">
+                                        <markdown:MarkdownView MarkdownText="{Binding Text}"
+                                                               Style="{StaticResource DefaultMarkdownStyle}"
+                                                               ImageAspect="AspectFill"
+                                                               MaximumHeightRequest="500"
+                                                               MaximumWidthRequest="500"
+                                                               IsVisible="{Binding Text, Converter={toolkit:IsStringNotNullOrEmptyConverter}}" />
+
+                                        <Label Text="{Binding Time}"
+                                               FontSize="10"
+                                               HorizontalOptions="End"
+                                               TextColor="#D0D0D0"
+                                               Margin="0,-2,0,0" />
+                                    </StackLayout>
+
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+
+                </CollectionView>
+            </Grid>
+            <!-- MESSAGES -->
+
+
+            <!-- Input -->
+            <Grid VerticalOptions="End"
+                  SafeAreaEdges="SoftInput"
+                  Margin="12,90,12,16"
+                  InputTransparent="False">
+
+                <Border
+                    Background="#2B2B2B"
+                    StrokeThickness="0"
+                    StrokeShape="RoundRectangle 20"
+                    Padding="12,8">
+
+                    <Grid ColumnDefinitions="*,Auto">
+
+                        <Editor
+                            x:Name="MessageEditor"
+                            Text="{Binding MessageText}"
+                            Placeholder="Сообщение"
+                            TextColor="White"
+                            PlaceholderColor="#999"
+                            AutoSize="TextChanges"
+                            MaximumHeightRequest="140"
+                            MinimumHeightRequest="40"
+                            BackgroundColor="Transparent"
+                            Margin="0,0,8,0" />
+
+                        <Button Grid.Column="1"
+                                VerticalOptions="End"
+                                Command="{Binding SendMessageCommand}"
+                                Clicked="SendMessageButtonClicked"
+                                Text="➤"
+                                FontSize="18"
+                                WidthRequest="40"
+                                HeightRequest="40"
+                                BackgroundColor="Transparent"
+                                TextColor="#5FA8FF" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</ContentPage>

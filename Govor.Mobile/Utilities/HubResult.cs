@@ -3,19 +3,19 @@
 public class HubResult<T>
 {
     public HubResultStatus Status { get; set; }
-    public T? Result { get; set; }
+    public T? Value { get; set; }
     public string? ErrorMessage { get; set; }
     
     public static HubResult<T> Ok(T? result = default) => new()
     {
         Status = HubResultStatus.Success,
-        Result = result
+        Value = result
     };
 
     public static HubResult<T> Created(T? result = default) => new()
     {
         Status = HubResultStatus.Created,
-        Result = result
+        Value = result
     };
 
     public static HubResult<T> NoContent() => new()
@@ -27,14 +27,14 @@ public class HubResult<T>
     {
         Status = HubResultStatus.BadRequest,
         ErrorMessage = message,
-        Result = details
+        Value = details
     };
     
     public static HubResult<T> NotFound(string message, T? details = default) => new()
     {
         Status = HubResultStatus.NotFound,
         ErrorMessage = message,
-        Result = details
+        Value = details
     };
 
     public static HubResult<T> Unauthorized(string message) => new()

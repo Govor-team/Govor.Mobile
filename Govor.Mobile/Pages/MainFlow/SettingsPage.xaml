@@ -9,17 +9,17 @@
              xmlns:models="clr-namespace:Govor.Mobile.Models"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              BackgroundColor="#282A37"
-             BackgroundImageSource="{DynamicResource CurrentBackground}"
+             ControlTemplate="{StaticResource MainPageTemplate}"
              Title="Настройки"
              x:Name="settingspage"
-             SafeAreaEdges="None"
-             Padding="{OnPlatform iOS='0,30,0,0', Android='10'}">
+             Shell.NavBarVisibilityAnimationEnabled="False"
+             Padding="{OnPlatform iOS='0,0,0,0', Android='0, 0, 0, 0'}">
     <Grid SafeAreaEdges="None">
         <ScrollView 
             VerticalScrollBarVisibility="Never"
             HorizontalScrollBarVisibility="Never"
-            SafeAreaEdges="Container, Container, Container, None"
-            Padding="16">
+            SafeAreaEdges="None"
+            Padding="16, 40, 16, 40">
             <VerticalStackLayout Spacing="20">
                 <!-- Аватар + имя + Tag -->
                 <VerticalStackLayout
@@ -119,7 +119,7 @@
                             MaterialTheme="AcrylicBlur"
                             MaterialBlurStyle="Dark"
                             Elevation="4"
-                            AndroidBlurRadius="20"
+                            AndroidBlurRadius="15"
                             CornerRadius="20"
                             Padding="10"
                             MinimumHeightRequest="140"
@@ -190,6 +190,7 @@
                                   VerticalScrollBarVisibility="Never"
                                   Loop="False">
 
+                        
                         <CarouselView.ItemsLayout>
                             <LinearItemsLayout Orientation="Horizontal"
                                                SnapPointsType="MandatorySingle"
@@ -225,10 +226,6 @@
                             </DataTemplate>
                         </CarouselView.ItemTemplate>
                     </CarouselView>
-
-                    <VisualElement.Resources>
-                        <x:Reference x:Key="carousel" Name="BackgroundCarousel" />
-                    </VisualElement.Resources>
 
                     <Grid ColumnDefinitions="*, Auto, *" Padding="0,10">
                         <IndicatorView Grid.Column="1" x:Name="bgIndicator"
@@ -276,7 +273,7 @@
                                     <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
                                                          MaterialBlurStyle="Dark"
                                                          Elevation="0"
-                                                         AndroidBlurRadius="30"
+                                                         AndroidBlurRadius="15"
                                                          WinUIHostBackdropBlur="True"
                                                          CornerRadius="20"
                                                          Padding="5"

@@ -3,4 +3,5 @@
 public interface IWasOnlineFormater
 {
     string FormatLastSeen(DateTime lastSeen);
+    string FormatIsOnline(bool isOnline);
 }

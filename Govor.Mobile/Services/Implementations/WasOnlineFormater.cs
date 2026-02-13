@@ -17,4 +17,9 @@ public class WasOnlineFormater : IWasOnlineFormater
         
         return lastSeen.ToString("dd.MM.yy"); // "25.12.25"
     }
+
+    public string FormatIsOnline(bool isOnline)
+    {
+        return isOnline ? "В сети" : "Был(а) недавно";
+    }
 }

@@ -10,7 +10,7 @@ using Microsoft.Maui.Controls.PlatformConfiguration;
 namespace Govor.Mobile
 {
     // defoult @style/Maui.SplashTheme
-    [Activity(Theme = "@style/Maui.SplashTheme", HardwareAccelerated = true, MainLauncher = true, ResizeableActivity = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
+    [Activity(Theme = "@style/Maui.SplashTheme", WindowSoftInputMode = SoftInput.AdjustResize, HardwareAccelerated = true, MainLauncher = true, ResizeableActivity = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
         protected override void OnCreate(Bundle? savedInstanceState)

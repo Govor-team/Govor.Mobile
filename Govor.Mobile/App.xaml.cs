@@ -1,8 +1,10 @@
-﻿using Govor.Mobile.Pages.AuthFlow;
+﻿using Govor.Mobile.Data;
+using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Govor.Mobile
 {
@@ -36,6 +38,10 @@ namespace Govor.Mobile
         {
             _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
             await _authService.InitializeAsync();
+            
+            using var scope = _serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GovorDbContext>();
+            await db.Database.MigrateAsync();   // применяет миграции, создаёт таблицы
         }
         
         private void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)

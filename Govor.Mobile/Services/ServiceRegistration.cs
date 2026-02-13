@@ -9,11 +9,18 @@ using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Api.Base;
 using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Implementations;
+using Govor.Mobile.Services.Implementations.ChatPage;
 using Govor.Mobile.Services.Implementations.JwtServices;
+using Govor.Mobile.Services.Implementations.MainPage;
 using Govor.Mobile.Services.Implementations.Profiles;
+using Govor.Mobile.Services.Implementations.Repositories;
 using Govor.Mobile.Services.Interfaces;
+using Govor.Mobile.Services.Interfaces.ChatPage;
 using Govor.Mobile.Services.Interfaces.JwtServices;
+using Govor.Mobile.Services.Interfaces.MainPage;
 using Govor.Mobile.Services.Interfaces.Profiles;
+using Govor.Mobile.Services.Interfaces.Repositories;
+using Govor.Mobile.Services.Mapping;
 using Microsoft.EntityFrameworkCore;
 using MainPage = Govor.Mobile.Pages.MainFlow.MainPage;
 
@@ -28,6 +35,7 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IFriendsRequestQueryService, FriendsRequestQueryService>();
         builder.Services.AddSingleton<IFriendshipApiService, FriendshipApiService>();
         builder.Services.AddSingleton<IJwtProviderService, JwtProviderService>();
+        builder.Services.AddSingleton<IChatLoaderApi, ChatLoaderApi>();
 
         builder.Services.AddSingleton<ITokenStorageService, TokenStorageService>();
         builder.Services.AddSingleton<IBuilderDeviceInfoString, BuilderDeviceInfoString>();
@@ -46,6 +54,11 @@ internal static class ServiceRegistration
         
         builder.Services.AddSingleton<IWasOnlineFormater, WasOnlineFormater>();
         
+        builder.Services.AddSingleton<IFriendsListController, FriendsListController>();
+        builder.Services.AddTransient<IFriendsFactory, FriendsFactory>();
+        builder.Services.AddTransient<IFriendsRealtimeService, FriendsRealtimeService>();
+        
+        
         // Profiles
         builder.Services.AddSingleton<IProfileApiClient, ProfileApiClient>();
         builder.Services.AddSingleton<IUserProfileService, UserProfileService>();
@@ -56,16 +69,25 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IDescriptionService, DescriptionService>();
         builder.Services.AddSingleton<IMaxDescriptionLengthProvider, MaxDescriptionLengthProvider>();
         builder.Services.AddSingleton<IDeviceSessionManagerService, DeviceSessionManagerService>();
+
+        builder.Services.AddSingleton<IMessagesRepository, MessagesRepository>(); // Message repository
         
         builder.Services.AddScoped<IAvatarStoragePath, AvatarStoragePathService>();
         builder.Services.AddScoped<IUserAvatarFileService, UserAvatarFileService>();
         builder.Services.AddScoped<IAvatarLoader, UserAvatarFileService>();
         builder.Services.AddScoped<IAvatarSaver, UserAvatarFileService>();
-
+        
+        // Chat
+        builder.Services.AddSingleton<IChatHeaderService, ChatHeaderService>();
+        builder.Services.AddTransient<IMessagesListController,  MessagesListController>();
+        builder.Services.AddTransient<IMessageStore, MessageStore>();
+        builder.Services.AddScoped<IPrivateChatApi, PrivateChatApi>();
+        
         // Hubs
         builder.Services.AddSingleton<ProfileHub>();
         builder.Services.AddSingleton<PresenceHub>();
         builder.Services.AddSingleton<FriendsHub>();
+        builder.Services.AddSingleton<ChatHub>();
         
         builder.Services.AddSingleton<ProfileHubListener>(); 
         
@@ -78,21 +100,27 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IFriendsHubService>(sp => sp.GetRequiredService<FriendsHub>());
         builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<FriendsHub>());
         
+        builder.Services.AddSingleton<IChatHub>(sp => sp.GetRequiredService<ChatHub>());
+        builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<ChatHub>());
+        
         builder.Services.AddSingleton<IHubInitializer, HubInitializer>();
 
         // ViewModels 
         builder.Services.AddTransient<AvatarViewModel>();
+        
+        builder.Services.AddAutoMapper(typeof(MappingProfile));
         
         return builder;
     }
 
     public static MauiAppBuilder RegisterDatabaseContext(this MauiAppBuilder builder)
     {
-        builder.Services.AddDbContext<GovorDbContext>(optionsAction =>
+        builder.Services.AddDbContextFactory<GovorDbContext>(options =>
         {
             var dbPath = Path.Combine(FileSystem.AppDataDirectory, "govor.db");
-            optionsAction.UseSqlite($"Data Source = {dbPath}");
+            options.UseSqlite($"Data Source={dbPath}");
         });
+        
         return builder;
     }
 
@@ -123,6 +151,12 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<SettingsPage>();
         builder.Services.AddSingleton<SettingsPageModel>();
 
+        builder.Services.AddSingleton<RootPage>();
+        builder.Services.AddSingleton<RootPageViewModel>();
+
+        builder.Services.AddTransient<ChatPageModel>();
+        builder.Services.AddTransient<ChatPage>();
+        
         builder.Services.AddTransient<AuthShell>();
         builder.Services.AddSingleton<MainShell>();
 

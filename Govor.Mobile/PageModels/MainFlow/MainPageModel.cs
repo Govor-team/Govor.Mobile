@@ -1,187 +1,171 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.Models.Responses;
-using Govor.Mobile.Models.Results;
+using CSharpMath.Structures;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.Pages.MainFlow;
-using Govor.Mobile.Services.Api;
-using Govor.Mobile.Services.Hubs;
+using Govor.Mobile.Services.Interfaces.MainPage;
 using Govor.Mobile.Services.Interfaces.Profiles;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
-public partial class MainPageModel : ObservableObject, IDisposable
+public partial class MainPageModel : ObservableObject, IInitializableViewModel, IDisposable
 {
+    public ObservableCollection<UserListItemViewModel> Friends { get; } = new();
+
     [ObservableProperty]
-    private string name = "Гость";
-    
-    [ObservableProperty]
-    private ObservableCollection<UserListItemViewModel> _friends = new();
-    
-    public bool IsLoaded { get; private set; }
-    
-    private Dictionary<Guid, UserListItemViewModel> _initedUsers = new();
+    private string name;
 
-    private readonly IUserProfileService _profileCacheService;
-    private readonly IFriendshipApiService _friendshipApiService;
-    private readonly IProfileApiClient _profileApiClient;
-    private readonly IUserProfileService _profileService; 
-    private readonly IFriendsHubService _friendsHubService;
-    private readonly IServiceProvider _provider;
+    private readonly IFriendsListController _controller;
+    private readonly IUserProfileService _profileService;
 
-
-    public MainPageModel(IUserProfileService profileCacheService,
-        IFriendshipApiService friendshipApiService,
-        IUserProfileService profileService,
-        IProfileApiClient profileApiClient,
-        IFriendsHubService friendsHubService,
-        IServiceProvider provider)
+    public MainPageModel(
+        IFriendsListController controller,
+        IUserProfileService profileService)
     {
-        _profileCacheService = profileCacheService;
+        _controller = controller;
         _profileService = profileService;
-        _friendsHubService = friendsHubService;
-        _friendshipApiService = friendshipApiService;
-        _profileApiClient = profileApiClient;
-        _provider = provider;
+        
+        _controller.FriendAdded += OnFriendAdded;
+        _controller.OnlineStatusChanged += OnOnlineStatusChanged;
     }
+    public bool IsLoaded { get; set; }
 
     public async Task InitAsync()
     {
-        if(IsLoaded)
-            return;
+        var profile = await _profileService.GetCurrentProfile();
+        Name = profile?.Username ?? "Гость";
         
-        _profileService.OnProfileUpdated += userProfile =>
+        await _controller.InitializeAsync();
+        
+        var loaded = _controller.GetLoadedFriends();
+        if (loaded.Any())
         {
-            if (_initedUsers.ContainsKey(userProfile.Id))
-                OnProfileUpdated(userProfile);
-        };
-        
-        _friendsHubService.FriendRequestAccepted += (dto) =>  _ = OnRequestAccepted(dto.RequesterId);
-        _friendsHubService.YourFriendRequestAccepted +=  (dto) => _ = OnYourFriendRequestAccepted(dto.AddresseeId);
-        
-        var currentProfile = await _profileCacheService.GetCurrentProfile();
-        Name = currentProfile?.Username ?? Name;
-
-        var friendsResult = await _friendshipApiService.GetFriends();
-
-        if (!friendsResult.IsSuccess)
-            return;
-
-        var tasks = friendsResult.Value
-            .Select(async r =>
+            await MainThread.InvokeOnMainThreadAsync(() =>
             {
-                var profile = await _profileApiClient.DowloadProfileByUserIdAsync(r.Id);
-
-                return profile; // friendshipId
+                foreach (var friend in loaded)
+                    Friends.Add(friend);
             });
-
-        var results = await Task.WhenAll(tasks);
-
-        foreach (var profile in results)
-        {
-            var vm = GetOrBuildProfile(profile);
-            Friends.Add(vm);
         }
 
         IsLoaded = true;
     }
-
-    private void AddProfileToViewList(UserProfileDto profile)
+    
+    private void OnFriendAdded(UserListItemViewModel vm)
     {
-        Application.Current?.Dispatcher.Dispatch(() =>
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            var vm = GetOrBuildProfile(profile);
             if (!Friends.Contains(vm))
                 Friends.Add(vm);
         });
     }
-    
-    private async Task OnYourFriendRequestAccepted(Guid addresseeId)
-    {
-        if (_initedUsers.ContainsKey(addresseeId))
-            return;
 
-        var profile = await _profileApiClient.DowloadProfileByUserIdAsync(addresseeId);
-        AddProfileToViewList(profile);
-    }
-    
-    private async Task OnRequestAccepted(Guid requesterId)
+    private void OnOnlineStatusChanged(Guid id, bool isOnline)
     {
-        if (_initedUsers.ContainsKey(requesterId))
-            return;
-        
-        var profile = await _profileApiClient.DowloadProfileByUserIdAsync(requesterId);
-        AddProfileToViewList(profile);
-    }
-    
-    private UserListItemViewModel GetOrBuildProfile(UserProfileDto profile)
-    {
-        if (_initedUsers.TryGetValue(profile.Id, out var existing))
-            return existing;
-
-        var vm = BuildByProfile(profile);
-        _initedUsers[profile.Id] = vm;
-        return vm;
-    }
-    
-    private void OnProfileUpdated(UserProfile userProfile)
-    {
-        Application.Current?.Dispatcher.Dispatch(async () =>
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            var userView = _initedUsers[userProfile.Id];
-            await userView.Avatar.InitializeAsync(userProfile.Username, userProfile.IconId);
-        
-            userView.Subtitle =  userProfile.Description;
-            userView.Title = userProfile.Username;
-            userView.IsOnline = userProfile.IsOnline;
+            var friend = Friends.FirstOrDefault(f => f.UserId == id);
+            if (friend != null)
+                friend.IsOnline = isOnline;
         });
     }
 
-    private UserListItemViewModel BuildByProfile(UserProfileDto profile)
-    {
-        var avatarViewModel = _provider.GetService<AvatarViewModel>();
-        avatarViewModel?.InitializeAsync(profile.Username, profile.IconId);
-        
-        var userView = new UserListItemViewModel(
-            avatarViewModel,
-            null,
-            profile.Id)
-        {
-            Title = profile.Username,
-            Subtitle = profile.Description ?? string.Empty,
-            IsOnline = profile.IsOnline,
-        };
-        
-        _initedUsers[userView.UserId] = userView;
-        
-        return userView;
-    }
-    
-    
-    
-    [RelayCommand]
-    public async Task OpenChatWithUser(UserListItemViewModel user)
-    {
-        
-    }
-    
     [RelayCommand]
     private async Task SettingsAsync()
     {
+        if (Shell.Current == null)
+        {
+            await LogExceptionAsync("Shell.Current == null", "SettingsAsync");
+            await AppShell.DisplayException("Shell.Current == null");
+            return;
+        }
+    
         try
         {
-            await Shell.Current.GoToAsync($"{nameof(SettingsPage)}", true);
+            await Shell.Current.GoToAsync(nameof(SettingsPage));
         }
         catch (Exception ex)
         {
-            await AppShell.DisplayException($"{ex.Message}");
+            await LogExceptionAsync(ex, "SettingsAsync");
+            await AppShell.DisplayException(ex.ToString());
         }
+    }
+    
+    /// <summary>
+    /// Логирование исключений в файл
+    /// </summary>
+    private async Task LogExceptionAsync(Exception ex, string methodName)
+    {
+        try
+        {
+            var log = new StringBuilder();
+            log.AppendLine("=== Ошибка ===");
+            log.AppendLine($"Время: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            log.AppendLine($"Метод: {methodName}");
+            log.AppendLine($"Сообщение: {ex.Message}");
+            log.AppendLine($"Источник: {ex.Source}");
+            log.AppendLine($"Стек-трейс: {ex.StackTrace}");
+    
+            if (ex.InnerException != null)
+            {
+                log.AppendLine("--- Внутреннее исключение ---");
+                log.AppendLine($"Сообщение: {ex.InnerException.Message}");
+                log.AppendLine($"Стек-трейс: {ex.InnerException.StackTrace}");
+            }
+    
+            // Путь к папке загрузок (кроссплатформенно)
+            string folderPath;
+    
+    #if ANDROID
+            folderPath = Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryDownloads)?.AbsolutePath;
+    #elif IOS
+            folderPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+    #elif WINDOWS
+            folderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+    #else
+            folderPath = FileSystem.AppDataDirectory;
+    #endif
+    
+            if (!Directory.Exists(folderPath))
+                Directory.CreateDirectory(folderPath);
+    
+            string fileName = $"Govor_Error_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+            string filePath = Path.Combine(folderPath, fileName);
+    
+            await File.WriteAllTextAsync(filePath, log.ToString());
+            Debug.WriteLine($"[LOG] Ошибка сохранена в: {filePath}");
+        }
+        catch
+        {
+            // Если лог не удаётся записать — молча игнорируем, чтобы не ломать приложение
+        }
+    }
+    
+    /// <summary>
+    /// Перегрузка для строки
+    /// </summary>
+    private Task LogExceptionAsync(string message, string methodName)
+    {
+        return LogExceptionAsync(new Exception(message), methodName);
+    }
+
+    [RelayCommand]
+    private async Task OpenChatWithUser(UserListItemViewModel item)
+    {
+        if (item == null)
+        {
+            //_logger.LogWarning("OpenChatWithUser called with null item");
+            return;
+        }
+
+        await Shell.Current.GoToAsync($"chat?chatId={item.UserId}&isGroup=false", animate: false);
     }
 
     public void Dispose()
     {
-        _friendsHubService.FriendRequestAccepted -= (dto) =>  OnRequestAccepted(dto.RequesterId);
-        _friendsHubService.YourFriendRequestAccepted -= (dto) =>  OnYourFriendRequestAccepted(dto.AddresseeId);
+        _controller.FriendAdded -= OnFriendAdded;
+        _controller.OnlineStatusChanged -= OnOnlineStatusChanged;
     }
 }

@@ -20,6 +20,7 @@
 
         <Grid Grid.Row="2">
             <better:BetterTabView
+                x:Name="BetterTabView"
                 TabBarHeight="35"
                 EnableSwiping="True"
                 Margin="0,0,0,10">

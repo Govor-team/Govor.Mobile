@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sho="http://sharpnado.com"
+             xmlns:tabsLayout="clr-namespace:Govor.Mobile.Pages.MainFlow.Layouts"
+             x:Class="Govor.Mobile.Pages.MainFlow.RootPage"
+             SafeAreaEdges="None"
+             BackgroundColor="#282A37"
+             Padding="0"
+             ControlTemplate="{StaticResource MainPageTemplate}">
+    <Grid SafeAreaEdges="None"
+          Padding="0,10,0,0"
+          BackgroundColor="Transparent">
+
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <sho:ViewSwitcher
+            x:Name="Switcher"
+            Animate="True"
+            SelectedIndex="{Binding SelectedViewModelIndex, Mode=OneWay}">
+
+            <tabsLayout:HomeView BindingContext="{Binding HomePageViewModel}" />
+            <tabsLayout:FriendsView BindingContext="{Binding FriendsPageViewModel}" />
+        </sho:ViewSwitcher>
+
+        <!-- FLOATING TAB BAR -->
+        <Grid VerticalOptions="End"
+              HorizontalOptions="Center"
+              Margin="0,0,0,15"
+              ZIndex="10">
+
+            <!-- GLASS / BACKGROUND -->
+            <Border
+                StrokeThickness="0"
+                Background="#AA282A37"
+                StrokeShape="RoundRectangle 35"
+                Padding="6">
+
+
+                <sho:TabHostView
+                    HeightRequest="60"
+                    WidthRequest="280"
+                    TabType="Fixed"
+                    IsSegmented="True"
+                    CornerRadius="40"
+                    BackgroundColor="Transparent"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Start"
+                    SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
+
+                    <sho:TabHostView.Tabs>
+                        <sho:BottomTabItem
+                            IconSize="34"
+                            IconImageSource="chat_icon.png"
+                            SelectedTabColor="#5FA8FF" />
+
+                        <sho:BottomTabItem
+                            IconSize="34"
+                            IconImageSource="friends_icon.png"
+                            SelectedTabColor="#5FA8FF" />
+
+                        <sho:BottomTabItem
+                            IconSize="34"
+                            IconImageSource="call_icon.png"
+                            SelectedTabColor="#5FA8FF" />
+                    </sho:TabHostView.Tabs>
+
+                </sho:TabHostView>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

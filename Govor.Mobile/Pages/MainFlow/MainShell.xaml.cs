@@ -15,5 +15,7 @@ public partial class MainShell : Shell
         _listener = listener;
 
         Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage));
+        Routing.RegisterRoute("chat", typeof(ChatPage));
+
     }
 }

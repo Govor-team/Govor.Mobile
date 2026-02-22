@@ -17,10 +17,12 @@ public class MessagesListController : IMessagesListController, IDisposable
     private readonly ILogger<MessagesListController> _logger;
     private readonly IMapper _mapper;
     private bool _initialized = false;
-    public ObservableCollection<MessagesViewModel> Messages { get; private set; } = new();
+
+    public ObservableRangeCollection<MessagesViewModel> Messages { get; private set; } = new();
 
     private Guid _currentChatId;
     private Guid _myId;
+    private bool _isGroup;
     
     public MessagesListController(
         IMessagesRepository repository,
@@ -45,40 +47,64 @@ public class MessagesListController : IMessagesListController, IDisposable
         _repository.OnNewMessage += OnNewMessageReceived;
         _repository.OnMessageUpdated += OnMessageUpdated;
         _repository.OnMessageDeleted += OnMessageDeleted;
+        _isGroup = isGroup;
         
         // 1. Подгружаем локальные данные
         var localMessages = await _repository.GetMessagesLocalAsync(chatId, group: isGroup);
         
         Messages.Clear();
         
-        foreach (var msg in localMessages.OrderBy(x => x.SentAt))
-        {
-            // Передаем myId в контекст каждого маппинга
-            var vm = _mapper.Map<MessagesViewModel>(msg, opt => 
+        var viewModels = localMessages
+            .OrderBy(x => x.SentAt)
+            .Select(msg => _mapper.Map<MessagesViewModel>(msg, opt => 
             {
                 opt.Items["CurrentUserId"] = _myId;
-            });
+            }))
+            .ToList();
 
-            MainThread.BeginInvokeOnMainThread(() => 
-            {
-                if(!Messages.Contains(vm))
-                    Messages.Add(vm);
-            });
-        }
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            Messages.Clear();
+            Messages.AddRange(viewModels);
+        });
 
         _initialized = true;
         
         // 2. Запускаем фоновую синхронизацию
         _ = _repository.SyncChatAsync(chatId, isGroup);
     }
+    
+    public async Task<List<MessagesViewModel>> LoadOlderMessagesAsync(Guid chatId, Guid? oldestMessageId = null)
+    {
+        // 1. Подгружаем локальные данные
+       var localMessages = await _repository.LoadHistoryAsync(chatId, oldestMessageId, group: _isGroup);
+       
+       var activeIds = new HashSet<Guid>(Messages.Select(x => x.Id));
+        
+       var viewModels = localMessages
+            .OrderBy(x => x.SentAt)
+            .Where(x => !activeIds.Contains(x.Id))
+            .Select(msg => _mapper.Map<MessagesViewModel>(msg, opt => 
+            {
+                opt.Items["CurrentUserId"] = _myId;
+            }))
+            .ToList();
+       
+       await MainThread.InvokeOnMainThreadAsync(() =>
+       {
+           Messages.InsertRange(0, viewModels);
+       });
+        
+       return viewModels;
+    }
 
-    public async Task<Result<bool>> SendAsync(Guid chatId, string text, bool isGroup)
+    public async Task<Result<bool>> SendAsync(Guid chatId, string text)
     {
         var request = new MessageRequest 
         { 
             RecipientId = chatId, 
             EncryptedContent = text,
-            RecipientType = isGroup ? RecipientType.Group : RecipientType.User
+            RecipientType = _isGroup ? RecipientType.Group : RecipientType.User
         };
         
         await _repository.SendMessageAsync(request);
@@ -100,11 +126,10 @@ public class MessagesListController : IMessagesListController, IDisposable
             {
                 opt.Items["CurrentUserId"] = _myId;
             });
-
+            
             Messages.Add(vm);
         });
     }
-
     
     private void OnMessageUpdated(MessageResponse msg)
     {

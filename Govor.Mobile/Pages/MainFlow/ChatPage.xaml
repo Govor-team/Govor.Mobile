@@ -22,6 +22,7 @@
         <!-- CONTENT -->
         <Grid Grid.Row="1" SafeAreaEdges="All" HorizontalOptions="End">
             <Grid>
+                <!-- MESSAGES -->
                 <CollectionView
                     x:Name="CollectionView"
                     ItemsSource="{Binding Messages}"
@@ -31,7 +32,15 @@
                     <CollectionView.Footer>
                         <Grid HeightRequest="90" />
                     </CollectionView.Footer>
-
+                    
+                    <CollectionView.Header>
+                        <ActivityIndicator
+                            IsVisible="{Binding IsLoadingMore}"
+                            IsRunning="{Binding IsLoadingMore}"
+                            Color="White"
+                            Margin="0,10"/>
+                    </CollectionView.Header>
+                    
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="vm:MessagesViewModel">
                             <Grid Padding="8" ColumnDefinitions="Auto,*">
@@ -52,14 +61,13 @@
                                         StrokeShape="RoundRectangle 18"
                                         Padding="8"
                                         HorizontalOptions="{Binding BubbleAlignment}"
+                                        MaximumWidthRequest="{OnPlatform iOS=350, Android=350, WinUI=400}"
                                         StrokeThickness="0">
 
                                     <StackLayout Spacing="4">
                                         <markdown:MarkdownView MarkdownText="{Binding Text}"
                                                                Style="{StaticResource DefaultMarkdownStyle}"
                                                                ImageAspect="AspectFill"
-                                                               MaximumHeightRequest="500"
-                                                               MaximumWidthRequest="500"
                                                                IsVisible="{Binding Text, Converter={toolkit:IsStringNotNullOrEmptyConverter}}" />
 
                                         <Label Text="{Binding Time}"
@@ -73,10 +81,20 @@
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
-
+                    
+                    <CollectionView.EmptyView>
+                        <Label
+                            Text="Начните диалог 👋"
+                            TextColor="MediumPurple"
+                            FontAttributes="Bold"
+                            FontSize="25"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"
+                            IsVisible="{Binding HasMessages, Converter={toolkit:InvertedBoolConverter}}"/>
+                    </CollectionView.EmptyView>
                 </CollectionView>
             </Grid>
-            <!-- MESSAGES -->
+
 
 
             <!-- Input -->
@@ -96,7 +114,7 @@
                         <Editor
                             x:Name="MessageEditor"
                             Text="{Binding MessageText}"
-                            Placeholder="Сообщение"
+                            Placeholder="Сообщение..."
                             TextColor="White"
                             PlaceholderColor="#999"
                             AutoSize="TextChanges"

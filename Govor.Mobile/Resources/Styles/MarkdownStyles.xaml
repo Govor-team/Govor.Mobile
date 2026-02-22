@@ -3,7 +3,7 @@
                     xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown">
     <Style x:Key="DefaultMarkdownStyle"
            TargetType="markdown:MarkdownView">
-
+        
         <Setter Property="LineBreakModeText" Value="WordWrap" />
         <Setter Property="LineBreakModeHeader" Value="WordWrap" />
 

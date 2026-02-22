@@ -71,7 +71,7 @@ public class MessagesRepository : IMessagesRepository
         _isInitialized = true;
     }
 
-    public async Task<List<MessageResponse>> GetMessagesLocalAsync(Guid chatId, int count = 50, bool group = false)
+    public async Task<List<MessageResponse>> GetMessagesLocalAsync(Guid chatId, int count = 50, bool group = false, Guid startMessage = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         
@@ -87,10 +87,10 @@ public class MessagesRepository : IMessagesRepository
 
         if (!entities.Any())
         {
-            _ = SyncChatAsync(chatId, group);
+            _ = SyncChatAsync(chatId, group, after: count);
         }
 
-        return _mapper.Map<List<MessageResponse>>(entities);;
+        return _mapper.Map<List<MessageResponse>>(entities);
     }
 
     // ЛОГИКА ИЗМЕНЕНА ЗДЕСЬ
@@ -110,17 +110,17 @@ public class MessagesRepository : IMessagesRepository
         }
     }
 
-    public async Task SyncChatAsync(Guid chatId, bool group = false)
+    public async Task SyncChatAsync(Guid chatId, bool group = false, int after = 50)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-
+        
         var lastMsg = await context.Messages
             .AsNoTracking()
             .Where(x => x.ChatId == chatId)
             .OrderByDescending(x => x.SentAt)
             .FirstOrDefaultAsync();
 
-        var query = new MessageQuery { StartMessageId = lastMsg?.Id, After = 50 };
+        var query = new MessageQuery { StartMessageId = lastMsg?.Id, After = after };
 
         var remoteResult = group 
             ? await _api.GetGroupMessages(chatId, query) 
@@ -132,21 +132,85 @@ public class MessagesRepository : IMessagesRepository
         }
     }
 
-    public async Task LoadHistoryAsync(Guid chatId, Guid oldestMessageId, bool group = false)
+    public async Task<List<MessageResponse>> LoadHistoryAsync(
+        Guid chatId,
+        Guid? oldestMessageId,
+        int before = 50,
+        bool group = false)
     {
-        var query = new MessageQuery { StartMessageId = oldestMessageId, Before = 30 };
+        await using var context = await _contextFactory.CreateDbContextAsync();
 
-        var result = group 
-            ? await _api.GetGroupMessages(chatId, query) 
+        DateTime? oldestSentAt = null;
+
+        if (oldestMessageId.HasValue)
+            oldestSentAt = await context.Messages
+                .Where(x => x.Id == oldestMessageId.Value)
+                .Select(x => x.SentAt)
+                .FirstOrDefaultAsync();
+
+        // ----------------------------
+        // 1️⃣ Попытка загрузить из БД
+        // ----------------------------
+
+        var localQuery = context.Messages
+            .AsNoTracking()
+            .Where(x => x.ChatId == chatId);
+
+        localQuery = group
+            ? localQuery.Where(x => x.RecipientType == RecipientType.Group)
+            : localQuery.Where(x => x.RecipientType == RecipientType.User);
+
+        if (oldestSentAt.HasValue)
+            localQuery = localQuery.Where(x => x.SentAt < oldestSentAt.Value);
+
+        var localEntities = await localQuery
+            .OrderByDescending(x => x.SentAt)
+            .Take(before)
+            .ToListAsync();
+
+        // Если достаточно локальных данных — возвращаем их
+        if (localEntities.Count == before) return _mapper.Map<List<MessageResponse>>(localEntities);
+
+        // ----------------------------
+        // 2️⃣ Запрос на сервер
+        // ----------------------------
+
+        var query = new MessageQuery
+        {
+            StartMessageId = oldestMessageId,
+            Before = before
+        };
+
+        var result = group
+            ? await _api.GetGroupMessages(chatId, query)
             : await _api.GetUserMessages(chatId, query);
 
-        if (result.IsSuccess && result.Value?.Any() == true)
-        {
-            await SaveBatchAsync(result.Value, chatId);
-        }
+        if (!result.IsSuccess || result.Value == null || !result.Value.Any())
+            return _mapper.Map<List<MessageResponse>>(localEntities);
+
+        // ----------------------------
+        // 3️⃣ Сохраняем новые сообщения
+        // ----------------------------
+
+        await SaveBatchAsync(result.Value, chatId, notify: false);
+
+        // ----------------------------
+        // 4️⃣ Объединяем и удаляем дубли
+        // ----------------------------
+
+        var merged = localEntities
+            .Select(x => _mapper.Map<MessageResponse>(x))
+            .Concat(result.Value)
+            .GroupBy(x => x.Id)
+            .Select(g => g.First())
+            .OrderByDescending(x => x.SentAt)
+            .Take(before)
+            .ToList();
+
+        return merged;
     }
 
-    private async Task SaveBatchAsync(List<MessageResponse> messages, Guid chatId)
+    private async Task SaveBatchAsync(List<MessageResponse> messages, Guid chatId, bool notify = true)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var newMessages = new List<LocalMessage>();
@@ -164,9 +228,15 @@ public class MessagesRepository : IMessagesRepository
             newMessages.Add(entity);
         }
         
+        newMessages = newMessages.OrderBy(x => x.SentAt).ToList();
+        
         if (newMessages.Any())
         {
             await context.SaveChangesAsync();
+            
+            if(!notify)
+                return;
+            
             foreach (var entity in newMessages)
             {
                 NotifyNewMessage(entity);

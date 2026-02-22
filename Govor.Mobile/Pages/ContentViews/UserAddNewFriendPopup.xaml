@@ -43,6 +43,7 @@
                        FontSize="120"
                        TextColor="White"
                        FontAttributes="Bold"
+                       FontFamily="CirilicOld"
                        HorizontalOptions="Center"
                        Margin="0,-150, 0, 0"
                        VerticalOptions="Center" />
@@ -58,14 +59,14 @@
             </BoxView>
 
             <Border
-                WidthRequest="36"
-                HeightRequest="36"
-                Background="#40000000"
-                HorizontalOptions="Start"
-                VerticalOptions="Start"
-                StrokeThickness="0"
-                ZIndex="1"
-                Margin="16">
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Background="#40000000"
+                    HorizontalOptions="Start"
+                    VerticalOptions="Start"
+                    StrokeThickness="0"
+                    ZIndex="1"
+                    Margin="16">
                 <Border.StrokeShape>
                     <RoundRectangle CornerRadius="18" />
                 </Border.StrokeShape>
@@ -99,11 +100,12 @@
 
                     <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
                         <Label
-                                Text="{Binding Title}"
-                                FontSize="22"
-                                FontAttributes="Bold"
-                                TextColor="White"
-                                VerticalOptions="Center" />
+                                    Text="{Binding Title}"
+                                    FontSize="24"
+                                    FontFamily="CirilicOld"
+                                    FontAttributes="Bold"
+                                    TextColor="White"
+                                    VerticalOptions="Center" />
 
                         <contentViews:TagView
                                 BindingContext="{Binding Tag}"

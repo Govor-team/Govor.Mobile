@@ -59,6 +59,10 @@
 
 	<ItemGroup>
 	  <None Remove="launchSettings.json" />
+	  <None Update="Platforms\Android\Resources\xml\file_paths.xml">
+	    <SubType>Designer</SubType>
+	    <Generator>MSBuild:UpdateGeneratedFiles</Generator>
+	  </None>
 	</ItemGroup>
 
 
@@ -119,6 +123,10 @@
 	    <DependentUpon>UserIncommingFriendPopup.xaml</DependentUpon>
 	    <SubType>Code</SubType>
 	  </Compile>
+	  <Compile Update="Pages\MainFlow\ContentViews\CustomBottomBarItem.xaml.cs">
+	    <DependentUpon>CustomBottomBar.xaml</DependentUpon>
+	    <SubType>Code</SubType>
+	  </Compile>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -172,6 +180,9 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\ContentViews\UserIncomingFriendPopup.xaml">
+	    <SubType>Designer</SubType>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\MainFlow\ContentViews\CustomBottomBarItem.xaml">
 	    <SubType>Designer</SubType>
 	  </MauiXaml>
 	</ItemGroup>

@@ -13,7 +13,8 @@
 
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,16">
             <Label Text="{Binding Name}"
-                   FontSize="28"
+                   FontSize="35"
+                   FontFamily="CirilicOld"
                    FontAttributes="Bold"
                    TextColor="White"
                    VerticalOptions="Center"
@@ -31,7 +32,7 @@
                     <sho:MaterialFrame
                         MaterialTheme="AcrylicBlur"
                         MaterialBlurStyle="Dark"
-                        AndroidBlurRadius="15"
+                        AndroidBlurRadius="10"
                         WinUIHostBackdropBlur="True"
                         CornerRadius="30"
                         Elevation="2">
@@ -47,7 +48,7 @@
                     <sho:MaterialFrame
                         MaterialTheme="AcrylicBlur"
                         MaterialBlurStyle="Dark"
-                        AndroidBlurRadius="15"
+                        AndroidBlurRadius="10"
                         WinUIHostBackdropBlur="True"
                         CornerRadius="30"
                         Elevation="2">

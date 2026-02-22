@@ -11,15 +11,15 @@ public class ProfileHub : IProfileHubService
     private readonly HubConnection _hubConnection;
     private readonly ILogger<ProfileHub> _logger;
     private readonly IJwtProviderService _jwtProvider;
-    private readonly IServerIpProvader _ipProvider;
+    private readonly IServerIpProvider _ipProvider;
     
     public event Action<Guid, DescriptionUpdatePayload>? OnDescriptionUpdated;
     public event Action<Guid, AvatarUpdatePayload>? OnAvatarUpdated;
 
-    public ProfileHub(IJwtProviderService jwtProvider, IServerIpProvader ipProvader,  ILogger<ProfileHub> logger)
+    public ProfileHub(IJwtProviderService jwtProvider, IServerIpProvider ipProvider,  ILogger<ProfileHub> logger)
     {
         _logger = logger;
-        _ipProvider = ipProvader;
+        _ipProvider = ipProvider;
         _jwtProvider = jwtProvider; 
         
         _hubConnection = new HubConnectionBuilder()

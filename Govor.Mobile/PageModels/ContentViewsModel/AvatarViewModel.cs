@@ -36,20 +36,22 @@ public partial class AvatarViewModel : ObservableObject
     public async Task InitializeAsync(string? userName, Guid? iconId)
     {
         ApplyDefaultAvatar(userName);
-
-        if (!iconId.HasValue || iconId.Value == Guid.Empty)
-            return;
-
-        await TryLoadAvatarAsync(iconId.Value);
+        
+        if (iconId.HasValue && iconId.Value != Guid.Empty)
+        {
+           await TryLoadAvatarAsync(iconId.Value);
+        }
     }
 
     private void ApplyDefaultAvatar(string? userName)
     {
-        var avatar = _avatarGenerator.GenerateAvatar(userName ?? string.Empty);
+        var nameForAvatar = (userName ?? string.Empty).Trim();
+
+        var avatar = _avatarGenerator.GenerateAvatar(nameForAvatar);
 
         AvatarText = avatar.Text;
         AvatarBackgroundColor = avatar.BackgroundColor;
-        AvatarImage = null;
+        AvatarImage = null;           
     }
 
     private async Task TryLoadAvatarAsync(Guid avatarId)

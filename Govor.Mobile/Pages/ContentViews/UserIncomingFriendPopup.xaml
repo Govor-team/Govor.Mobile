@@ -40,6 +40,7 @@
 
                 <Label Text="{Binding Avatar.AvatarText}"
                        FontSize="120"
+                       FontFamily="CirilicOld"
                        TextColor="White"
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
@@ -112,7 +113,8 @@
                             <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
                                 <Label
                                     Text="{Binding Title}"
-                                    FontSize="22"
+                                    FontSize="24"
+                                    FontFamily="CirilicOld"
                                     FontAttributes="Bold"
                                     TextColor="White"
                                     VerticalOptions="Center" />

@@ -1,0 +1,59 @@
+﻿<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.MainFlow.ContentViews"
+             x:Class="Govor.Mobile.Pages.MainFlow.ContentViews.FloatingBottomBarView"
+             x:Name="RootElement">
+     <Grid IgnoreSafeArea="True" 
+                   InputTransparent="True" 
+                   VerticalOptions="Fill" 
+                   HorizontalOptions="Fill">
+
+        <VerticalStackLayout 
+            VerticalOptions="End"
+            HorizontalOptions="Fill"
+            Margin="16,0,16,16"
+            Spacing="12"
+            InputTransparent="True"> 
+            <Border IsVisible="{Binding HasNewUpdate}" 
+                    InputTransparent="False" 
+                    Background="#0055CC" 
+                    StrokeThickness="0" 
+                    StrokeShape="RoundRectangle 20" 
+                    Padding="16,10" 
+                    HorizontalOptions="Center">
+                <HorizontalStackLayout Spacing="10">
+                    <Image Source="update_icon.png" HeightRequest="20" WidthRequest="20"/>
+                    <Label Text="Доступно обновление" TextColor="White" VerticalOptions="Center"/>
+                    <Button Text="Скачать" Command="{Binding DownloadUpdateCommand}" HeightRequest="30" Padding="10,0"/>
+                </HorizontalStackLayout>
+            </Border>
+
+            <Border InputTransparent="False" 
+                    StrokeThickness="0" 
+                    Background="#E621232F" 
+                    StrokeShape="RoundRectangle 40" 
+                    HeightRequest="65">
+                
+                <Grid ColumnDefinitions="*, *, *">
+                    <contentViews:CustomBottomBarItem
+                        Grid.Column="0" Title="Чаты" Icon="chat_icon.png"
+                        TabIndex="0"
+                        TabCommand="{Binding TabCommand, Source={x:Reference RootElement}}"
+                        IsSelected="{Binding SelectedIndex, Source={x:Reference RootElement}, Converter={StaticResource IndexToBoolConverter}, ConverterParameter=0}" />
+
+                    <contentViews:CustomBottomBarItem 
+                        Grid.Column="1" Title="Контакты" Icon="friends_icon.png"
+                        TabIndex="1"
+                        TabCommand="{Binding TabCommand, Source={x:Reference RootElement}}"
+                        IsSelected="{Binding SelectedIndex, Source={x:Reference RootElement}, Converter={StaticResource IndexToBoolConverter}, ConverterParameter=1}" />
+
+                    <contentViews:CustomBottomBarItem 
+                        Grid.Column="2" Title="Настройки" Icon="settings_icon.png"
+                        TabIndex="2"
+                        TabCommand="{Binding TabCommand, Source={x:Reference RootElement}}"
+                        IsSelected="{Binding SelectedIndex, Source={x:Reference RootElement}, Converter={StaticResource IndexToBoolConverter}, ConverterParameter=2}" />
+                </Grid>
+            </Border>
+        </VerticalStackLayout>
+    </Grid>
+</ContentView>

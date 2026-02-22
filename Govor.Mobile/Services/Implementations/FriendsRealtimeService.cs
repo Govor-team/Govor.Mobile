@@ -14,6 +14,7 @@ public class FriendsRealtimeService : IFriendsRealtimeService
     public event Func<Guid, string, Task> OnUserDescriptionUpdate;
     public event Func<Guid, Guid, Task> OnUserAvatarUpdate;
     public event Func<Guid, Task> OnFriendAdded;
+    public event Func<Guid, Task> OnFriendRemoved;
 
     public FriendsRealtimeService(
         IProfileHubService profileHub,

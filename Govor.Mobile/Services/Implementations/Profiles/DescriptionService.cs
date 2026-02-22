@@ -26,7 +26,7 @@ public class DescriptionService : IDescriptionService
         {
             var result = await _profileHub.SetDescriptionAsync(description);
 
-            if (!result.Value)
+            if (!result.Value && !string.IsNullOrEmpty(result.ErrorMessage))
             {
                 await AppShell.DisplayException($"Ошибка: {result.ErrorMessage}");
                 return false;

@@ -51,6 +51,7 @@ namespace Govor.Mobile
                     fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
                     fonts.AddFont("SegoeUI-Semibold.ttf", "SegoeSemibold");
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
+                    fonts.AddFont("cyrillicold.ttf", "CirilicOld");
                 })
                 .RegisterDatabaseContext()
                 .RegisterAppServices()

@@ -35,13 +35,13 @@
                                    Padding="15"
                                    Spacing="20"
                                    HorizontalOptions="Center">
-
+            <!--
                 <buttons:SfButton Text="⟳ Повернуть"
                              Clicked="RotateClicked"
                              Background="#00FFFFFF"
                              BackgroundColor="#333" 
                              FontSize="24"
-                             TextColor="White" />
+                             TextColor="White" /> -->
             
                 <buttons:SfButton Text="Сохранить"
                              Clicked="SaveClicked"

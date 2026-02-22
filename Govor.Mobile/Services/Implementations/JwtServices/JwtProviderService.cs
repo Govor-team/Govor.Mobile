@@ -15,7 +15,7 @@ public sealed class JwtProviderService : IJwtProviderService
 
     private readonly ILogger<JwtProviderService> _logger;
     private readonly ITokenStorageService _storageService;
-    private readonly IServerIpProvader _ipProvider;
+    private readonly IServerIpProvider _ipProvider;
     private readonly HttpClient _httpClient;
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -28,12 +28,12 @@ public sealed class JwtProviderService : IJwtProviderService
 
     public JwtProviderService(
         ILogger<JwtProviderService> logger,
-        IServerIpProvader serverIpProvader,
+        IServerIpProvider serverIpProvider,
         ITokenStorageService tokenStorage)
     {
         _logger = logger;
         _storageService = tokenStorage;
-        _ipProvider = serverIpProvader;
+        _ipProvider = serverIpProvider;
         _httpClient = new HttpClient();
     }
 

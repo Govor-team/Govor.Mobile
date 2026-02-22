@@ -30,6 +30,10 @@ internal static class ServiceRegistration
 {
     public static MauiAppBuilder RegisterAppServices(this MauiAppBuilder builder)
     {
+        builder.Services.AddSingleton<IAppStartupOrchestrator, AppStartupOrchestrator>();
+        
+        builder.Services.AddSingleton<NetworkAvailabilityService>();
+        
         builder.Services.AddSingleton<IApiClient, ApiClient>();
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<IFriendsRequestQueryService, FriendsRequestQueryService>();
@@ -47,7 +51,7 @@ internal static class ServiceRegistration
 
         builder.Services.AddSingleton<IMediaLoaderService, MediaLoaderService>();
 
-        builder.Services.AddSingleton<IServerIpProvader, ServerIpProvader>();
+        builder.Services.AddSingleton<IServerIpProvider, ServerIpProvider>();
         builder.Services.AddSingleton<IPlatformIconService, PlatformIconService>();
         
         builder.Services.AddSingleton<IBackgroundImageService, BackgroundService>();
@@ -63,8 +67,9 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IProfileApiClient, ProfileApiClient>();
         builder.Services.AddSingleton<IUserProfileService, UserProfileService>();
         
-        builder.Services.AddScoped<ICurrentUserAvatarService, CurrentUserAvatarService>();
-    
+        builder.Services.AddSingleton<ICurrentUserAvatarService, CurrentUserAvatarService>();
+        builder.Services.AddSingleton<IAvatartVMCreater, UserAvatartVMCreater>();
+        
         builder.Services.AddSingleton<IDefaultAvatarGenerator, DefaultAvatarGenerator>();
         builder.Services.AddSingleton<IDescriptionService, DescriptionService>();
         builder.Services.AddSingleton<IMaxDescriptionLengthProvider, MaxDescriptionLengthProvider>();
@@ -103,8 +108,15 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IChatHub>(sp => sp.GetRequiredService<ChatHub>());
         builder.Services.AddSingleton<IHubClient>(sp => sp.GetRequiredService<ChatHub>());
         
-        builder.Services.AddSingleton<IHubInitializer, HubInitializer>();
-
+        // Hub Initializer 
+        builder.Services.AddSingleton<HubInitializer>();
+        builder.Services.AddSingleton<IHubInitializer>(sp => sp.GetRequiredService<HubInitializer>());
+        builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<HubInitializer>());
+       
+        builder.Services.AddSingleton<UpdateService>();
+        builder.Services.AddSingleton<IUpdateService>(sp => sp.GetRequiredService<UpdateService>());
+        builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<UpdateService>());
+        
         // ViewModels 
         builder.Services.AddTransient<AvatarViewModel>();
         
@@ -144,7 +156,8 @@ internal static class ServiceRegistration
 
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<MainPageModel>();
-
+        builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<MainPageModel>());
+        
         builder.Services.AddSingleton<FriendsSearchPage>();
         builder.Services.AddSingleton<FriendsSearchPageModel>();
 

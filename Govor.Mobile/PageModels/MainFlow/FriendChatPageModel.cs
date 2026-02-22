@@ -39,8 +39,11 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     
     [ObservableProperty] private string messageText;
     [ObservableProperty] private bool canWrite = true;
+    
+    [ObservableProperty] private bool isLoadingMore;
+    [ObservableProperty] private bool hasMoreMessages = true;
 
-    public ObservableCollection<MessagesViewModel> Messages => _controller.Messages;
+    public ObservableRangeCollection<MessagesViewModel> Messages => _controller.Messages;
     [ObservableProperty] private ChatHeaderViewModel header;
 
     public ChatPageModel(
@@ -137,13 +140,42 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         var textToSend = MessageText;
         MessageText = string.Empty;
 
-        var result = await _controller.SendAsync(ChatId, textToSend, IsGroup);
+        var result = await _controller.SendAsync(ChatId, textToSend);
         
         if (!result.IsSuccess)
         {
             MessageText = textToSend; 
         }
     }
+
+    [RelayCommand]
+    public async Task<int> LoadMoreAsync()
+    {
+        if (IsLoadingMore || !HasMoreMessages)
+            return 0;
+
+        IsLoadingMore = true;
+
+        var oldestMessageId = Messages.FirstOrDefault()?.Id;
+
+        if (oldestMessageId is null)
+        {
+            IsLoadingMore = false;
+            return 0;
+        }
+        
+        var result = await _controller.LoadOlderMessagesAsync(ChatId, oldestMessageId);
+
+        if (result.Count == 0)
+        {
+            HasMoreMessages = false;
+        }
+
+        IsLoadingMore = false;
+        
+        return result.Count;
+    }
+
 
     // Очистка при закрытии страницы
     public void Dispose()

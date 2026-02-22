@@ -34,6 +34,7 @@
                             TextTransform="Uppercase"
                             FontSize="50"
                             FontAttributes="Bold"
+                            FontFamily="CirilicOld"
                             Text="{Binding AvatarViewModel.AvatarText}"
                             ImageSource="{Binding AvatarViewModel.AvatarImage}"
                             CornerRadius="75"
@@ -82,8 +83,9 @@
 
                         <Label
                             Text="{Binding UserName}"
-                            FontSize="24"
+                            FontSize="26"
                             FontAttributes="Bold"
+                            FontFamily="CirilicOld"
                             TextColor="White"
                             VerticalTextAlignment="Center">
 
@@ -147,7 +149,7 @@
                             Grid.Column="0"
                             Text="{Binding DescriptionCounter}"
                             TextColor="{Binding DescriptionCounterColor}"
-                            FontSize="13"
+                            FontSize="14"
                             HorizontalOptions="End"
                             VerticalOptions="Center"
                             Margin="0,0,8,0" />

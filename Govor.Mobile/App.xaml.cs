@@ -1,67 +1,96 @@
-﻿using Govor.Mobile.Data;
-using Govor.Mobile.Pages.AuthFlow;
+﻿using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
-using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
-namespace Govor.Mobile
+namespace Govor.Mobile;
+
+public partial class App : Application
 {
-    public partial class App : Application
-    {
-        private readonly IAuthService _authService;
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IHubInitializer _initializer;
-        public App(IAuthService authService, IServiceProvider serviceProvider, IHubInitializer initializer, IBackgroundImageService backgroundService)
-        {
-            InitializeComponent();
-            
-            _authService = authService;
-            _serviceProvider = serviceProvider;
-            _initializer = initializer; 
-            backgroundService.LoadCurrent();
-            
-            MainPage = new ContentPage
-            {
-                Content = new ActivityIndicator
-                {
-                    IsRunning = true,
-                    HorizontalOptions = LayoutOptions.Center,
-                    VerticalOptions = LayoutOptions.Center
-                },
-                BackgroundColor = Color.FromArgb("#282A37")
-            };
-        }
+    private readonly IAuthService _authService;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IAppStartupOrchestrator _initializer;
 
-        protected override async void OnStart()
-        {
-            _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-            await _authService.InitializeAsync();
-            
-            using var scope = _serviceProvider.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<GovorDbContext>();
-            await db.Database.MigrateAsync();   // применяет миграции, создаёт таблицы
-        }
+    public App(
+        IAuthService authService,
+        IServiceProvider serviceProvider,
+        IBackgroundImageService backgroundService,
+        IAppStartupOrchestrator startupOrchestrator)
+    {
+        InitializeComponent();
+
+        _authService = authService;
+        _serviceProvider = serviceProvider;
+        _initializer = startupOrchestrator;
         
-        private void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)
+        backgroundService.LoadCurrent(); 
+
+        // Показываем splash / loader
+        MainPage = new ContentPage
         {
-            MainThread.BeginInvokeOnMainThread(() =>
+            Content = new ActivityIndicator
             {
-                if (isAuthenticated)
-                { 
-                    _initializer.ConnectAllAsync();
-                    MainPage = _serviceProvider.GetRequiredService<MainShell>();
-                    //MainPage = _serviceProvider.GetRequiredService<RootMainPage>();
-                }
-                else
-                {
-                    _initializer.DisconnectAllAsync();
-                    MainPage = _serviceProvider.GetRequiredService<AuthShell>();
-                    // = _serviceProvider.GetRequiredService<MainShell>();
-                }
+                IsRunning = true,
+                HorizontalOptions = LayoutOptions.Center,
+                VerticalOptions = LayoutOptions.Center
+            },
+            BackgroundColor = Color.FromArgb("#282A37")
+        };
+    }
+
+    protected override async void OnStart()
+    {
+        base.OnStart();
+        
+        _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
+
+        try
+        {
+            await _authService.InitializeAsync();
+            // иначе ждём события (токен может быть в процессе refresh)
+        }
+        catch (Exception ex)
+        {
+            // Логируем + показываем ошибку или дефолтный экран
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                await Current.MainPage.DisplayAlertAsync("Ошибка запуска", "Не удалось инициализировать приложение", "OK");
+                // или перейти на страницу с retry
             });
         }
-        
+    }
+
+    private async void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)
+    {
+        // Чтобы избежать множественных вызовов
+        //_authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+
+        await MainThread.InvokeOnMainThreadAsync(async () =>
+        {
+            if (isAuthenticated)
+                await NavigateToAuthenticatedAsync();
+            else
+                MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+        });
+    }
+
+    private async Task NavigateToAuthenticatedAsync()
+    {
+        try
+        {
+            await _initializer.StartAsync();
+            MainPage = _serviceProvider.GetRequiredService<MainShell>();
+        }
+        catch (Exception ex)
+        {
+            await AppShell.DisplayException("Не удалось загрузить основной интерфейс");
+            MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+        }
+    }
+
+    protected override void OnSleep()
+    {
+        // можно отписаться, если нужно
+        // _authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
     }
 }

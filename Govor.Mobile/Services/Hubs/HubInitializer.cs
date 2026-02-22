@@ -2,7 +2,7 @@
 
 namespace Govor.Mobile.Services.Hubs;
 
-public class HubInitializer : IHubInitializer
+public class HubInitializer : IHubInitializer, IConnectivityChanged
 {
     private readonly IEnumerable<IHubClient> _clients;
     private readonly ILogger<HubInitializer> _logger;
@@ -42,4 +42,8 @@ public class HubInitializer : IHubInitializer
             }
         }
     }
+
+    public Task OnInternetConnectedAsync() => ConnectAllAsync();
+
+    public Task OnInternetDisconnectedAsync() => DisconnectAllAsync();
 }

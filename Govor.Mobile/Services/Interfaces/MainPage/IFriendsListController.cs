@@ -7,6 +7,7 @@ public interface IFriendsListController : IDisposable
 {
     public event Action? FriendsLoaded;           // опционально — для уведомления
     public event Action<UserListItemViewModel>? FriendAdded;
+    public event Action<UserListItemViewModel>? FriendRemoved;
     public event Action<Guid, bool>? OnlineStatusChanged;
     Task InitializeAsync();
     public IReadOnlyList<UserListItemViewModel> GetLoadedFriends();

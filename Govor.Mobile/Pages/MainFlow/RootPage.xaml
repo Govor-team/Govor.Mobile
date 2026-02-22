@@ -23,50 +23,88 @@
             <tabsLayout:FriendsView BindingContext="{Binding FriendsPageViewModel}" />
         </sho:ViewSwitcher>
 
-        <!-- FLOATING TAB BAR -->
+        <!--      
+        <contentViews:FloatingBottomBarView 
+            SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}"
+            TabCommand="{Binding ChangeTabCommand}"
+            ZIndex="10" />
+           -->
+
         <Grid VerticalOptions="End"
-              HorizontalOptions="Center"
-              Margin="0,0,0,15"
-              ZIndex="10">
+              HorizontalOptions="Fill"
+              Margin="16,0,16,16"
+              ZIndex="10"
+              RowDefinitions="Auto, Auto">
+            <VerticalStackLayout Spacing="10" Grid.Row="0">
 
-            <!-- GLASS / BACKGROUND -->
-            <Border
-                StrokeThickness="0"
-                Background="#AA282A37"
-                StrokeShape="RoundRectangle 35"
-                Padding="6">
+                <Border Background="Transparent"
+                        StrokeThickness="0"
+                        IsVisible="{Binding HasNewUpdate}"
+                        HorizontalOptions="Center">
 
+                    <Border.Shadow>
+                        <Shadow Brush="Black" Offset="0,4" Radius="8" Opacity="0.3" />
+                    </Border.Shadow>
 
-                <sho:TabHostView
-                    HeightRequest="60"
-                    WidthRequest="280"
-                    TabType="Fixed"
-                    IsSegmented="True"
-                    CornerRadius="40"
-                    BackgroundColor="Transparent"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Start"
-                    SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
+                    <sho:MaterialFrame
+                        MaterialTheme="AcrylicBlur"
+                        MaterialBlurStyle="Dark"
+                        AndroidBlurRadius="15"
+                        CornerRadius="20"
+                        Padding="16,8"
+                        VerticalOptions="Center">
 
-                    <sho:TabHostView.Tabs>
-                        <sho:BottomTabItem
-                            IconSize="34"
-                            IconImageSource="chat_icon.png"
-                            SelectedTabColor="#5FA8FF" />
+                    <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+                        <Image Source="download_icon.png"
+                               HeightRequest="22"
+                               WidthRequest="22"
+                               VerticalOptions="Center">
+                        </Image>
 
-                        <sho:BottomTabItem
-                            IconSize="34"
-                            IconImageSource="friends_icon.png"
-                            SelectedTabColor="#5FA8FF" />
+                        <Label Text="Доступна новая версия"
+                               TextColor="White"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               VerticalOptions="Center" />
 
-                        <sho:BottomTabItem
-                            IconSize="34"
-                            IconImageSource="call_icon.png"
-                            SelectedTabColor="#5FA8FF" />
-                    </sho:TabHostView.Tabs>
+                        <Button Text="Скачать"
+                                FontSize="18"
+                                FontFamily="CirilicOld"
+                                FontAttributes="Bold"
+                                TextColor="White" 
+                                BackgroundColor="#00CC42"
+                                CornerRadius="12"
+                                HeightRequest="32"
+                                Padding="15,0"
+                                Command="{Binding DownloadUpdateCommand}" />
+                    </HorizontalStackLayout>
+                    </sho:MaterialFrame>
+                </Border>
+                
+                <Border StrokeThickness="0"
+                        Background="#AA282A37"
+                        StrokeShape="RoundRectangle 20"
+                        HeightRequest="60">
 
-                </sho:TabHostView>
-            </Border>
+                    <sho:TabHostView
+                        TabType="Fixed"
+                        IsSegmented="True"
+                        CornerRadius="40"
+                        BackgroundColor="Transparent"
+                        VerticalOptions="Center"
+                        HorizontalOptions="Fill"
+                        TouchColor="{StaticResource Primary}"
+                        SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
+
+                        <sho:TabHostView.Tabs>
+                            <sho:BottomTabItem IconSize="34" IconImageSource="chat_icon.png" />
+                            <sho:BottomTabItem IconSize="34" IconImageSource="friends_icon.png" />
+                            <sho:BottomTabItem IconSize="34" IconImageSource="call_icon.png" />
+                        </sho:TabHostView.Tabs>
+                    </sho:TabHostView>
+                </Border>
+
+            </VerticalStackLayout>
         </Grid>
     </Grid>
 </ContentPage>

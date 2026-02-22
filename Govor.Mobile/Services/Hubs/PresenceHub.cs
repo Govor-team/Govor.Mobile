@@ -11,15 +11,15 @@ public class PresenceHub : IPresenceHubService
     private readonly HubConnection _hubConnection;
     private readonly ILogger<PresenceHub> _logger;
     private readonly IJwtProviderService _jwtProvider;
-    private readonly IServerIpProvader _ipProvider;
+    private readonly IServerIpProvider _ipProvider;
     
     public event Action<Guid>? OnUserOnline;
     public event Action<Guid>? OnUserOffline;
 
-    public PresenceHub(IJwtProviderService jwtProvider, IServerIpProvader ipProvader, ILogger<PresenceHub> logger)
+    public PresenceHub(IJwtProviderService jwtProvider, IServerIpProvider ipProvider, ILogger<PresenceHub> logger)
     {
         _logger = logger;
-        _ipProvider = ipProvader;
+        _ipProvider = ipProvider;
         _jwtProvider = jwtProvider;
 
         _hubConnection = new HubConnectionBuilder()

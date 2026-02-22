@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Govor.Mobile.Services.Interfaces;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
@@ -10,23 +11,33 @@ public partial class RootPageViewModel : ObservableObject
     private int _selectedViewModelIndex = -1;
     
     [ObservableProperty]
+    private bool hasNewUpdate;
+    
+    [ObservableProperty]
     private bool isSettingsOpen = false;
     public MainPageModel HomePageViewModel { get; }
     public FriendsSearchPageModel FriendsPageViewModel { get; }
     
     public SettingsPageModel SettingsViewModel { get; }
     // public CallViewModel CallPageViewModel { get; }
+    
+    private readonly IUpdateService _updateService;
 
     public RootPageViewModel(
         MainPageModel homeVM, 
-        FriendsSearchPageModel friendsVM)
+        FriendsSearchPageModel friendsVM,
+        IUpdateService updateService)
     {
+        _updateService =  updateService;
         HomePageViewModel = homeVM;
         FriendsPageViewModel = friendsVM;
         //CallPageViewModel = callVM;
 
         // Устанавливаем начальную вкладку
         SelectedViewModelIndex = 0;
+        
+        updateService.UpdateAvailabilityChanged += value => HasNewUpdate = value;
+        HasNewUpdate = updateService.HasNewUpdate;
     }
 
     partial void OnSelectedViewModelIndexChanged(int value)
@@ -53,5 +64,12 @@ public partial class RootPageViewModel : ObservableObject
         {
             await viewModelToInit.InitAsync();
         }
+    }
+    
+    [RelayCommand]
+    private void DownloadUpdate()
+    {
+        if (HasNewUpdate)
+           _ = _updateService.UpdateAsync();
     }
 }

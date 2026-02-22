@@ -21,8 +21,9 @@ public class FriendsListController : IFriendsListController, IDisposable
 
     private readonly ConcurrentDictionary<Guid, UserListItemViewModel> _cache = new();
 
-    public event Action? FriendsLoaded;           // опционально — для уведомления
+    public event Action? FriendsLoaded;           
     public event Action<UserListItemViewModel>? FriendAdded;
+    public event Action<UserListItemViewModel>? FriendRemoved;
     public event Action<Guid, bool>? OnlineStatusChanged;
 
     public FriendsListController(
@@ -40,7 +41,10 @@ public class FriendsListController : IFriendsListController, IDisposable
 
         _realtime.OnUserOnline += id => OnlineStatusChanged?.Invoke(id, true);
         _realtime.OnUserOffline += id => OnlineStatusChanged?.Invoke(id, false);
+        
         _realtime.OnFriendAdded += OnFriendAddedAsync;
+        _realtime.OnFriendRemoved += OnFriendRemovedAsync;
+        
         _realtime.OnUserAvatarUpdate += OnUserAvatarUpdateAsync;
     }
 
@@ -94,7 +98,7 @@ public class FriendsListController : IFriendsListController, IDisposable
                         Console.WriteLine($"[DEBUG] VM == null после фабрики для {friend.Id} ({profile.Username})");
                         return null;
                     }
-
+                    
                     _cache[profile.Id] = vm;
                     success++;
                     Console.WriteLine($"[DEBUG] Успешно создан VM для {friend.Id}");
@@ -144,6 +148,19 @@ public class FriendsListController : IFriendsListController, IDisposable
         catch { /* log */ }
     }
 
+    private async Task OnFriendRemovedAsync(Guid userId)
+    {
+        if (_cache.ContainsKey(userId)) return;
+        
+        try
+        {
+            _cache.Remove(userId, out var vm);
+            if (vm is not null)
+                FriendRemoved?.Invoke(vm);
+        }
+        catch { /* log */ }
+    }
+    
     private async Task OnUserAvatarUpdateAsync(Guid userId, Guid avatarId)
     {
         if (_cache.TryGetValue(userId, out var vm))
@@ -166,6 +183,7 @@ public class FriendsListController : IFriendsListController, IDisposable
         _realtime.Dispose();
         // отписка от событий
         _realtime.OnFriendAdded -= OnFriendAddedAsync;
+        _realtime.OnFriendRemoved -= OnFriendRemovedAsync;
         _realtime.OnUserAvatarUpdate -= OnUserAvatarUpdateAsync;
     }
 }

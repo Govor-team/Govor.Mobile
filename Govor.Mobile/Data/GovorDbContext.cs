@@ -7,7 +7,7 @@ namespace Govor.Mobile.Data;
 
 public class GovorDbContext : DbContext
 {
-    //public DbSet<LocalUserProfile> Users;
+    //public DbSet<LocalUserProfile> Friends;
     public DbSet<LocalMessage> Messages { get; set; } 
     //public DbSet<UserSession> CurrentSessions { get; set; }
 
@@ -19,6 +19,7 @@ public class GovorDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new LocalMessageConfiguration());
+        //.ApplyConfiguration(new LocalUserFriendsConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Govor.Mobile.Services.Interfaces;
 
-public interface IServerIpProvader
+public interface IServerIpProvider
 {
     public string IP {  get; }
 }

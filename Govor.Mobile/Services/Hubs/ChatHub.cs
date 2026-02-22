@@ -12,9 +12,9 @@ public class ChatHub : IChatHub
     private readonly HubConnection _hubConnection;
     private readonly ILogger<ChatHub> _logger;
     private readonly IJwtProviderService _jwtProvider;
-    private readonly IServerIpProvader _ipProvider;
+    private readonly IServerIpProvider _ipProvider;
     
-    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvader ipProvider)
+    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider)
     {
         _logger = logger;
         _jwtProvider = jwtProvider;

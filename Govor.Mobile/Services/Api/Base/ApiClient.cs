@@ -21,7 +21,7 @@ public class ApiClient : IApiClient
     };
 
     public ApiClient(
-        IServerIpProvader ipProvader,
+        IServerIpProvider ipProvider,
         IJwtProviderService jwtProvider,
         ILogger<ApiClient> logger)
     {
@@ -29,7 +29,7 @@ public class ApiClient : IApiClient
         _jwtProvider = jwtProvider;
         _logger = logger;
 
-        _httpClient.BaseAddress = new Uri(ipProvader.IP);
+        _httpClient.BaseAddress = new Uri(ipProvider.IP);
     }
 
     // Универсальный метод, с обработкой 401

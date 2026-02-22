@@ -14,7 +14,9 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
     private readonly IProfileApiClient _profileApiClient;
     private readonly IUserAvatarFileService _fileService;
     private readonly ILogger<CurrentUserAvatarService> _logger;
-
+    
+    private readonly Dictionary<Guid, ImageSource> _avatars = new Dictionary<Guid, ImageSource>();
+    
     public CurrentUserAvatarService(IProfileHubService profileHub,
         IMediaLoaderService mediaLoaderService,
         IProfileApiClient profileApiClient,
@@ -31,15 +33,18 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
     public async Task<ImageSource> LoadAvatarAsync(Guid avatarId)
     {
         if (avatarId == Guid.Empty)
-        {
-            return null; 
-        }
+            return null;
 
+        if (_avatars.TryGetValue(avatarId, out var avatar))
+            return avatar;
+        
         var localImage = await _fileService.LoadLocalAvatarAsync(avatarId);
 
         if (localImage != null)
         {
             _logger?.LogInformation("Avatar loaded from local cache: {AvatarId}", avatarId);
+           
+            _avatars[avatarId] = localImage;
             return localImage;
         }
         
@@ -56,19 +61,31 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
         
         _ = Task.Run(async () =>
         {
-            mem.Seek(0, SeekOrigin.Begin); 
-            await _fileService.SaveAvatarAsync(avatarId,
-                $"dummy{result.Value.FileName}.{result.Value.MimeType.Split("/")[1]}", // получение имени файла и его расширения
-                mem);
-            mem.Dispose();
+            try
+            {
+                mem.Seek(0, SeekOrigin.Begin);
+                await _fileService.SaveAvatarAsync(avatarId,
+                    $"dummy{result.Value.FileName}.{result.Value.MimeType.Split("/")[1]}", // получение имени файла и его расширения
+                    mem);
+                mem.Dispose();
+                
+                _logger?.LogInformation("Avatar saved to cache: {AvatarId}", avatarId);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to cache avatar: {AvatarId}", avatarId);
+            }
         });
         
         mem.Seek(0, SeekOrigin.Begin);
         
-        return ImageSource.FromStream(() =>
+        var downloadedImageSource = ImageSource.FromStream(() =>
         {
             return new MemoryStream(mem.ToArray());
         });
+        
+        _avatars[avatarId] = downloadedImageSource;
+        return downloadedImageSource;
     }
 
     public async Task<Guid?> PickAndUploadNewAvatarAsync()

@@ -11,7 +11,7 @@ public class FriendsHub : IFriendsHubService
     private readonly HubConnection _hubConnection;
     private readonly ILogger<PresenceHub> _logger;
     private readonly IJwtProviderService _jwtProvider;
-    private readonly IServerIpProvader _ipProvider;
+    private readonly IServerIpProvider _ipProvider;
 
     public event Action<FriendshipDto>? YourFriendRequestReceived;
     public event Action<FriendshipDto>? FriendRequestReceived;
@@ -22,7 +22,7 @@ public class FriendsHub : IFriendsHubService
     public event Action<FriendshipDto>? YourFriendRequestRejected;
     public event Action<FriendshipDto>? FriendRequestRejected;
 
-    public FriendsHub(ILogger<PresenceHub> logger, IJwtProviderService jwtProvider, IServerIpProvader ipProvider)
+    public FriendsHub(ILogger<PresenceHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider)
     {
         _logger = logger;
         _jwtProvider = jwtProvider;

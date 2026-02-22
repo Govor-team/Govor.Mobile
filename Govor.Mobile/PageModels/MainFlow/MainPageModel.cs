@@ -11,9 +11,9 @@ using Govor.Mobile.Services.Interfaces.Profiles;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
-public partial class MainPageModel : ObservableObject, IInitializableViewModel, IDisposable
+public partial class MainPageModel : ObservableObject, IInitializableViewModel, IConnectivityChanged, IDisposable
 {
-    public ObservableCollection<UserListItemViewModel> Friends { get; } = new();
+    public ObservableCollection<UserListItemViewModel> Friends { private set; get; } = new();
 
     [ObservableProperty]
     private string name;
@@ -29,28 +29,25 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
         _profileService = profileService;
         
         _controller.FriendAdded += OnFriendAdded;
+        _controller.FriendRemoved += OnFriendRemoved;
         _controller.OnlineStatusChanged += OnOnlineStatusChanged;
     }
+
     public bool IsLoaded { get; set; }
 
     public async Task InitAsync()
     {
-        var profile = await _profileService.GetCurrentProfile();
-        Name = profile?.Username ?? "Гость";
-        
-        await _controller.InitializeAsync();
-        
-        var loaded = _controller.GetLoadedFriends();
-        if (loaded.Any())
+        if(!IsLoaded)
+            await OnInternetConnectedAsync();
+    }
+    
+    private void OnFriendRemoved(UserListItemViewModel vm)
+    {
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                foreach (var friend in loaded)
-                    Friends.Add(friend);
-            });
-        }
-
-        IsLoaded = true;
+            if (!Friends.Contains(vm))
+                Friends.Remove(vm);
+        });
     }
     
     private void OnFriendAdded(UserListItemViewModel vm)
@@ -161,6 +158,31 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
         }
 
         await Shell.Current.GoToAsync($"chat?chatId={item.UserId}&isGroup=false", animate: false);
+    }
+    
+    public async Task OnInternetConnectedAsync()
+    {
+        var profile = await _profileService.GetCurrentProfile();
+        Name = profile?.Username ?? "Гость";
+        
+        await _controller.InitializeAsync();
+        
+        var loaded = _controller.GetLoadedFriends();
+        if (loaded.Any())
+        {
+            await MainThread.InvokeOnMainThreadAsync(async () =>
+            {
+                Friends = new ObservableCollection<UserListItemViewModel>(loaded);
+                OnPropertyChanged(nameof(Friends));
+            });
+        }
+        
+        IsLoaded = true;
+    }
+
+    public async Task OnInternetDisconnectedAsync()
+    {
+        await MainThread.InvokeOnMainThreadAsync(() => Name = "Соединение...");
     }
 
     public void Dispose()

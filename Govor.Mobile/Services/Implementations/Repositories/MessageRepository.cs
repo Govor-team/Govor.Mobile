@@ -4,10 +4,12 @@ using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
+using Govor.Mobile.Services.Interfaces.Notification;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Plugin.LocalNotification;
 
 namespace Govor.Mobile.Services.Implementations.Repositories;
 
@@ -17,6 +19,7 @@ public class MessagesRepository : IMessagesRepository
     private readonly IChatLoaderApi _api;
     private readonly IChatHub _hub;
     private readonly IMapper _mapper;
+    private readonly IMessageNotificationService _notificationService;
     private readonly IUserProfileService _profileService;
     
     private readonly IMemoryCache _cache;
@@ -40,6 +43,7 @@ public class MessagesRepository : IMessagesRepository
         IChatHub hub,
         IMapper mapper,
         IMemoryCache cache,
+        IMessageNotificationService notificationService,
         IUserProfileService profileService)
     {
         _contextFactory = contextFactory;
@@ -47,6 +51,7 @@ public class MessagesRepository : IMessagesRepository
         _hub = hub;
         _mapper = mapper;
         _cache = cache;
+        _notificationService = notificationService;
         _profileService = profileService;
     }
 
@@ -307,10 +312,13 @@ public class MessagesRepository : IMessagesRepository
     }
     
     // --- helpers ---
-    private void NotifyNewMessage(LocalMessage entity)
+    private async void NotifyNewMessage(LocalMessage entity)
     {
         var response = _mapper.Map<MessageResponse>(entity);
         OnNewMessage?.Invoke(response);
+        
+        if(response.SenderId != await GetMyIdAsync())
+           await _notificationService.ShowMessageNotification(response);
     }
 
     private void NotifyMessageUpdated(LocalMessage entity)

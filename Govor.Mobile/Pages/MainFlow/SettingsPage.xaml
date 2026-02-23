@@ -341,6 +341,15 @@
                         </CollectionView.ItemTemplate>
                     </CollectionView>
                 </VerticalStackLayout>
+                
+                <Label VerticalOptions="End"
+                       HorizontalOptions="Center"
+                       HorizontalTextAlignment="Center"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       FontFamily="CirilicOld"
+                       Text="{Binding VersionOfApp}"
+                       TextColor="White"/>
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

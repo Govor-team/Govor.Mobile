@@ -38,12 +38,23 @@
             <VerticalStackLayout Spacing="10" Grid.Row="0">
 
                 <Border Background="Transparent"
-                        StrokeThickness="0"
+                        StrokeThickness="1"
                         IsVisible="{Binding HasNewUpdate}"
-                        HorizontalOptions="Center">
-
+                        HorizontalOptions="CenterAndExpand">
+                    
+                    <Border.Stroke>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#30FFFFFF" Offset="0.0" />
+                            <GradientStop Color="#0CFFFFFF" Offset="0.5" />
+                            <GradientStop Color="#108080FF" Offset="1.0" />
+                        </LinearGradientBrush>
+                    </Border.Stroke>
+                    
                     <Border.Shadow>
-                        <Shadow Brush="Black" Offset="0,4" Radius="8" Opacity="0.3" />
+                        <Shadow Brush="Black"
+                                Offset="0,4"
+                                Radius="8"
+                                Opacity="0.3" />
                     </Border.Shadow>
 
                     <sho:MaterialFrame
@@ -51,33 +62,43 @@
                         MaterialBlurStyle="Dark"
                         AndroidBlurRadius="15"
                         CornerRadius="20"
-                        Padding="16,8"
-                        VerticalOptions="Center">
+                        Padding="16,10">
 
-                    <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
-                        <Image Source="download_icon.png"
-                               HeightRequest="22"
-                               WidthRequest="22"
-                               VerticalOptions="Center">
-                        </Image>
+                        <Grid ColumnDefinitions="Auto,*,Auto"
+                              ColumnSpacing="12"
+                              VerticalOptions="Center">
 
-                        <Label Text="Доступна новая версия"
-                               TextColor="White"
-                               FontSize="16"
-                               FontAttributes="Bold"
-                               VerticalOptions="Center" />
+                            <!-- Иконка -->
+                            <Image Grid.Column="0"
+                                   Source="download_icon.png"
+                                   HeightRequest="22"
+                                   WidthRequest="22"
+                                   VerticalOptions="Center" />
 
-                        <Button Text="Скачать"
-                                FontSize="18"
-                                FontFamily="CirilicOld"
-                                FontAttributes="Bold"
-                                TextColor="White" 
-                                BackgroundColor="#00CC42"
-                                CornerRadius="12"
-                                HeightRequest="32"
-                                Padding="15,0"
-                                Command="{Binding DownloadUpdateCommand}" />
-                    </HorizontalStackLayout>
+                            <!-- Текст -->
+                            <Label Grid.Column="1"
+                                   Text="Доступна новая версия"
+                                   TextColor="White"
+                                   FontSize="15"
+                                   FontAttributes="Bold"
+                                   VerticalOptions="Center"
+                                   LineBreakMode="TailTruncation"
+                                   MaxLines="2" />
+
+                            <!-- Кнопка -->
+                            <Button Grid.Column="2"
+                                    Text="Скачать"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    TextColor="White"
+                                    BackgroundColor="#00CC42"
+                                    CornerRadius="12"
+                                    HeightRequest="36"
+                                    Padding="14,0"
+                                    MinimumWidthRequest="90"
+                                    Command="{Binding DownloadUpdateCommand}" />
+
+                        </Grid>
                     </sho:MaterialFrame>
                 </Border>
                 

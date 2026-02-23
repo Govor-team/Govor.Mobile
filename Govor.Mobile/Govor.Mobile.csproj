@@ -28,7 +28,7 @@
 		<ApplicationId>com.nascode.govor.mobile</ApplicationId>
 
 		<!-- Versions -->
-		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
@@ -83,6 +83,7 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.11" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls.Core" Version="10.0.11" />
+		<PackageReference Include="Plugin.LocalNotification" Version="14.0.0-preview01" />
 		<PackageReference Include="QRCoder" Version="1.7.0" />
 		<PackageReference Include="Sharpnado.Tabs.Maui" Version="4.0.1" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />

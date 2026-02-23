@@ -2,6 +2,7 @@
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
+using Plugin.LocalNotification;
 
 namespace Govor.Mobile;
 
@@ -78,6 +79,8 @@ public partial class App : Application
     {
         try
         {
+            await LocalNotificationCenter.Current.RequestNotificationPermission();
+            
             await _initializer.StartAsync();
             MainPage = _serviceProvider.GetRequiredService<MainShell>();
         }

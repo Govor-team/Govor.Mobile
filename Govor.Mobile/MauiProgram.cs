@@ -14,6 +14,7 @@ using Syncfusion.Maui.Toolkit.Hosting;
 using UraniumUI;
 using UXDivers.Popups.Maui;
 using Govor.Mobile.Data;
+using Plugin.LocalNotification;
 
 namespace Govor.Mobile
 {
@@ -30,6 +31,7 @@ namespace Govor.Mobile
             
             builder
                 .UseMauiApp<App>()
+                .UseLocalNotification()
                 .UseMauiCommunityToolkit(options =>
                 {
                     options.SetShouldEnableSnackbarOnWindows(false);

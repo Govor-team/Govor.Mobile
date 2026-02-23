@@ -5,6 +5,7 @@ using Govor.Mobile.Models;
 using Govor.Mobile.Models.Results;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using UXDivers.Popups.Maui.Controls;
 using UXDivers.Popups.Services;
@@ -50,10 +51,14 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     [ObservableProperty]
     private BackgroundItem _selectedBackground;
 
+    [ObservableProperty]
+    private string _versionOfApp = $"Alfa v{AppInfo.VersionString} - NAS";
+
     private readonly IUserProfileService _profileService; 
     private readonly IDescriptionService _descriptionService;
     private readonly IDeviceSessionManagerService _sessionsService;
     private readonly IBackgroundImageService _backgroundImageService;
+    private readonly IAuthService _authService;
     private readonly int MaxLength;
 
     private Guid _currentUserId;
@@ -65,13 +70,15 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
         IDeviceSessionManagerService sessionsService,
         IMaxDescriptionLengthProvider  maxDescriptionLengthProvider,
         IBackgroundImageService backgroundImageService,
+        IAuthService authService,
         AvatarViewModel avatarModel)
     {
         _profileService = profileService;
         _descriptionService = descriptionService;
         _sessionsService = sessionsService;
-        MaxLength = maxDescriptionLengthProvider.MaxDescriptionLength;
         _backgroundImageService = backgroundImageService;
+        _authService = authService;
+        MaxLength = maxDescriptionLengthProvider.MaxDescriptionLength;
         avatarViewModel = avatarModel;
     }
     
@@ -194,17 +201,43 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
             }
         });
     }
-
     
     [RelayCommand]
     private async Task RemoveSessionAsync(DeviceSession session)
     {
-        bool success = await _sessionsService.CloseSessionAsync(session.Id);
-
-        if (success)
+        var popup = new SimpleActionPopup
         {
-            Sessions.Remove(session);
-        }
+            Title = "Отключить текущую сессию?",
+            Text = "Это действие нельзя отменить.",
+            ActionButtonText = "Удалить",
+            SecondaryActionButtonText = "Отмена",
+            ActionButtonCommand = new Command(async () =>
+            {
+                await IPopupService.Current.PopAsync();
+                
+                if (session.IsCurrent)
+                {
+                    await _authService.LogoutAsync();
+                    Application.Current?.Quit();
+                }
+                else
+                {
+                    bool success = await _sessionsService.CloseSessionAsync(session.Id);
+                    
+                    if (success)
+                    {
+                        Sessions.Remove(session);
+                    }
+                    else
+                    {
+                        await AppShell.DisplayException("Не удалось закрыть выбранную сессию!");
+                    }
+                }
+            })
+        };
+
+        await IPopupService.Current.PushAsync(popup);
+        
     }
     
     [RelayCommand]

@@ -12,12 +12,14 @@ using Govor.Mobile.Services.Implementations;
 using Govor.Mobile.Services.Implementations.ChatPage;
 using Govor.Mobile.Services.Implementations.JwtServices;
 using Govor.Mobile.Services.Implementations.MainPage;
+using Govor.Mobile.Services.Implementations.Notification;
 using Govor.Mobile.Services.Implementations.Profiles;
 using Govor.Mobile.Services.Implementations.Repositories;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.ChatPage;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 using Govor.Mobile.Services.Interfaces.MainPage;
+using Govor.Mobile.Services.Interfaces.Notification;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.Services.Interfaces.Repositories;
 using Govor.Mobile.Services.Mapping;
@@ -122,6 +124,10 @@ internal static class ServiceRegistration
         
         builder.Services.AddAutoMapper(typeof(MappingProfile));
         
+        // Notification 
+        builder.Services.AddSingleton<IMessageNotificationService, MessageNotificationService>();
+        builder.Services.AddSingleton<IMessageWasSendedFormater, MessageWasSendedFormater>();
+        
         return builder;
     }
 
@@ -171,7 +177,7 @@ internal static class ServiceRegistration
         builder.Services.AddTransient<ChatPage>();
         
         builder.Services.AddTransient<AuthShell>();
-        builder.Services.AddSingleton<MainShell>();
+        builder.Services.AddTransient<MainShell>();
 
         builder.Services.AddSingleton<AppShell>();
 

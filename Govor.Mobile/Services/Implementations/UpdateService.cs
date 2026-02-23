@@ -42,21 +42,6 @@ public partial class UpdateService : IUpdateService, IConnectivityChanged
             if (Version.Parse(latestVersion) > Version.Parse(currentVersion))
             {
                 return true;
-                
-                var update = await Application.Current.MainPage.DisplayAlert("Update Available",
-                    $"A new version {latestVersion} is available. Do you want to update?", "Yes", "No");
-
-                if (update)
-                {
-                    string assetName = GetPlatformAssetName();
-                    var asset = release.Assets?.FirstOrDefault(a => a.Name == assetName);
-
-                    if (asset != null)
-                        await DownloadAndInstallAsync(asset.BrowserDownloadUrl, assetName);
-                    else
-                        await Application.Current.MainPage.DisplayAlert("Error",
-                            "No suitable asset found for this platform.", "OK");
-                }
             }
             
             return false;
@@ -127,17 +112,44 @@ public partial class UpdateService : IUpdateService, IConnectivityChanged
     
     public async Task UpdateAsync()
     {
-        if (!HasNewUpdate) return;
-        
-        string assetName = GetPlatformAssetName();
-        var asset = _latestRelease?.Assets?.FirstOrDefault(a => a.Name == assetName);
+        if (!HasNewUpdate)
+            return;
 
-        if (asset != null)
-            await DownloadAndInstallAsync(asset.BrowserDownloadUrl, assetName);
-        else
-            await AppShell.DisplayException("No suitable asset found for this platform.");
+        string assetName = GetPlatformAssetName();
+        var asset = _latestRelease?.Assets?
+            .FirstOrDefault(a => a.Name == assetName);
+
+        if (asset == null)
+        {
+            await AppShell.DisplayException("No suitable asset found.");
+            return;
+        }
+
+        try
+        {
+            await Launcher.OpenAsync(new Uri(asset.BrowserDownloadUrl));
+        }
+        catch (Exception ex)
+        {
+            await AppShell.DisplayException(ex.ToString());
+
+        }
     }
 
+    
+    /* private async Task UpdateAsync_Install()
+     {
+         if (!HasNewUpdate) return;
+
+         string assetName = GetPlatformAssetName();
+         var asset = _latestRelease?.Assets?.FirstOrDefault(a => a.Name == assetName);
+
+         if (asset != null)
+             await DownloadAndInstallAsync(asset.BrowserDownloadUrl, assetName);
+         else
+             await AppShell.DisplayException("No suitable asset found for this platform.");
+     } */
+    
     public async Task OnInternetConnectedAsync()
     {
         bool newValue = await CheckForUpdatesAsync();

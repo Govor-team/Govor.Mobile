@@ -1,24 +1,23 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.ObjectModel;
+using Govor.Mobile.Models.DTO;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.MainPage;
 using Govor.Mobile.Services.Interfaces.Repositories;
-using CommunityToolkit.Mvvm.Collections;
-using Microsoft.Extensions.Logging;
 
 namespace Govor.Mobile.Services.Implementations.MainPage;
 
-public class FriendsListController : IFriendsListController, IDisposable
+public class FriendsListController : IFriendsListController
 {
     private readonly IFriendshipApiService _friendshipApi;
     private readonly IProfileApiClient _profileApi;
     private readonly IMessagesRepository _messages;
     private readonly IFriendsFactory _factory;
     private readonly IFriendsRealtimeService _realtime;
-
+    private readonly IPrivateChatApi _privateChatApi;
+    
     private readonly ConcurrentDictionary<Guid, UserListItemViewModel> _cache = new();
 
     public event Action? FriendsLoaded;           
@@ -29,6 +28,7 @@ public class FriendsListController : IFriendsListController, IDisposable
     public FriendsListController(
         IFriendshipApiService friendshipApi,
         IProfileApiClient profileApi,
+        IPrivateChatApi privateChatApi,
         IMessagesRepository messages,
         IFriendsFactory factory,
         IFriendsRealtimeService realtime)
@@ -37,14 +37,14 @@ public class FriendsListController : IFriendsListController, IDisposable
         _profileApi = profileApi;
         _messages = messages;
         _factory = factory;
+        _privateChatApi = privateChatApi;
         _realtime = realtime;
 
+        // Подписка на события реального времени
         _realtime.OnUserOnline += id => OnlineStatusChanged?.Invoke(id, true);
         _realtime.OnUserOffline += id => OnlineStatusChanged?.Invoke(id, false);
-        
         _realtime.OnFriendAdded += OnFriendAddedAsync;
         _realtime.OnFriendRemoved += OnFriendRemovedAsync;
-        
         _realtime.OnUserAvatarUpdate += OnUserAvatarUpdateAsync;
     }
 
@@ -52,120 +52,116 @@ public class FriendsListController : IFriendsListController, IDisposable
     {
         _messages.Initialize();
 
-        var result = await _friendshipApi.GetFriends();
-        if (!result.IsSuccess) return;
+        var friendsResult = await _friendshipApi.GetFriends();
+        var privateChatsResult = await _privateChatApi.GetPrivateChats();
 
-        await LoadFriendsProgressiveAsync(result.Value);
+        if (!friendsResult.IsSuccess || !privateChatsResult.IsSuccess)
+            return;
+
+        await LoadFriendsAsync(friendsResult.Value, privateChatsResult.Value);
 
         FriendsLoaded?.Invoke();
     }
-    
-    private async Task LoadFriendsProgressiveAsync(IEnumerable<UserDto> friends)
+
+    private async Task LoadFriendsAsync(IEnumerable<UserDto> friends, IEnumerable<PrivateChatDto> privateChats)
     {
         if (friends == null || !friends.Any()) return;
 
-        Console.WriteLine($"[DEBUG] Загружаем {friends.Count()} друзей");
-
         const int batchSize = 8;
-        var validVms = new List<UserListItemViewModel>();
-
         int processed = 0;
         int success = 0;
 
         foreach (var batch in friends.Chunk(batchSize))
         {
-            Console.WriteLine($"[DEBUG] Батч из {batch.Length} элементов");
-
             var tasks = batch.Select(async friend =>
             {
                 processed++;
                 try
                 {
                     var profile = await _profileApi.DowloadProfileByUserIdAsync(friend.Id);
+                    if (profile == null) return null;
+
+                    // Находим приватный чат
+                    var chat = privateChats.FirstOrDefault(c => c.FriendId == friend.Id); 
                     
-                    if (profile == null)
+                    var vm = await _factory.CreateAsync(profile, chat?.ChatId ?? Guid.Empty);
+
+                    if (vm != null)
                     {
-                        Console.WriteLine($"[DEBUG] Profile null для {friend.Id}");
-                        return null;
+                        _cache[profile.Id] = vm;
+                        success++;
                     }
 
-                    Console.WriteLine($"[DEBUG] Profile получен для {friend.Id} → {profile.Username}");
-
-                    var vm = await _factory.CreateAsync(profile);
-                    
-                    if (vm == null)
-                    {
-                        Console.WriteLine($"[DEBUG] VM == null после фабрики для {friend.Id} ({profile.Username})");
-                        return null;
-                    }
-                    
-                    _cache[profile.Id] = vm;
-                    success++;
-                    Console.WriteLine($"[DEBUG] Успешно создан VM для {friend.Id}");
                     return vm;
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[ERROR] Исключение для {friend.Id}: {ex.Message}");
+                    Console.WriteLine($"[ERROR] Для {friend.Id}: {ex.Message}");
                     return null;
                 }
             });
 
-            var batchResults = await Task.WhenAll(tasks);
-
-            var batchValid = batchResults.Where(x => x != null).ToList();
-
-            Console.WriteLine($"[DEBUG] В батче успешно: {batchValid.Count}");
-
-            if (batchValid.Any())
-            {
-                validVms.AddRange(batchValid);
-            }
+            await Task.WhenAll(tasks);
         }
 
-        Console.WriteLine($"[SUMMARY] Обработано: {processed}, Успешно: {success}, В validVms: {validVms.Count}");
-        Console.WriteLine($"[SUMMARY] В кэше: {_cache.Count}");
+        Console.WriteLine($"[SUMMARY] Обработано: {processed}, Успешно: {success}, В кэше: {_cache.Count}");
     }
-
+    
     // Вызывается из ViewModel после загрузки
     public IReadOnlyList<UserListItemViewModel> GetLoadedFriends() => _cache.Values.ToList();
 
     private async Task OnFriendAddedAsync(Guid userId)
     {
-        if (_cache.ContainsKey(userId)) return;
-
         try
         {
-            var profile = await _profileApi.DowloadProfileByUserIdAsync(userId);
-            if (profile == null) return;
+            if (_cache.ContainsKey(userId)) return;
 
-            var vm = await _factory.CreateAsync(profile);
+            var profile = await _profileApi.DowloadProfileByUserIdAsync(userId);
+            var privateChatRusult = await _privateChatApi.GetChatByFriendId(userId);
+            
+            if (profile is null || !privateChatRusult.IsSuccess) return;
+
+            var vm = await _factory.CreateAsync(profile, privateChatRusult.Value);
             if (vm == null) return;
 
-            _cache[userId] = vm;
-            FriendAdded?.Invoke(vm);
+            if (_cache.TryAdd(userId, vm))
+            {
+                FriendAdded?.Invoke(vm);
+            }
         }
-        catch { /* log */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FriendsListController] Ошибка OnFriendAddedAsync: {ex}");
+        }
     }
 
     private async Task OnFriendRemovedAsync(Guid userId)
     {
-        if (_cache.ContainsKey(userId)) return;
-        
         try
         {
-            _cache.Remove(userId, out var vm);
-            if (vm is not null)
+            if (_cache.TryRemove(userId, out var vm) && vm is not null)
+            {
                 FriendRemoved?.Invoke(vm);
+            }
         }
-        catch { /* log */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FriendsListController] Ошибка OnFriendRemovedAsync: {ex}");
+        }
     }
     
     private async Task OnUserAvatarUpdateAsync(Guid userId, Guid avatarId)
     {
         if (_cache.TryGetValue(userId, out var vm))
         {
-            await vm.Avatar.InitializeAsync(vm.Title, avatarId);
+            try
+            {
+                await vm.Avatar.InitializeAsync(vm.Title, avatarId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FriendsListController] Ошибка OnUserAvatarUpdateAsync: {ex}");
+            }
         }
     }
 
@@ -177,13 +173,19 @@ public class FriendsListController : IFriendsListController, IDisposable
             OnlineStatusChanged?.Invoke(id, isOnline);
         }
     }
-
-    public void Dispose()
+    
+    private void UnsubscribeRealtimeEvents()
     {
-        _realtime.Dispose();
-        // отписка от событий
+        _realtime.OnUserOnline -= id => OnlineStatusChanged?.Invoke(id, true);
+        _realtime.OnUserOffline -= id => OnlineStatusChanged?.Invoke(id, false);
         _realtime.OnFriendAdded -= OnFriendAddedAsync;
         _realtime.OnFriendRemoved -= OnFriendRemovedAsync;
         _realtime.OnUserAvatarUpdate -= OnUserAvatarUpdateAsync;
+    }
+
+    public void Dispose()
+    {
+        UnsubscribeRealtimeEvents();
+        _realtime.Dispose();
     }
 }

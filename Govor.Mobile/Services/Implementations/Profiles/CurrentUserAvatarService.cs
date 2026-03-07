@@ -1,8 +1,10 @@
-﻿using Govor.Mobile.Models.Requests;
+﻿using System.Collections.Concurrent;
+using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.Profiles;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace Govor.Mobile.Services.Implementations.Profiles;
@@ -12,83 +14,72 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
     private readonly IProfileHubService _profileHub;
     private readonly IMediaLoaderService _mediaLoaderService;
     private readonly IProfileApiClient _profileApiClient;
-    private readonly IUserAvatarFileService _fileService;
     private readonly ILogger<CurrentUserAvatarService> _logger;
     
-    private readonly Dictionary<Guid, ImageSource> _avatars = new Dictionary<Guid, ImageSource>();
+    private readonly IMemoryCache _cache;
     
-    public CurrentUserAvatarService(IProfileHubService profileHub,
+    public CurrentUserAvatarService(
+        IProfileHubService profileHub,
         IMediaLoaderService mediaLoaderService,
         IProfileApiClient profileApiClient,
-        IUserAvatarFileService avatarFileService,
-        ILogger<CurrentUserAvatarService> logger)
+        ILogger<CurrentUserAvatarService> logger,
+        IMemoryCache cache)
     {
         _profileHub = profileHub;
         _mediaLoaderService = mediaLoaderService;
         _profileApiClient = profileApiClient;
-        _fileService = avatarFileService;
         _logger = logger;
+        _cache = cache;
     }
+    
+    private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _locks = new();
 
     public async Task<ImageSource> LoadAvatarAsync(Guid avatarId)
     {
         if (avatarId == Guid.Empty)
             return null;
 
-        if (_avatars.TryGetValue(avatarId, out var avatar))
-            return avatar;
-        
-        var localImage = await _fileService.LoadLocalAvatarAsync(avatarId);
-
-        if (localImage != null)
+        if (_cache.TryGetValue(avatarId, out byte[] cachedBytes))
         {
-            _logger?.LogInformation("Avatar loaded from local cache: {AvatarId}", avatarId);
-           
-            _avatars[avatarId] = localImage;
-            return localImage;
+            return ImageSource.FromStream(() => new MemoryStream(cachedBytes));
         }
-        
-        var result = await _mediaLoaderService.Download(avatarId);
 
-        if (!result.IsSuccess)
+        var semaphore = _locks.GetOrAdd(avatarId, _ => new SemaphoreSlim(1, 1));
+
+        await semaphore.WaitAsync();
+
+        try
         {
-            return default;
+            // double-check после входа в lock
+            if (_cache.TryGetValue(avatarId, out cachedBytes))
+            {
+                return ImageSource.FromStream(() => new MemoryStream(cachedBytes));
+            }
+
+            var result = await _mediaLoaderService.Download(avatarId);
+
+            if (!result.IsSuccess)
+                return null;
+
+            using var mem = new MemoryStream();
+            await result.Value.FileStream.CopyToAsync(mem);
+            var avatarBytes = mem.ToArray();
+
+            var cacheOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(20))
+                .SetSize(avatarBytes.Length);
+
+            _cache.Set(avatarId, avatarBytes, cacheOptions);
+
+            return ImageSource.FromStream(() => new MemoryStream(avatarBytes));
         }
-        
-        var mem = new MemoryStream();
-        await result.Value.FileStream.CopyToAsync(mem);
-        mem.Position = 0;
-        
-        _ = Task.Run(async () =>
+        finally
         {
-            try
-            {
-                mem.Seek(0, SeekOrigin.Begin);
-                await _fileService.SaveAvatarAsync(avatarId,
-                    $"dummy{result.Value.FileName}.{result.Value.MimeType.Split("/")[1]}", // получение имени файла и его расширения
-                    mem);
-                mem.Dispose();
-                
-                _logger?.LogInformation("Avatar saved to cache: {AvatarId}", avatarId);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Failed to cache avatar: {AvatarId}", avatarId);
-            }
-        });
-        
-        mem.Seek(0, SeekOrigin.Begin);
-        
-        var downloadedImageSource = ImageSource.FromStream(() =>
-        {
-            return new MemoryStream(mem.ToArray());
-        });
-        
-        _avatars[avatarId] = downloadedImageSource;
-        return downloadedImageSource;
+            semaphore.Release();
+        }
     }
 
-    public async Task<Guid?> PickAndUploadNewAvatarAsync()
+    public async Task<Guid?> PickAndUploadNewAvatarAsync(Guid oldAvatarId)
     {
         try
         {
@@ -98,7 +89,7 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
                 FileTypes = FilePickerFileType.Images
             });
 
-            if (result == null)
+            if (result is null)
                 return null; 
 
             using var stream = await result.OpenReadAsync();
@@ -119,11 +110,21 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
                 return null;
             }
             
-            var mediaId = uploadResult.Value.MediaId;
+            var newMediaId = uploadResult.Value.MediaId;
             
-            await _profileHub.SetAvatarAsync(mediaId);
+            var hubResult =  await _profileHub.SetAvatarAsync(newMediaId);
             
-            return mediaId;
+            if (hubResult.Status != HubResultStatus.Success)
+            {
+                await AppShell.DisplayException("Не удалось установить картинку как аватар.");
+                return null;
+            }
+            
+            // Инвалидируем кеш 
+            if (oldAvatarId != Guid.Empty)
+                _cache.Remove(oldAvatarId);
+            
+            return newMediaId;
         }
         catch (Exception ex)
         {

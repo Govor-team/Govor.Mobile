@@ -13,18 +13,15 @@ public class AppStartupOrchestrator : IAppStartupOrchestrator
 {
     private readonly ILogger<AppStartupOrchestrator> _logger;
     private readonly NetworkAvailabilityService  _networkAvailabilityService;
-    private readonly IBackgroundImageService _backgroundService;
     private readonly IServiceProvider _serviceProvider;
     
     public AppStartupOrchestrator(
         IServiceProvider serviceProvider,
         NetworkAvailabilityService  networkAvailabilityService,
-        IBackgroundImageService backgroundService,
         ILogger<AppStartupOrchestrator> logger)
     {
         _logger = logger;
         _serviceProvider =  serviceProvider;
-        _backgroundService = backgroundService;
         _networkAvailabilityService = networkAvailabilityService;
     }
 
@@ -36,6 +33,6 @@ public class AppStartupOrchestrator : IAppStartupOrchestrator
         var db = scope.ServiceProvider.GetRequiredService<GovorDbContext>();
         await db.Database.MigrateAsync();   // применяет миграции, создаёт таблицы
         
-        await _networkAvailabilityService.CheckInitialConnectivity();
+        await _networkAvailabilityService.CheckInitialConnectivityAsync();
     }
 }

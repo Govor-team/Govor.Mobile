@@ -34,39 +34,42 @@
                          VerticalOptions="Start"
                          HorizontalOptions="Fill">
 
-                <!-- Поле Пароль -->
+                <!-- Поле кода -->
                 <VerticalStackLayout Spacing="5">
                     <Label Text="Введите код приглашения"
                            TextColor="White"
                            FontSize="16"
                            Padding="10,0,0,0"/>
-                    <Frame BackgroundColor="#33000000"
-                           CornerRadius="15"
-                           HasShadow="True"
-                           Padding="0"
-                           HeightRequest="60">
+
+                    <sharp:MaterialFrame MaterialTheme="AcrylicBlur"
+                             MaterialBlurStyle="Dark"
+                             Elevation="4"
+                             AndroidBlurRadius="50"
+                             CornerRadius="15"
+                             Padding="0"
+                             HeightRequest="60">
                         <Grid>
                             <Entry x:Name="InvitationEntry"
-                               Placeholder="Код"
-                               Text="{Binding Code}"
-                               TextColor="White"
-                               PlaceholderColor="White"
-                               Margin="15,5"
-                               FontSize="18"
-                               IsPassword="{Binding IsCodeHidden}"
-                               BackgroundColor="Transparent"
-                               Completed="InvitationCode_Completed">
-                            </Entry>
+                                   Placeholder="Код"
+                                   Text="{Binding Code}"
+                                   TextColor="White"
+                                   PlaceholderColor="White"
+                                   Margin="15,5"
+                                   FontSize="18"
+                                   IsPassword="{Binding IsCodeHidden}"
+                                   BackgroundColor="Transparent"
+                                   Completed="InvitationCode_Completed" />
+
                             <ImageButton Source="{Binding EyeIcon}"
-                                 Padding="7"
-                                 HeightRequest="20"
-                                 WidthRequest="20"
-                                 BackgroundColor="Transparent"
-                                 HorizontalOptions="End"
-                                 VerticalOptions="Center"
-                                 Command="{Binding ToggleCodeVisibilityCommand}"/>
+                                     Padding="7"
+                                     HeightRequest="20"
+                                     WidthRequest="20"
+                                     BackgroundColor="Transparent"
+                                     HorizontalOptions="End"
+                                     VerticalOptions="Center"
+                                     Command="{Binding ToggleCodeVisibilityCommand}"/>
                         </Grid>
-                    </Frame>
+                    </sharp:MaterialFrame>
                 </VerticalStackLayout>
             </VerticalStackLayout>
         </Grid>
@@ -103,7 +106,7 @@
             <!-- Ссылка на регистрацию -->
             <HorizontalStackLayout HorizontalOptions="Center" Spacing="5">
                 <Label Text="Что это такое?" TextColor="#917EEC" FontSize="16"/>
-                <Label Text="Как получит?" TextColor="#917EEC" FontSize="16">
+                <Label Text="Как получить?" TextColor="#917EEC" FontSize="16">
                     <Label.GestureRecognizers>
                         <TapGestureRecognizer 
                         Command="{Binding OpenWikiCommand}" />

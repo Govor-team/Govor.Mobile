@@ -40,7 +40,7 @@
 		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
 	</PropertyGroup>
-    
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\govor.png" />
@@ -59,6 +59,8 @@
 
 	<ItemGroup>
 	  <None Remove="launchSettings.json" />
+	  <None Remove="Platforms\Android\google-services.json" />
+	  <None Remove="Platforms\Android\Resources\google-services.json" />
 	  <None Update="Platforms\Android\Resources\xml\file_paths.xml">
 	    <SubType>Designer</SubType>
 	    <Generator>MSBuild:UpdateGeneratedFiles</Generator>
@@ -80,9 +82,12 @@
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="11.0.0-preview.1.26104.118" />
+		<PackageReference Include="Microsoft.Extensions.Http.Polly" Version="11.0.0-preview.1.26104.118" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.11" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="Microsoft.Maui.Controls.Core" Version="10.0.11" />
+		<PackageReference Include="Plugin.FirebasePushNotifications" Version="4.0.23-pre" />
 		<PackageReference Include="Plugin.LocalNotification" Version="14.0.0-preview01" />
 		<PackageReference Include="QRCoder" Version="1.7.0" />
 		<PackageReference Include="Sharpnado.Tabs.Maui" Version="4.0.1" />
@@ -200,6 +205,10 @@
 
 	<ItemGroup>
 	  <Folder Include="Controls\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <GoogleServicesJson Include="Platforms\Android\google-services.json" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1077812274046",
+    "project_id": "govor-ad008",
+    "storage_bucket": "govor-ad008.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077812274046:android:286488d2f298774240492f",
+        "android_client_info": {
+          "package_name": "com.nascode.govor.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4kxNzQFidV6zcXTLZfOjIwYMB0BKlEHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

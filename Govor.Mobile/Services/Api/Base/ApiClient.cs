@@ -1,212 +1,152 @@
 ﻿using Govor.Mobile.Services.Interfaces;
-using Govor.Mobile.Services.Interfaces.JwtServices;
+using Govor.Mobile.Models.Responses;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Govor.Mobile.Models.Responses;
 
 namespace Govor.Mobile.Services.Api.Base;
 
 public class ApiClient : IApiClient
 {
     private readonly HttpClient _httpClient;
-    private readonly IJwtProviderService _jwtProvider;
     private readonly ILogger<ApiClient> _logger;
 
-    private readonly JsonSerializerOptions _jsonOptions = new()
+    private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
     public ApiClient(
+        HttpClient httpClient,
         IServerIpProvider ipProvider,
-        IJwtProviderService jwtProvider,
         ILogger<ApiClient> logger)
     {
-        _httpClient = new HttpClient();
-        _jwtProvider = jwtProvider;
+        _httpClient = httpClient;
         _logger = logger;
 
+        // BaseAddress через DI
         _httpClient.BaseAddress = new Uri(ipProvider.IP);
     }
 
-    // Универсальный метод, с обработкой 401
-    private async Task<HttpResult<T>> SendWithAuthRetryAsync<T>(
-        Func<HttpRequestMessage> createRequest, bool authenticated = true)
+    // -----------------------------
+    // CORE SEND
+    // -----------------------------
+    private async Task<HttpResult<T>> SendAsync<T>(HttpRequestMessage request)
     {
-        async Task<HttpResponseMessage> SendAuthorizedAsync()
+        try
         {
-            using var request = createRequest();
+            using var response = await _httpClient.SendAsync(request);
 
-            if (authenticated)
+            if (!response.IsSuccessStatusCode)
             {
-                var token = await _jwtProvider.GetAccessTokenAsync();
-                if (!string.IsNullOrEmpty(token))
-                {
-                    request.Headers.Authorization =
-                        new AuthenticationHeaderValue("Bearer", token);
-                }
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning(
+                    "Request failed → {StatusCode} | {Error}",
+                    response.StatusCode,
+                    error);
+                return new HttpResult<T>(error, response.StatusCode);
             }
 
-            return await _httpClient.SendAsync(request);
-        }
+            if (response.Content == null)
+                return HttpResult<T>.Success(default);
 
-        var response = await SendAuthorizedAsync();
+            var json = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json))
+                return HttpResult<T>.Success(default);
 
-        // Retry once if 401
-        if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
-        {
-            _logger.LogInformation("Access token expired. Retrying request...");
-            response = await SendAuthorizedAsync();
-        }
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            _logger.LogWarning("Request failed: {Error}", error);
-            return new HttpResult<T>(error, response.StatusCode);
-        }
-
-        var json = await response.Content.ReadAsStringAsync();
-
-        if (!string.IsNullOrEmpty(json))
-        {
             var result = JsonSerializer.Deserialize<T>(json, _jsonOptions);
             return HttpResult<T>.Success(result!);
         }
-        else
-        {
-            return HttpResult<T>.Success(default);
-        }
-    }
-
-    
-
-    public async Task<HttpResult<T>> GetAsync<T>(string endpoint, bool authenticated = true)
-    {
-        try
-        {
-            return await SendWithAuthRetryAsync<T>(() => new HttpRequestMessage(HttpMethod.Get, endpoint), authenticated);
-        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while sending GET request.");
+            _logger.LogError(ex, "HTTP request failed");
             return HttpResult<T>.FromException(ex);
         }
     }
 
+    // -----------------------------
+    // REQUEST FACTORY
+    // -----------------------------
+    private HttpRequestMessage CreateRequest(
+        HttpMethod method,
+        string endpoint,
+        bool authenticated = true,
+        HttpContent? content = null)
+    {
+        var request = new HttpRequestMessage(method, endpoint);
 
+        if (content != null)
+            request.Content = content;
+
+        // Этот флаг обрабатывается AuthHeaderHandler
+        request.Options.Set(HttpRequestOptionsKeys.RequireAuth, authenticated);
+
+        return request;
+    }
+
+    // -----------------------------
+    // GET
+    // -----------------------------
+    public Task<HttpResult<T>> GetAsync<T>(string endpoint, bool authenticated = true)
+    {
+        var request = CreateRequest(HttpMethod.Get, endpoint, authenticated);
+        return SendAsync<T>(request);
+    }
+
+    // -----------------------------
     // POST
-    public async Task<HttpResult<T>> PostAsync<T>(string endpoint, object data, bool authenticated = true)
+    // -----------------------------
+    public Task<HttpResult<T>> PostAsync<T>(string endpoint, object data, bool authenticated = true)
     {
-        try
-        {
-            return await SendWithAuthRetryAsync<T>(() =>
-            {
-                var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
-                return new HttpRequestMessage(HttpMethod.Post, endpoint) { Content = content };
-            }, authenticated);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while sending POST request.");
-            return HttpResult<T>.FromException(ex);
-        }
+        var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+        var request = CreateRequest(HttpMethod.Post, endpoint, authenticated, content);
+        return SendAsync<T>(request);
     }
 
-
+    // -----------------------------
     // PUT
-    public async Task<HttpResult<T>> PutAsync<T>(string endpoint, object data, bool authenticated = true)
+    // -----------------------------
+    public Task<HttpResult<T>> PutAsync<T>(string endpoint, object data, bool authenticated = true)
     {
-        try
-        {
-            return await SendWithAuthRetryAsync<T>(() =>
-            {
-                var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
-                return  new HttpRequestMessage(HttpMethod.Put, endpoint) { Content = content };
-            }, authenticated);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while sending PUT request.");
-            return HttpResult<T>.FromException(ex);
-        }
+        var content = new StringContent(JsonSerializer.Serialize(data), Encoding.UTF8, "application/json");
+        var request = CreateRequest(HttpMethod.Put, endpoint, authenticated, content);
+        return SendAsync<T>(request);
     }
 
+    // -----------------------------
     // DELETE
+    // -----------------------------
     public async Task<HttpResult<bool>> DeleteAsync(string endpoint, bool authenticated = true)
     {
-        try
-        {
-            var result = await SendWithAuthRetryAsync<string>(() =>
-                new HttpRequestMessage(HttpMethod.Delete, endpoint), authenticated);
+        var request = CreateRequest(HttpMethod.Delete, endpoint, authenticated);
+        var result = await SendAsync<string>(request);
 
-            return result.IsSuccess
-                ? HttpResult<bool>.Success(true)
-                : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while sending DELETE request.");
-            return HttpResult<bool>.FromException(ex);
-        }
+        return result.IsSuccess
+            ? HttpResult<bool>.Success(true)
+            : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
     }
 
-
-    // POST multipart/form-data (для загрузки медиа)
-    public async Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(
-        string endpoint, MultipartFormDataContent form, bool authenticated = true)
+    // -----------------------------
+    // MULTIPART (UPLOAD)
+    // -----------------------------
+    public Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(
+        string endpoint,
+        MultipartFormDataContent form,
+        bool authenticated = true)
     {
-        try
-        {
-            return await SendWithAuthRetryAsync<UploadMediaResponse>(() =>
-            {
-                var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
-                {
-                    Content = form
-                };
-                return request;
-            }, authenticated);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error while sending multipart POST request.");
-            return HttpResult<UploadMediaResponse>.FromException(ex);
-        }
+        var request = CreateRequest(HttpMethod.Post, endpoint, authenticated, form);
+        return SendAsync<UploadMediaResponse>(request);
     }
 
-
-    // GET (stream download, для скачивания медиа)
+    // -----------------------------
+    // STREAM DOWNLOAD
+    // -----------------------------
     public async Task<HttpResult<Utilities.FileResult>> GetFileStreamAsync(string endpoint, bool authenticated = true)
     {
         try
         {
-            async Task<HttpResponseMessage> SendAuthorizedAsync(Func<HttpRequestMessage> createRequest)
-            {
-                using var request = createRequest();
-
-                if (authenticated)
-                {
-                    var token = await _jwtProvider.GetAccessTokenAsync();
-                    if (!string.IsNullOrEmpty(token))
-                    {
-                        request.Headers.Authorization =
-                            new AuthenticationHeaderValue("Bearer", token);
-                    }
-                }
-
-                return await _httpClient.SendAsync(request);
-            }
-            
-            var response = await SendAuthorizedAsync( () => new HttpRequestMessage(HttpMethod.Get, endpoint));
-
-            if (response.StatusCode == HttpStatusCode.Unauthorized && authenticated)
-            {
-                _logger.LogInformation("Access token expired. Retrying request...");
-                response = await SendAuthorizedAsync( () => new HttpRequestMessage(HttpMethod.Get, endpoint));
-            }
+            var request = CreateRequest(HttpMethod.Get, endpoint, authenticated);
+            var response = await _httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -215,19 +155,21 @@ public class ApiClient : IApiClient
             }
 
             var stream = await response.Content.ReadAsStreamAsync();
-
-            // Получаем имя файла из заголовка Content-Disposition
             var contentDisposition = response.Content.Headers.ContentDisposition;
-            string fileName = contentDisposition?.FileNameStar ?? contentDisposition?.FileName ?? "downloaded_file";
 
-            // Получаем MIME-тип
-            string? mimeType = response.Content.Headers.ContentType?.MediaType;
+            var fileName =
+                contentDisposition?.FileNameStar ??
+                contentDisposition?.FileName ??
+                "downloaded_file";
 
-            return HttpResult<Utilities.FileResult>.Success(new Utilities.FileResult(stream, fileName, mimeType));
+            var mimeType = response.Content.Headers.ContentType?.MediaType;
+
+            return HttpResult<Utilities.FileResult>.Success(
+                new Utilities.FileResult(stream, fileName, mimeType));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while downloading stream.");
+            _logger.LogError(ex, "File download failed");
             return HttpResult<Utilities.FileResult>.FromException(ex);
         }
     }

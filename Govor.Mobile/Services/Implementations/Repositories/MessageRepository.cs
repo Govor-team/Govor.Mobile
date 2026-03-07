@@ -19,7 +19,6 @@ public class MessagesRepository : IMessagesRepository
     private readonly IChatLoaderApi _api;
     private readonly IChatHub _hub;
     private readonly IMapper _mapper;
-    private readonly IMessageNotificationService _notificationService;
     private readonly IUserProfileService _profileService;
     
     private readonly IMemoryCache _cache;
@@ -43,7 +42,6 @@ public class MessagesRepository : IMessagesRepository
         IChatHub hub,
         IMapper mapper,
         IMemoryCache cache,
-        IMessageNotificationService notificationService,
         IUserProfileService profileService)
     {
         _contextFactory = contextFactory;
@@ -51,7 +49,6 @@ public class MessagesRepository : IMessagesRepository
         _hub = hub;
         _mapper = mapper;
         _cache = cache;
-        _notificationService = notificationService;
         _profileService = profileService;
     }
 
@@ -89,12 +86,7 @@ public class MessagesRepository : IMessagesRepository
             .OrderByDescending(x => x.SentAt)
             .Take(count)
             .ToListAsync();
-
-        if (!entities.Any())
-        {
-            _ = SyncChatAsync(chatId, group, after: count);
-        }
-
+        
         return _mapper.Map<List<MessageResponse>>(entities);
     }
 
@@ -316,9 +308,6 @@ public class MessagesRepository : IMessagesRepository
     {
         var response = _mapper.Map<MessageResponse>(entity);
         OnNewMessage?.Invoke(response);
-        
-        if(response.SenderId != await GetMyIdAsync())
-           await _notificationService.ShowMessageNotification(response);
     }
 
     private void NotifyMessageUpdated(LocalMessage entity)

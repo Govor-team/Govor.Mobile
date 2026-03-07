@@ -23,20 +23,53 @@ using Govor.Mobile.Services.Interfaces.Notification;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.Services.Interfaces.Repositories;
 using Govor.Mobile.Services.Mapping;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Extensions.Http;
 using MainPage = Govor.Mobile.Pages.MainFlow.MainPage;
 
 namespace Govor.Mobile.Services;
 
 internal static class ServiceRegistration
 {
+    public static MauiAppBuilder RegisterHttpClients(this MauiAppBuilder builder)
+    {
+        builder.Services.AddTransient<AuthHeaderHandler>();
+        
+        var services = builder.Services;
+
+        services.AddHttpClient<INetworkChecker, NetworkChecker>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(3);
+        });
+
+        services.AddHttpClient<IApiClient, ApiClient>(client => {
+                client.Timeout = TimeSpan.FromSeconds(10); 
+            })
+            .AddHttpMessageHandler<AuthHeaderHandler>()
+            .AddPolicyHandler(GetRetryPolicy());
+            //.AddHttpMessageHandler<RefreshTokenHandler>();
+
+        return builder;
+    }
+    
+    private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError() // 5xx + network errors
+            .WaitAndRetryAsync(
+                retryCount: 4,
+                sleepDurationProvider: retryAttempt =>
+                    TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) // 2s, 4s, 8s, 16s
+            );
+    }
+    
     public static MauiAppBuilder RegisterAppServices(this MauiAppBuilder builder)
     {
+        builder.Services.AddTransient<NetworkAvailabilityService>();
         builder.Services.AddSingleton<IAppStartupOrchestrator, AppStartupOrchestrator>();
         
-        builder.Services.AddSingleton<NetworkAvailabilityService>();
-        
-        builder.Services.AddSingleton<IApiClient, ApiClient>();
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<IFriendsRequestQueryService, FriendsRequestQueryService>();
         builder.Services.AddSingleton<IFriendshipApiService, FriendshipApiService>();
@@ -123,11 +156,19 @@ internal static class ServiceRegistration
         builder.Services.AddTransient<AvatarViewModel>();
         
         builder.Services.AddAutoMapper(typeof(MappingProfile));
-        
+
         // Notification 
-        builder.Services.AddSingleton<IMessageNotificationService, MessageNotificationService>();
-        builder.Services.AddSingleton<IMessageWasSendedFormater, MessageWasSendedFormater>();
+        builder.Services.AddSingleton<PushNotificationService>();
+        builder.Services.AddSingleton<IPushNotificationService>(sp => sp.GetRequiredService<PushNotificationService>());
+        builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<PushNotificationService>());
         
+        builder.Services.AddSingleton<IPushTokenService, PushTokenService>();
+        
+        // builder.Services.AddSingleton<IMessageNotificationService, MessageNotificationService>();
+        builder.Services.AddSingleton<IMessageWasSendedFormater, MessageWasSendedFormater>();
+
+        builder.Services.AddTransient<IRetryPolicy, InfiniteRetryPolicy>();
+
         return builder;
     }
 

@@ -14,7 +14,7 @@ public class ChatHub : IChatHub
     private readonly IJwtProviderService _jwtProvider;
     private readonly IServerIpProvider _ipProvider;
     
-    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider)
+    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider, IRetryPolicy retryPolicy)
     {
         _logger = logger;
         _jwtProvider = jwtProvider;
@@ -26,7 +26,7 @@ public class ChatHub : IChatHub
                 {
                     options.AccessTokenProvider = async () => { return await _jwtProvider.GetAccessTokenAsync(); };
                 })
-            .WithAutomaticReconnect()
+            .WithAutomaticReconnect(retryPolicy)
             .Build();
 
         _hubConnection.Closed += async (error) =>
@@ -35,6 +35,7 @@ public class ChatHub : IChatHub
 
             try
             {
+                await Task.Delay(5000);
                 await _hubConnection.StartAsync();
                 _logger.LogInformation("SignalR reconnected after token refresh.");
             }
@@ -43,9 +44,9 @@ public class ChatHub : IChatHub
                 _logger.LogError(ex, "Failed to reconnect SignalR after token refresh.");
             }
         };
-        
+
         #region Events
-        
+
         _hubConnection.On("ReceiveMessage", (UserMessageResponse dto) =>
         {
             if(dto.MessageId != Guid.Empty && !string.IsNullOrEmpty(dto.EncryptedContent))
@@ -76,10 +77,16 @@ public class ChatHub : IChatHub
             
             _logger.LogInformation("Edited message: {0}", dto.MessageId);
         });
-        
-        _hubConnection.Reconnected += (connectionId) =>
+
+        _hubConnection.Reconnecting += error =>
         {
-            _logger.LogInformation("SignalR reconnected automatically.");
+            Console.WriteLine("Connection lost...");
+            return Task.CompletedTask;
+        };
+
+        _hubConnection.Reconnected += id =>
+        {
+            Console.WriteLine("Connection restored");
             return Task.CompletedTask;
         };
         #endregion

@@ -1,7 +1,5 @@
-﻿using CommunityToolkit.Maui.Extensions;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Govor.Mobile.ContentViews;
 using Govor.Mobile.Pages.ContentViews;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.Profiles;
@@ -24,7 +22,9 @@ public partial class AvatarViewModel : ObservableObject
     private Color avatarBackgroundColor = Colors.Gray;
     
     public bool HasImage => AvatarImage != null;
-
+    
+    private Guid avatarId;
+    
     public AvatarViewModel(
         ICurrentUserAvatarService profileService,
         IDefaultAvatarGenerator avatarGenerator)
@@ -40,6 +40,7 @@ public partial class AvatarViewModel : ObservableObject
         if (iconId.HasValue && iconId.Value != Guid.Empty)
         {
            await TryLoadAvatarAsync(iconId.Value);
+           avatarId = iconId.Value;
         }
     }
 
@@ -75,7 +76,7 @@ public partial class AvatarViewModel : ObservableObject
     [RelayCommand]
     private async Task PickNewAvatarAsync()
     {
-        var newMediaId = await _profileService.PickAndUploadNewAvatarAsync();
+        var newMediaId = await _profileService.PickAndUploadNewAvatarAsync(avatarId);
 
         if (!newMediaId.HasValue)
             return;

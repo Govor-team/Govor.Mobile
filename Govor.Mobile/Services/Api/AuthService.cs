@@ -111,8 +111,7 @@ public class AuthService : IAuthService
     public async Task InitializeAsync()
     {
         await _jwtProvider.InitializeAsync();
-        IsAuthenticated = _jwtProvider.HasRefreshToken;
-        AuthenticationStateChanged?.Invoke(this, _isAuthenticated);
+        _isAuthenticated = _jwtProvider.HasRefreshToken;
     }
 }
 public class LogoutException(string message) : Exception(message);

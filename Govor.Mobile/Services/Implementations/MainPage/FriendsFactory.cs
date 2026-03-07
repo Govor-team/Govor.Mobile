@@ -25,42 +25,51 @@ public class FriendsFactory : IFriendsFactory
         _privateChatApi = privateChatApi;
     }
 
-    public async Task<UserListItemViewModel> CreateAsync(UserProfileDto profile)
+    public async Task<UserListItemViewModel> CreateAsync(UserProfileDto profile, Guid privateChatId)
     {
-        var avatar = _provider.GetRequiredService<AvatarViewModel>(); 
-        await avatar.InitializeAsync(profile.Username, profile.IconId);
+        // Инициализация аватара
+        var avatar = _provider.GetRequiredService<AvatarViewModel>();
         
-        var result = await _privateChatApi.GetChatByFriendId(profile.Id);
-        
-        var vm = new UserListItemViewModel(
-            avatar,
-            null,
-            profile.Id)
+        _ = avatar.InitializeAsync(profile.Username, profile.IconId)
+            .ContinueWith(t =>
+            {
+                if (t.IsFaulted)
+                    Console.WriteLine($"[Avatar ERROR] {profile.Id}: {t.Exception?.GetBaseException().Message}");
+            });
+
+        var vm = new UserListItemViewModel(avatar, null, profile.Id)
         {
             Title = profile.Username,
-            IsOnline = profile.IsOnline,
+            IsOnline = profile.IsOnline
         };
+
         try
         {
-            // предположим здесь:
-            var lastMessage = result.IsSuccess ? 
-                (await _messages.GetMessagesLocalAsync(result.Value, 1)).FirstOrDefault() : null;
-            
-            vm.Subtitle = lastMessage?.EncryptedContent;
-            
-            vm.DateTime = lastMessage != null
-                ? _lastSeen.FormatLastSeen(lastMessage.SentAt)
-                : String.Empty;
+            // Получаем последние сообщения для приватного чата
+            if (privateChatId != Guid.Empty)
+            {
+                _ = LoadLastMessageAsync(vm, privateChatId); // фоновой вызов
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[FACTORY ERROR] Для {profile.Id}: {ex.Message}");
-            // или верни vm без последних сообщений
-            // vm.LastMessage = "Ошибка загрузки сообщений";
         }
 
         return vm;
-        
-        
+    }
+    
+    private async Task LoadLastMessageAsync(UserListItemViewModel vm, Guid privateChatId)
+    {
+        try
+        {
+            var lastMessage = (await _messages.GetMessagesLocalAsync(privateChatId, 1)).FirstOrDefault();
+            vm.Subtitle = lastMessage?.EncryptedContent;
+            vm.DateTime = lastMessage != null ? _lastSeen.FormatLastSeen(lastMessage.SentAt) : string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FACTORY ERROR] Last message load failed: {ex.Message}");
+        }
     }
 }

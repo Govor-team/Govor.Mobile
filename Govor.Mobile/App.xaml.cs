@@ -2,6 +2,7 @@
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
+using Govor.Mobile.Services.Interfaces.Notification;
 using Plugin.LocalNotification;
 
 namespace Govor.Mobile;
@@ -11,7 +12,7 @@ public partial class App : Application
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IAppStartupOrchestrator _initializer;
-
+    
     public App(
         IAuthService authService,
         IServiceProvider serviceProvider,
@@ -44,11 +45,11 @@ public partial class App : Application
         base.OnStart();
         
         _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-
+        
         try
         {
             await _authService.InitializeAsync();
-            // иначе ждём события (токен может быть в процессе refresh)
+            OnAuthenticationStateChanged(_authService, _authService.IsAuthenticated);
         }
         catch (Exception ex)
         {
@@ -56,7 +57,6 @@ public partial class App : Application
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
                 await Current.MainPage.DisplayAlertAsync("Ошибка запуска", "Не удалось инициализировать приложение", "OK");
-                // или перейти на страницу с retry
             });
         }
     }
@@ -69,9 +69,24 @@ public partial class App : Application
         await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             if (isAuthenticated)
+            {
                 await NavigateToAuthenticatedAsync();
+            }
             else
+            {
+                try
+                {
+                    var push = _serviceProvider.GetService<IPushNotificationService>();
+                    if (push != null)
+                        await push.UnregisterAsync();
+                }
+                catch
+                {
+                    // swallow: ensure logout flow doesn't crash if push service fails
+                }
+
                 MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+            }
         });
     }
 
@@ -79,8 +94,6 @@ public partial class App : Application
     {
         try
         {
-            await LocalNotificationCenter.Current.RequestNotificationPermission();
-            
             await _initializer.StartAsync();
             MainPage = _serviceProvider.GetRequiredService<MainShell>();
         }

@@ -4,18 +4,24 @@ namespace Govor.Mobile.Services.Implementations;
 
 public class WasOnlineFormater : IWasOnlineFormater
 {
-    public string FormatLastSeen(DateTime lastSeen)
+    public string FormatLastSeen(DateTime utcLastSeen)
     {
-        if (lastSeen.Date == DateTime.Today)
-            return lastSeen.ToString("HH:mm"); // "14:20"
-    
-        if (lastSeen.Date == DateTime.Today.AddDays(-1))
-            return "Вчера"; 
-        
-        if (lastSeen.Date == DateTime.Today.AddDays(-2))
-            return "Позовчера"; 
-        
-        return lastSeen.ToString("dd.MM.yy"); // "25.12.25"
+        var localTime = utcLastSeen.Kind == DateTimeKind.Utc
+            ? utcLastSeen.ToLocalTime()
+            : DateTime.SpecifyKind(utcLastSeen, DateTimeKind.Utc).ToLocalTime();
+
+        var today = DateTime.Now.Date;
+
+        if (localTime.Date == today)
+            return localTime.ToString("HH:mm");
+
+        if (localTime.Date == today.AddDays(-1))
+            return "Вчера";
+
+        if (localTime.Date == today.AddDays(-2))
+            return "Позавчера";
+
+        return localTime.ToString("dd.MM.yy");
     }
 
     public string FormatIsOnline(bool isOnline)

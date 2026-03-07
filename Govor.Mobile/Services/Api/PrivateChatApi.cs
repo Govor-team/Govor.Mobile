@@ -1,4 +1,5 @@
-﻿using Govor.Mobile.Services.Api.Base;
+﻿using Govor.Mobile.Models.DTO;
+using Govor.Mobile.Services.Api.Base;
 using Markdig.Extensions.TaskLists;
 
 namespace Govor.Mobile.Services.Api;
@@ -7,7 +8,7 @@ public class PrivateChatApi : IPrivateChatApi
 {
     private readonly IApiClient _apiClient;
     private readonly Dictionary<Guid, Guid> _privateChats = new();
-    
+
     public PrivateChatApi(IApiClient apiClient)
     {
         _apiClient = apiClient;
@@ -29,6 +30,21 @@ public class PrivateChatApi : IPrivateChatApi
         else
         {
             return Result<Guid>.Failure(result.ErrorMessage);
+        }
+    }
+
+    public async Task<Result<IEnumerable<PrivateChatDto>>> GetPrivateChats()
+    {
+        var path = $"/api/user/private-chats";
+        var result = await _apiClient.GetAsync<IEnumerable<PrivateChatDto>>(path, authenticated: true);
+
+        if (result.IsSuccess)
+        {
+            return Result<IEnumerable<PrivateChatDto>>.Success(result.Value);
+        }
+        else
+        {
+            return Result<IEnumerable<PrivateChatDto>>.Failure(result.ErrorMessage);
         }
     }
 }

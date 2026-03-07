@@ -132,7 +132,6 @@ public partial class UpdateService : IUpdateService, IConnectivityChanged
         catch (Exception ex)
         {
             await AppShell.DisplayException(ex.ToString());
-
         }
     }
 

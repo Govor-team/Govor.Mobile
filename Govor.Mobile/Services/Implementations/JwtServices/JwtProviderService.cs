@@ -59,7 +59,7 @@ public sealed class JwtProviderService : IJwtProviderService
 
             var result = await RefreshInternalAsync();
             if (!result.IsSuccess)
-                throw new InvalidOperationException(result.ErrorMessage);
+                return null;
 
             return _accessToken!;
         }

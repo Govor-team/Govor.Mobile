@@ -3,5 +3,5 @@
 public interface ICurrentUserAvatarService
 {
     Task<ImageSource> LoadAvatarAsync(Guid avatarId);
-    Task<Guid?> PickAndUploadNewAvatarAsync();
+    Task<Guid?> PickAndUploadNewAvatarAsync(Guid oldAvatarId);
 }

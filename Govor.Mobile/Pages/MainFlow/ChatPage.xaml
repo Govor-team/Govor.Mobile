@@ -68,6 +68,7 @@
                                         <markdown:MarkdownView MarkdownText="{Binding Text}"
                                                                Style="{StaticResource DefaultMarkdownStyle}"
                                                                ImageAspect="AspectFill"
+                                                               OnHyperLinkClicked="MarkdownView_OnHyperLinkClicked"
                                                                IsVisible="{Binding Text, Converter={toolkit:IsStringNotNullOrEmptyConverter}}" />
 
                                         <Label Text="{Binding Time}"

@@ -183,6 +183,33 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         UnsubscribeRealtimeEvents();
     }
 
+    [RelayCommand]
+    private async Task OpenLink(string url)
+    {
+        try
+        {
+            if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+                {
+                    await Launcher.OpenAsync(uri);
+                }
+                else
+                {
+                    Console.WriteLine($"Blocked unsafe scheme: {uri.Scheme}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"Invalid URL: {url}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to open link: {ex}");
+        }
+    }
+
     private void UnsubscribeRealtimeEvents()
     {
         _realtime.OnUserOnline -= SetOnline;

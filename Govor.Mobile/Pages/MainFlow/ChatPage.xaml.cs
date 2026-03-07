@@ -74,4 +74,13 @@ public partial class ChatPage : ContentPage
             _isLoadingMore = false;
         }
     }
+
+    private void MarkdownView_OnHyperLinkClicked(object sender, Indiko.Maui.Controls.Markdown.LinkEventArgs e)
+    {
+        if (BindingContext is ChatPageModel bc)
+        {
+            if (bc.IsLoaded)
+                bc.OpenLinkCommand.Execute(e.Url);
+        }
+    }
 }

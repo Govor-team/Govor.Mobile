@@ -17,7 +17,7 @@
 
         <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,16">
             <Label Text="{Binding Name}"
-                   FontSize="28"
+                   FontSize="26"
                    FontAttributes="Bold"
                    TextColor="White"
                    VerticalOptions="Center"

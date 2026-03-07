@@ -8,15 +8,37 @@ public class UserAvatartVMCreater : IAvatartVMCreater
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IProfileApiClient _profileApiClient;
+    private readonly IFriendsRealtimeService _realtime;
     private readonly Dictionary<Guid, AvatarViewModel> _avatarViewModels = new Dictionary<Guid, AvatarViewModel>();
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
     
-    public UserAvatartVMCreater(IServiceProvider serviceProvider, IProfileApiClient profileApiClient)
+    public UserAvatartVMCreater(
+        IServiceProvider serviceProvider,
+        IFriendsRealtimeService realtime,
+        IProfileApiClient profileApiClient)
     {
         _serviceProvider = serviceProvider;
+        _realtime = realtime;
         _profileApiClient = profileApiClient;
-    } 
-    
+
+        _realtime.OnUserAvatarUpdate += OnUserAvatarUpdateAsync;
+    }
+
+    private async Task OnUserAvatarUpdateAsync(Guid userId, Guid avatarId)
+    {
+        if (_avatarViewModels.TryGetValue(userId, out var vm))
+        {
+            try
+            {
+                await vm.InitializeAsync(vm.AvatarText, avatarId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[FriendsListController] Ошибка OnUserAvatarUpdateAsync: {ex}");
+            }
+        }
+    }
+
     public async Task<AvatarViewModel> CreateAvatar(Guid userId)
     {
         // Сначала проверяем без блокировки

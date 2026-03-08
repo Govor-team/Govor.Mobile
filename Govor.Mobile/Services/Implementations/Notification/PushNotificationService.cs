@@ -65,7 +65,6 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
             ChannelName = "Сообщения",
             Description = "Уведомления о новых сообщениях в чатах",
             Importance = NotificationImportance.High,
-            Group = "Govor",
             LockscreenVisibility = NotificationVisibility.Public,
             VibrationPattern = new long[] { 0, 250, 250, 250 },
             // Sound = "chat_sound" // если есть кастомный звук
@@ -104,12 +103,8 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
     {
         try
         {
-            if (Preferences.Get(_pref_key, "") != token)
-            {
-                await _pushTokenService.PushToken(token, DeviceInfo.Platform.ToString().ToLower());
-                Preferences.Set(_pref_key, token);
-            }
-              
+            var result = await _pushTokenService.PushToken(token, DeviceInfo.Platform.ToString().ToLower());
+            Console.WriteLine($"[Token status] status: {result.IsSuccess} | errore: {result.ErrorMessage}");
             // Можно сохранить токен локально Preferences.Set("fcm_token", token);
         }
         catch (Exception ex)

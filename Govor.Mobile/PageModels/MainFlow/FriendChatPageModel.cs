@@ -1,11 +1,12 @@
-﻿using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.ChatPage;
 using Govor.Mobile.Services.Interfaces.Profiles;
+using System.Collections.ObjectModel;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 
@@ -43,7 +44,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     [ObservableProperty] private bool isLoadingMore;
     [ObservableProperty] private bool hasMoreMessages = true;
 
-    public ObservableRangeCollection<MessagesViewModel> Messages => _controller.Messages;
+    public ObservableRangeCollection<MessagesGroupModel> MessageGroups => _controller.MessageGroups;
     [ObservableProperty] private ChatHeaderViewModel header;
 
     public ChatPageModel(
@@ -156,7 +157,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         IsLoadingMore = true;
 
-        var oldestMessageId = Messages.FirstOrDefault()?.Id;
+        var oldestMessageId = MessageGroups.FirstOrDefault()?.Messages.FirstOrDefault()?.Id;
 
         if (oldestMessageId is null)
         {

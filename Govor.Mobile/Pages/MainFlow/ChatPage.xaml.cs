@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Govor.Mobile.PageModels.ContentViewsModel;
+﻿using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.PageModels.MainFlow;
 
 namespace Govor.Mobile.Pages.MainFlow;
@@ -29,7 +25,7 @@ public partial class ChatPage : ContentPage
                 bc.InitAsync();
         }
         
-        CollectionView.ScrollTo(0, position: ScrollToPosition.End);
+        CollectionView.ScrollTo(0, position: ScrollToPosition.End, animate: false);
         base.OnAppearing();
     }
 
@@ -49,8 +45,8 @@ public partial class ChatPage : ContentPage
         if (_isLoadingMore || !_hasMoreMessages)
             return;
 
-        // Когда доскроллил к верхней границе (первые 2 элемента)
-        if (e.FirstVisibleItemIndex <= 1)
+        // Когда доскроллил к верхней границе (первые 11 элемента)
+        if (e.FirstVisibleItemIndex <= 10)
         {
             _isLoadingMore = true;
 
@@ -58,7 +54,7 @@ public partial class ChatPage : ContentPage
             {
                 // Сохраняем первый видимый элемент
                 var firstIndex = e.FirstVisibleItemIndex;
-                if (CollectionView.ItemsSource is IList<MessagesViewModel> messages && messages.Count > firstIndex)
+                if (CollectionView.ItemsSource is IList<MessagesGroupModel> messages && messages.Count > firstIndex)
                 {
                     var element = messages[firstIndex];
                     var loadedCount = await bc.LoadMoreAsync();

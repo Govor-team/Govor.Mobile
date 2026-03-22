@@ -47,9 +47,9 @@ public partial class TagView : ContentView
         Tooltip.IsVisible = true;
 
         await Task.WhenAll(
-            Tooltip.FadeTo(1, 120),
-            Tooltip.TranslateTo(0, -44, 120),
-            TagBody.ScaleTo(1.05, 120)
+            Tooltip.FadeToAsync(1, 120),
+            Tooltip.TranslateToAsync(0, -44, 120),
+            TagBody.ScaleToAsync(1.05, 120)
         );
     }
 
@@ -61,9 +61,9 @@ public partial class TagView : ContentView
         _isTooltipVisible = false;
 
         await Task.WhenAll(
-            Tooltip.FadeTo(0, 120),
-            Tooltip.TranslateTo(0, -36, 120),
-            TagBody.ScaleTo(1.0, 120)
+            Tooltip.FadeToAsync(0, 120),
+            Tooltip.TranslateToAsync(0, -36, 120),
+            TagBody.ScaleToAsync(1.0, 120)
         );
 
         Tooltip.IsVisible = false;

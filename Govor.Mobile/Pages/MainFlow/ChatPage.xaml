@@ -2,7 +2,7 @@
 
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Messages"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
@@ -25,64 +25,95 @@
                 <!-- MESSAGES -->
                 <CollectionView
                     x:Name="CollectionView"
-                    ItemsSource="{Binding Messages}"
-                    ItemsLayout="VerticalList"
+                    ItemsSource="{Binding MessageGroups}"
+                    ItemsLayout="VerticalList" 
                     VerticalScrollBarVisibility="Never">
 
                     <CollectionView.Footer>
                         <Grid HeightRequest="90" />
                     </CollectionView.Footer>
-                    
+
                     <CollectionView.Header>
                         <ActivityIndicator
                             IsVisible="{Binding IsLoadingMore}"
                             IsRunning="{Binding IsLoadingMore}"
                             Color="White"
-                            Margin="0,10"/>
+                            Margin="0,10" />
                     </CollectionView.Header>
-                    
+
                     <CollectionView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:MessagesViewModel">
-                            <Grid Padding="8" ColumnDefinitions="Auto,*">
+                        <DataTemplate x:DataType="vm:MessagesGroupModel">
+                            <Grid Padding="8">
 
-                                <toolkit:AvatarView
-                                    Grid.Column="0"
-                                    IsVisible="{Binding IsIncoming}"
-                                    HeightRequest="28" WidthRequest="28"
-                                    Margin="0,0,6,0" VerticalOptions="End"
-                                    CornerRadius="30"
-                                    BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
-                                    Text="{Binding Avatar.AvatarText}"
-                                    ImageSource="{Binding Avatar.AvatarImage}"
-                                    BorderColor="Transparent" />
+                                <!-- STACK MESSAGES -->
+                                <VerticalStackLayout
+                                    BindableLayout.ItemsSource="{Binding Messages}"
+                                    Spacing="4">
 
-                                <Border Grid.Column="1"
-                                        Background="{Binding BubbleColor}"
-                                        StrokeShape="RoundRectangle 18"
-                                        Padding="8"
-                                        HorizontalOptions="{Binding BubbleAlignment}"
-                                        MaximumWidthRequest="{OnPlatform iOS=350, Android=350, WinUI=400}"
-                                        StrokeThickness="0">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:MessagesViewModel">
+                                            <VerticalStackLayout Spacing="2" HorizontalOptions="Fill">
 
-                                    <StackLayout Spacing="4">
-                                        <markdown:MarkdownView MarkdownText="{Binding Text}"
-                                                               Style="{StaticResource DefaultMarkdownStyle}"
-                                                               ImageAspect="AspectFill"
-                                                               OnHyperLinkClicked="MarkdownView_OnHyperLinkClicked"
-                                                               IsVisible="{Binding Text, Converter={toolkit:IsStringNotNullOrEmptyConverter}}" />
+                                                <VerticalStackLayout HorizontalOptions="{Binding BubbleAlignment}" Spacing="2">
+                                                    <Border
+                                                        Background="{Binding BubbleBackground}"
+                                                        Padding="7"
+                                                        HorizontalOptions="{Binding BubbleAlignment}">
 
-                                        <Label Text="{Binding Time}"
-                                               FontSize="10"
-                                               HorizontalOptions="End"
-                                               TextColor="#D0D0D0"
-                                               Margin="0,-2,0,0" />
-                                    </StackLayout>
+                                                        <Border.StrokeShape>
+                                                            <RoundRectangle CornerRadius="{Binding BubbleCorners}" />
+                                                        </Border.StrokeShape>
 
-                                </Border>
+                                                        <Grid
+                                                              RowDefinitions="Auto,1,Auto"
+                                                              ColumnDefinitions="Auto,Auto">
+                                                            <markdown:MarkdownView
+                                                                MaximumWidthRequest="250"
+                                                                MinimumWidthRequest="45"
+                                                                HyperlinkColor="#6394B7"
+                                                                OnHyperLinkClicked="MarkdownView_OnHyperLinkClicked"
+                                                                TextColor="#cdd6d9"
+                                                                MarkdownText="{Binding Text}" />
+
+                                                            <!-- Время внутри тела сообщения -->
+                                                            <Label
+                                                                Grid.Row="2"
+                                                                Grid.Column="0"
+                                                                Text="{Binding Time}"
+                                                                FontSize="9"
+                                                                TextColor="#A0A0A0"
+                                                                VerticalOptions="End"
+                                                                HorizontalOptions="{Binding BubbleAlignment}"
+                                                                Margin="0,0,0,0" />
+                                                        </Grid>
+            
+                                                    </Border>
+
+                                                    <!-- Avatar under the last message in a group (time moved into bubble) -->
+                                                    <HorizontalStackLayout IsVisible="{Binding ShowAvatar}"  Spacing="6">
+                                                        <toolkit:AvatarView
+                                                            HeightRequest="28"
+                                                            WidthRequest="28"
+                                                            BorderColor="Transparent"
+                                                            CornerRadius="20"
+                                                            HorizontalOptions="{Binding BubbleAlignment}"
+                                                            BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                                                            Text="{Binding Avatar.AvatarText}"
+                                                            ImageSource="{Binding Avatar.AvatarImage}" />
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+
+                                            </VerticalStackLayout>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+
+                                </VerticalStackLayout>
+
                             </Grid>
+
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
-                    
+
                     <CollectionView.EmptyView>
                         <Label
                             Text="Начните диалог 👋"
@@ -91,11 +122,10 @@
                             FontSize="25"
                             HorizontalOptions="Center"
                             VerticalOptions="Center"
-                            IsVisible="{Binding HasMessages, Converter={toolkit:InvertedBoolConverter}}"/>
+                             />
                     </CollectionView.EmptyView>
                 </CollectionView>
             </Grid>
-
 
 
             <!-- Input -->

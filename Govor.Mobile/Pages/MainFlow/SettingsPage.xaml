@@ -26,7 +26,8 @@
                     HorizontalOptions="Center"
                     Spacing="6">
 
-                    <Grid>
+                    <Grid MaximumHeightRequest="150"
+                          MaximumWidthRequest="150">
                         <toolkit:AvatarView
                             WidthRequest="150"
                             HeightRequest="150"
@@ -76,18 +77,23 @@
                     </Grid>
 
                     <!-- Имя + Tag (inline) -->
-                    <HorizontalStackLayout
+                    <Grid
                         HorizontalOptions="Center"
-                        Spacing="6"
-                        VerticalOptions="Center">
-
+                        ColumnDefinitions="*,Auto"
+                        ColumnSpacing="6"
+                        MaximumWidthRequest="350">
+                        <!-- Имя -->
                         <Label
+                            Grid.Column="0"
                             Text="{Binding UserName}"
                             FontSize="26"
                             FontAttributes="Bold"
+                            LineBreakMode="TailTruncation"
+                            MaxLines="1"
                             FontFamily="CirilicOld"
                             TextColor="White"
-                            VerticalTextAlignment="Center">
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Center">
 
                             <Label.Shadow>
                                 <Shadow
@@ -98,12 +104,12 @@
                             </Label.Shadow>
                         </Label>
 
-                        <!-- Tag как продолжение имени -->
+                        <!-- Tag -->
                         <contentViews:TagView
+                            Grid.Column="1"
                             BindingContext="{Binding Tag}"
-                            VerticalOptions="Center"
-                            Margin="0,2,0,0"/>
-                    </HorizontalStackLayout>
+                            VerticalOptions="Center" />
+                    </Grid>
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Spacing="6">

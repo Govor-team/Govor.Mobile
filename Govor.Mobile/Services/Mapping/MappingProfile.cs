@@ -2,6 +2,7 @@
 using Govor.Mobile.Data;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 
 namespace Govor.Mobile.Services.Mapping;
 
@@ -36,6 +37,7 @@ public class MappingProfile : Profile
         CreateMap<MessageResponse, MessagesViewModel>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(src => src.EncryptedContent))
+            .ForMember(dest => dest.SenderId, opt => opt.MapFrom(srs => srs.SenderId))
             // Игнорируем поля, которые заполнит MappingAction
             .ForMember(dest => dest.Time, opt => opt.Ignore())
             .ForMember(dest => dest.IsIncoming, opt => opt.Ignore())

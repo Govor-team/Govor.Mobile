@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 
 namespace Govor.Mobile.Services.Interfaces;
 

@@ -50,6 +50,19 @@ public class ChatHeaderService : IChatHeaderService
             vm.Subtitle = _formater.FormatIsOnline(profile.IsOnline);
         }
 
+        // Default leave command - navigate back. Consumers can override if needed.
+        vm.LeaveCommand = new AsyncRelayCommand(async () =>
+        {
+            try
+            {
+                await Shell.Current.GoToAsync("..", true);
+            }
+            catch
+            {
+                // swallow navigation errors
+            }
+        });
+
         return vm;
     }
 }

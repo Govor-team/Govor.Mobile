@@ -86,7 +86,7 @@
                                         <!-- <contentViews:UserItemView /> -->
                                     </DataTemplate>
                                 </CollectionView.ItemTemplate>
-
+                                
                                 <CollectionView.EmptyView>
                                     <VerticalStackLayout
                                         HorizontalOptions="Center"

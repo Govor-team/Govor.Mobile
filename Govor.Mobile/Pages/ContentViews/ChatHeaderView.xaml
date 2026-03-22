@@ -40,8 +40,10 @@
         </VerticalStackLayout>
 
         <HorizontalStackLayout Grid.Column="3" Spacing="10">
-            <ImageButton Source="phone_icon.png" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" />
-            <ImageButton Source="dots_vertical.png" />
+            <!-- When this is a 1:1 chat show call and leave buttons; otherwise hide call -->
+            <ImageButton Source="phone_icon.png" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" Command="{Binding CallCommand}" />
+            <Button Text="Выйти" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" Command="{Binding LeaveCommand}" BackgroundColor="Transparent" TextColor="White" />
+            <ImageButton Source="dots_vertical.png" Command="{Binding OpenMenuCommand}" />
         </HorizontalStackLayout>
     </Grid>
 </ContentView>

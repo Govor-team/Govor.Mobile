@@ -15,4 +15,5 @@ public partial class ChatHeaderViewModel : ObservableObject
     public IAsyncRelayCommand GoBackCommand { get; set; }
     public IAsyncRelayCommand CallCommand { get; set; }
     public IAsyncRelayCommand OpenMenuCommand { get; set; }
+    public IAsyncRelayCommand LeaveCommand { get; set; }
 }

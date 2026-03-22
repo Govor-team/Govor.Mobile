@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using AutoMapper;
 using Govor.Mobile.Models.Responses;
-using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Caching.Memory;

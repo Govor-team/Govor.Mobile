@@ -11,12 +11,17 @@
     <Grid SafeAreaEdges="None"
           RowDefinitions="Auto, *" Padding="16,16,16,0">
 
-        <Grid Grid.Row="0" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,16">
+        <Grid Grid.Row="0" 
+              ColumnDefinitions="*, Auto, Auto"
+              RowDefinitions="Auto"
+              Margin="0,0,0,16">
             <Label Text="{Binding Name}"
-                   FontSize="35"
+                   FontSize="32"
                    FontFamily="CirilicOld"
                    FontAttributes="Bold"
                    TextColor="White"
+                   LineBreakMode="TailTruncation"
+                   MaxLines="2"
                    VerticalOptions="Center"
                    Opacity="0.9">
                 <Label.Shadow>
@@ -24,7 +29,11 @@
                 </Label.Shadow>
             </Label>
 
-            <HorizontalStackLayout Grid.Column="1" Spacing="10">
+            <HorizontalStackLayout Grid.Column="1"
+                                   Grid.ColumnSpan="2"
+                                   Spacing="10"
+                                   VerticalOptions="Center" 
+                                   HorizontalOptions="End">
                 <Border
                     Background="#11ffffff"
                     StrokeShape="RoundRectangle 30"
@@ -82,14 +91,18 @@
                                             <contentViews:UserItemView />
                                         </DataTemplate>
                                     </CollectionView.ItemTemplate>
-
-                                    <CollectionView.EmptyView>
+                        
+                                <CollectionView.Footer>
+                                    <Grid HeightRequest="90" />
+                                </CollectionView.Footer>
+                                
+                                <CollectionView.EmptyView>
                                         <VerticalStackLayout
                                             HorizontalOptions="Center"
                                             VerticalOptions="Center"
                                             Spacing="10"
                                             Padding="30">
-                                            <Label Text="Пока нет новых заявок"
+                                            <Label Text="Пока нет друзей"
                                                    TextColor="#80FFFFFF"
                                                    HorizontalTextAlignment="Center" />
                                         </VerticalStackLayout>
@@ -105,7 +118,7 @@
                                     VerticalOptions="Center"
                                     Spacing="10"
                                     Padding="30">
-                            <Label Text="Пока нет новых заявок"
+                            <Label Text="Пока нет групп"
                                    TextColor="#80FFFFFF"
                                    HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>

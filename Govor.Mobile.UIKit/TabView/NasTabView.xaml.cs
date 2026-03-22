@@ -150,7 +150,7 @@ public partial class NasTabView : ContentView
         // Анимация перемещения
         if (animate)
         {
-            await SelectionIndicator.TranslateTo(targetX, 0, 250, Easing.CubicOut);
+            await SelectionIndicator.TranslateToAsync(targetX, 0, 250, Easing.CubicOut);
         }
         else
         {
@@ -167,8 +167,8 @@ public partial class NasTabView : ContentView
             if (HeadersGrid.Children[i] is Grid container && container.Children[0] is Label lbl)
             {
                 bool isSelected = i == SelectedIndex;
-                lbl.FadeTo(isSelected ? 1.0 : 0.5, 200);
-                lbl.ScaleTo(isSelected ? 1.05 : 1.0, 200);
+                lbl.FadeToAsync(isSelected ? 1.0 : 0.5, 200);
+                lbl.ScaleToAsync(isSelected ? 1.05 : 1.0, 200);
             }
         }
     }

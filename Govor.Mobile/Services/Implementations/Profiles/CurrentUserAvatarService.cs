@@ -86,7 +86,13 @@ public class CurrentUserAvatarService : ICurrentUserAvatarService
             var result = await FilePicker.Default.PickAsync(new PickOptions
             {
                 PickerTitle = "Выберите аватар",
-                FileTypes = FilePickerFileType.Images
+                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    { DevicePlatform.Android, new[] { "image/*" } },
+                    { DevicePlatform.iOS, new[] { "public.image" } },
+                    { DevicePlatform.WinUI, new[] { ".png", ".jpg", ".jpeg", ".gif" } },
+                    { DevicePlatform.MacCatalyst, new[] { "public.image" } }
+                })
             });
 
             if (result is null)

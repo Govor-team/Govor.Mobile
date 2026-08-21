@@ -27,6 +27,7 @@
                   HorizontalOptions="Center">
 
                 <Image x:Name="PreviewImage"
+                       IsAnimationPlaying="True"
                        Aspect="AspectFit"
                 />
             </Grid>

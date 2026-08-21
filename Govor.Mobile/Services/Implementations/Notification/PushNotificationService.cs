@@ -1,8 +1,9 @@
 ﻿#if ANDROID
 using Android.App;
+using Android.Content;
+
 #endif
 using Govor.Mobile.Services.Api;
-using Govor.Mobile.Services.Api.Base;
 using Govor.Mobile.Services.Interfaces.Notification;
 using Plugin.FirebasePushNotifications;
 using Plugin.FirebasePushNotifications.Model;
@@ -11,22 +12,25 @@ namespace Govor.Mobile.Services.Implementations.Notification;
 
 public class PushNotificationService : IPushNotificationService, IConnectivityChanged
 {
-    private readonly IApiClient _apiClient;
     private readonly IFirebasePushNotification _firebase;
     private readonly IPushTokenService _pushTokenService;
     private readonly INotificationPermissions _permissions;
-    private readonly INotificationChannels _channels; // для Android каналов
-    private bool _isInitialized = false;
-    private const string _pref_key = "FBT_Govor";
+    private readonly INotificationChannels _channels;
+
+    private bool _isInitialized;
+    private bool _eventsSubscribed;
+    private static bool _channelCreated = false;
+
+    private readonly SemaphoreSlim _initLock = new(1, 1);
+
+    private const string TokenCacheKey = "fcm_token_sent";
 
     public PushNotificationService(
-        IApiClient apiClient,
         IFirebasePushNotification firebase,
         INotificationPermissions permissions,
         IPushTokenService pushTokenService,
         INotificationChannels channels)
     {
-        _apiClient = apiClient;
         _firebase = firebase;
         _permissions = permissions;
         _pushTokenService = pushTokenService;
@@ -38,116 +42,246 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
         await InitializeAsync();
     }
 
-    public async Task OnInternetDisconnectedAsync() { }
+    public Task OnInternetDisconnectedAsync() => Task.CompletedTask;
 
     public async Task InitializeAsync()
     {
         if (_isInitialized)
-            return; 
-        
-        // 1. Запрос разрешений (лучше после логина пользователя)
-        var status = await _permissions.GetAuthorizationStatusAsync();
-        if (status is AuthorizationStatus.NotDetermined or AuthorizationStatus.Denied)
+            return;
+
+        await _initLock.WaitAsync();
+        try
         {
-            await _permissions.RequestPermissionAsync();
-        }
+            if (_isInitialized)
+                return;
 
-        // 2. Подписка на события (один раз)
-        _firebase.TokenRefreshed += OnTokenRefreshed;
-        _firebase.NotificationReceived += OnNotificationReceived;
-        _firebase.NotificationOpened += OnNotificationOpened;
+            Console.WriteLine("[Push] Initializing...");
 
-        // 3. Создание канала уведомлений (только для Android 8+)
+            // 1. Permissions
+            var status = await _permissions.GetAuthorizationStatusAsync();
+            if (status is AuthorizationStatus.NotDetermined or AuthorizationStatus.Denied)
+            {
+                await _permissions.RequestPermissionAsync();
+            }
+
+            // 2. Subscribe events (idempotent)
+            if (!_eventsSubscribed)
+            {
+                _firebase.TokenRefreshed += OnTokenRefreshed;
+                _firebase.NotificationReceived += OnNotificationReceived;
+                _firebase.NotificationOpened += OnNotificationOpened;
+
+                _eventsSubscribed = true;
+            }
+
+            // 3. Android channel
 #if ANDROID
-        var chatChannel = new Plugin.FirebasePushNotifications.Platforms.Channels.NotificationChannelRequest
-        {
-            ChannelId = "chat_messages",
-            ChannelName = "Сообщения",
-            Description = "Уведомления о новых сообщениях в чатах",
-            Importance = NotificationImportance.High,
-            LockscreenVisibility = NotificationVisibility.Public,
-            VibrationPattern = new long[] { 0, 250, 250, 250 },
-            // Sound = "chat_sound" // если есть кастомный звук
-        };
+            var channel = new Plugin.FirebasePushNotifications.Platforms.Channels.NotificationChannelRequest
+            {
+                ChannelId = "chat_messages",
+                ChannelName = "Сообщения",
+                Description = "Уведомления о сообщениях",
+                Importance = NotificationImportance.High,
+                LockscreenVisibility = NotificationVisibility.Public,
+                VibrationPattern = new long[] { 0, 250, 250, 250 },
+            };
 
-        // Передаём как массив даже если канал один
-        _channels.CreateNotificationChannels(new[]
-        {
-            chatChannel
-        });
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                var manager = (NotificationManager)Android.App.Application.Context
+                    .GetSystemService(Context.NotificationService);
 
-        // или в новых версиях плагина может быть CreateChannelAsync для одного
-        // await _channels.CreateChannelAsync(chatChannel);
+                var existing = manager.GetNotificationChannel("chat_messages");
+
+                if (existing == null)
+                {
+                    var channel = new NotificationChannel(
+                        "chat_messages",
+                        "Сообщения",
+                        NotificationImportance.High)
+                    {
+                        Description = "Уведомления о сообщениях"
+                    };
+
+                    manager.CreateNotificationChannel(channel);
+
+                    Console.WriteLine("[Push] Channel created");
+                }
+                else
+                {
+                    Console.WriteLine("[Push] Channel already exists");
+                }
+            });
 #endif
 
-        // 3. Регистрируемся в FCM с retry
-        await _firebase.RegisterForPushNotificationsAsync();
+            // 4. Register in FCM
+            await _firebase.RegisterForPushNotificationsAsync();
 
-        // 4. Если токен уже есть — сразу отправляем на сервер
-        if (!string.IsNullOrEmpty(_firebase.Token))
-        {
-            Console.WriteLine($"[TOKEN]: {_firebase.Token}");
-            await SendTokenToServerAsync(_firebase.Token);
+            // 5. Ensure token delivery (critical fix)
+            await EnsureTokenSentAsync();
+
+            _isInitialized = true;
+
+            Console.WriteLine("[Push] Initialized");
         }
-        
-        _isInitialized = true;
+        catch(Exception ex)
+        {
+            Console.WriteLine($"[Push] Error - {ex}");
+        }
+        finally
+        {
+            _initLock.Release();
+        }
     }
 
-    private async void OnTokenRefreshed(object sender, FirebasePushNotificationTokenEventArgs e)
+    private async Task EnsureTokenSentAsync()
     {
-        if (!string.IsNullOrEmpty(e.Token))
-            await SendTokenToServerAsync(e.Token);
+        for (int i = 0; i < 5; i++)
+        {
+            var token = _firebase.Token;
+
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                await SendTokenIfNeededAsync(token);
+                return;
+            }
+
+            await Task.Delay(1000);
+        }
+
+        Console.WriteLine("[Push] Token not available after retries");
+    }
+
+    private async Task SendTokenIfNeededAsync(string token)
+    {
+        var lastSent = Preferences.Get(TokenCacheKey, string.Empty);
+
+        if (lastSent == token)
+        {
+            Console.WriteLine("[Push] Token already sent, skipping");
+            return;
+        }
+
+        await SendTokenToServerAsync(token);
+
+        Preferences.Set(TokenCacheKey, token);
     }
 
     private async Task SendTokenToServerAsync(string token)
     {
         try
         {
-            var result = await _pushTokenService.PushToken(token, DeviceInfo.Platform.ToString().ToLower());
-            Console.WriteLine($"[Token status] status: {result.IsSuccess} | errore: {result.ErrorMessage}");
-            // Можно сохранить токен локально Preferences.Set("fcm_token", token);
+            Console.WriteLine($"[Push] Sending token: {token}");
+
+            var result = await _pushTokenService.PushToken(
+                token,
+                DeviceInfo.Platform.ToString().ToLower()
+            );
+
+            Console.WriteLine($"[Push] Token result: success={result.IsSuccess}, error={result.ErrorMessage}");
+
+            if (!result.IsSuccess)
+            {
+                // retry позже (не блокируем UI)
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(5000);
+                    await SendTokenToServerAsync(token);
+                });
+            }
         }
         catch (Exception ex)
         {
-            // логирование
+            Console.WriteLine($"[Push] Send token failed: {ex}");
+
+            // retry
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(5000);
+                await SendTokenToServerAsync(token);
+            });
         }
+    }
+
+    // ❗ теперь без потери ошибок
+    private void OnTokenRefreshed(object sender, FirebasePushNotificationTokenEventArgs e)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(e.Token))
+                {
+                    Console.WriteLine($"[Push] Token refreshed: {e.Token}");
+                    await SendTokenIfNeededAsync(e.Token);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Push] Token refresh error: {ex}");
+            }
+        });
     }
 
     private void OnNotificationReceived(object sender, FirebasePushNotificationDataEventArgs e)
     {
-        // Уведомление пришло (foreground или background)
-        // Если это data-only сообщение — можно обработать тихо (обновить чат без баннера)
+        Console.WriteLine("[Push] Notification received");
 
         if (e.Data.TryGetValue("chatId", out var chatId))
         {
-            // Например, показать in-app баннер или обновить badge
-            // MessagingCenter.Send(this, "NewMessage", chatId);
+            Console.WriteLine($"[Push] chatId: {chatId}");
         }
     }
 
-    private async void OnNotificationOpened(object sender, FirebasePushNotificationResponseEventArgs e)
+    private void OnNotificationOpened(object sender, FirebasePushNotificationResponseEventArgs e)
     {
-        // Пользователь тапнул по уведомлению
-        if (e.Data.TryGetValue("chatId", out var chatIdObj) && chatIdObj is Guid chatId)
+        _ = Task.Run(async () =>
         {
-            if (e.Data.TryGetValue("isGroup", out var isGroupObj) && isGroupObj is bool isGroup)
+            try
             {
-                await Shell.Current.GoToAsync($"chat?chatId={chatId}&isGroup={isGroup}", animate: false);
+                if (e.Data.TryGetValue("chatId", out var chatIdStr) &&
+                    Guid.TryParse(chatIdStr?.ToString(), out var chatId))
+                {
+                    var isGroup = e.Data.TryGetValue("isGroup", out var isGroupStr) &&
+                                  bool.TryParse(isGroupStr?.ToString(), out var g) && g;
+
+                    Console.WriteLine($"[Push] Open chat {chatId}");
+
+                    await MainThread.InvokeOnMainThreadAsync(async () =>
+                    {
+                        await Shell.Current.GoToAsync(
+                            $"chat?chatId={chatId}&isGroup={isGroup}",
+                            animate: false);
+                    });
+                }
             }
-        }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Push] Open notification error: {ex}");
+            }
+        });
     }
 
-    // При логауте — обязательно!
     public async Task UnregisterAsync()
     {
-        if(!_isInitialized)
+        if (!_isInitialized)
             return;
-        
-        _firebase.TokenRefreshed -= OnTokenRefreshed;
-        _firebase.NotificationReceived -= OnNotificationReceived;
-        _firebase.NotificationOpened -= OnNotificationOpened;
+
+        Console.WriteLine("[Push] Unregistering");
+
+        if (_eventsSubscribed)
+        {
+            _firebase.TokenRefreshed -= OnTokenRefreshed;
+            _firebase.NotificationReceived -= OnNotificationReceived;
+            _firebase.NotificationOpened -= OnNotificationOpened;
+
+            _eventsSubscribed = false;
+        }
 
         await _firebase.UnregisterForPushNotificationsAsync();
+
+        Preferences.Remove(TokenCacheKey);
+
         _isInitialized = false;
     }
 }

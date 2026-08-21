@@ -20,7 +20,7 @@
         <contentViews:ChatHeaderView Grid.Row="0" BindingContext="{Binding Header}" />
 
         <!-- CONTENT -->
-        <Grid Grid.Row="1" SafeAreaEdges="All" HorizontalOptions="End">
+        <Grid Grid.Row="1" SafeAreaEdges="All" HorizontalOptions="FillAndExpand">
             <Grid>
                 <!-- MESSAGES -->
                 <CollectionView
@@ -65,8 +65,7 @@
                                                         </Border.StrokeShape>
 
                                                         <Grid
-                                                              RowDefinitions="Auto,1,Auto"
-                                                              ColumnDefinitions="Auto,Auto">
+                                                              RowDefinitions="Auto,1,Auto">
                                                             <markdown:MarkdownView
                                                                 MaximumWidthRequest="250"
                                                                 MinimumWidthRequest="45"
@@ -77,8 +76,7 @@
 
                                                             <!-- Время внутри тела сообщения -->
                                                             <Label
-                                                                Grid.Row="2"
-                                                                Grid.Column="0"
+                                                                Grid.Row="2"           
                                                                 Text="{Binding Time}"
                                                                 FontSize="9"
                                                                 TextColor="#A0A0A0"
@@ -127,6 +125,22 @@
                 </CollectionView>
             </Grid>
 
+            <!-- Floating scroll-to-bottom button -->
+            <Button
+                x:Name="ScrollToEndButton"
+                IsVisible="False"
+                Clicked="ScrollToBottomButton_Clicked"
+                Text="↓"
+                FontSize="20"
+                WidthRequest="44"
+                HeightRequest="44"
+                CornerRadius="22"
+                BackgroundColor="#2B2B2B"
+                TextColor="#FFFFFF"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="12,100,12,80"
+                Opacity="0.9" />
 
             <!-- Input -->
             <Grid VerticalOptions="End"

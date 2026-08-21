@@ -6,13 +6,13 @@ public partial class UserListItemViewModel : ObservableObject
 {
     [ObservableProperty]
     private AvatarViewModel avatar;
-    
+
     [ObservableProperty]
     private TagViewModel tag;
 
     public readonly Guid UserId;
     public Guid FriendshipId;
-    
+
     public UserListItemViewModel(AvatarViewModel avatar,
         TagViewModel tag, Guid userId = default, Guid friendshipId = default)
     {
@@ -21,10 +21,10 @@ public partial class UserListItemViewModel : ObservableObject
         Avatar = avatar;
         Tag = tag;
     }
-    
+
     [ObservableProperty]
     private bool isOnline;
-    
+
     [ObservableProperty]
     private string title;
 

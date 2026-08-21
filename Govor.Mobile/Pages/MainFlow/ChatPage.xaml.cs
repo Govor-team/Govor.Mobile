@@ -24,8 +24,7 @@ public partial class ChatPage : ContentPage
             if (!bc.IsLoaded)
                 bc.InitAsync();
         }
-        
-        CollectionView.ScrollTo(0, position: ScrollToPosition.End, animate: false);
+
         base.OnAppearing();
     }
 
@@ -37,11 +36,29 @@ public partial class ChatPage : ContentPage
 
         var lastItem = items[items.Count - 1];
 
-        CollectionView.ScrollTo(lastItem, position: ScrollToPosition.Start, animate: true);
+        CollectionView.ScrollTo(lastItem, position: ScrollToPosition.End, animate: true);
     }
     
     private async void CollectionView_Scrolled(object sender, ItemsViewScrolledEventArgs e)
     {
+        // Показ/скрытие floating-кнопки "скролл вниз"
+        try
+        {
+            if (CollectionView.ItemsSource is System.Collections.IList items && items.Count > 0)
+            {
+                var atBottom = e.LastVisibleItemIndex >= items.Count - 1;
+                ScrollToEndButton.IsVisible = !atBottom;
+            }
+            else
+            {
+                ScrollToEndButton.IsVisible = false;
+            }
+        }
+        catch
+        {
+            ScrollToEndButton.IsVisible = false;
+        }
+
         if (_isLoadingMore || !_hasMoreMessages)
             return;
 
@@ -68,6 +85,23 @@ public partial class ChatPage : ContentPage
             }
 
             _isLoadingMore = false;
+        }
+    }
+
+    private void ScrollToBottomButton_Clicked(object sender, EventArgs e)
+    {
+        try
+        {
+            if (CollectionView.ItemsSource is System.Collections.IList items && items.Count > 0)
+            {
+                var last = items[items.Count - 1];
+                CollectionView.ScrollTo(last, position: ScrollToPosition.End, animate: true);
+                ScrollToEndButton.IsVisible = false;
+            }
+        }
+        catch
+        {
+            // ignore
         }
     }
 

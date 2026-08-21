@@ -45,8 +45,12 @@ internal static class ServiceRegistration
         });
 
         services.AddHttpClient<IApiClient, ApiClient>(client => {
-                client.Timeout = TimeSpan.FromSeconds(10); 
-            })
+#if RELEASE
+            client.Timeout = TimeSpan.FromSeconds(10); 
+#else
+            client.Timeout = TimeSpan.FromSeconds(200);
+#endif
+        })
             .AddHttpMessageHandler<AuthHeaderHandler>()
             .AddPolicyHandler(GetRetryPolicy());
             //.AddHttpMessageHandler<RefreshTokenHandler>();

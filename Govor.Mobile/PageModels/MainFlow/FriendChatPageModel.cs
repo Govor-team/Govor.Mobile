@@ -67,7 +67,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     }
 
     public bool IsLoaded { get; set; }
-    
+
     private Guid _ChatIdForHeader = Guid.Empty;
     private IAsyncRelayCommand _GoBackCommand { get; }
 

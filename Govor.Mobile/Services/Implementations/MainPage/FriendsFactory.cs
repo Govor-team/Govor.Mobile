@@ -37,6 +37,8 @@ public class FriendsFactory : IFriendsFactory
                     Console.WriteLine($"[Avatar ERROR] {profile.Id}: {t.Exception?.GetBaseException().Message}");
             });
 
+      
+
         var vm = new UserListItemViewModel(avatar, null, profile.Id)
         {
             Title = profile.Username,

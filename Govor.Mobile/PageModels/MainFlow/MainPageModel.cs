@@ -38,7 +38,7 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
     public async Task InitAsync()
     {
         if(!IsLoaded)
-            await OnInternetConnectedAsync();
+            OnInternetConnectedAsync();
     }
     
     private void OnFriendRemoved(UserListItemViewModel vm)

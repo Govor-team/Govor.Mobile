@@ -152,9 +152,6 @@
 	  <MauiXaml Update="Pages\MainFlow\ContentViews\ContentViewSwitcher.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
-	  <MauiXaml Update="Pages\MainFlow\MainPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
 	  <MauiXaml Update="Pages\MainFlow\MainShell.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

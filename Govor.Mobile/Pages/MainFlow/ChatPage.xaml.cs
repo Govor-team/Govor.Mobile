@@ -22,7 +22,7 @@ public partial class ChatPage : SmoothBackPage
         if (BindingContext is ChatPageModel bc)
         {
             if (!bc.IsLoaded)
-                bc.InitAsync();
+                _ = bc.InitAsync();
         }
 
         base.OnAppearing();

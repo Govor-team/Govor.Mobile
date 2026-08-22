@@ -14,12 +14,6 @@ public partial class BottomBarModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task OpenChatsAsync()
-    {
-        await Shell.Current.GoToAsync($"//{nameof(MainPage)}", animate: true);
-    }
-
-    [RelayCommand]
     private async Task OpenCallsAsync()
     {
         return;

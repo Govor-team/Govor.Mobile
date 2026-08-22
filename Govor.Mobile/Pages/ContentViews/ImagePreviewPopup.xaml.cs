@@ -12,13 +12,16 @@ public partial class ImagePreviewPopup : PopupPage
 {
     private IImage? _currentImage;
     private Stream? _originalStream;
-    public ImagePreviewPopup(ImageSource src)
+    private string _imageName;
+    public ImagePreviewPopup(ImageSource src, string imageName = "avatar")
     {
         InitializeComponent();
         
         PreviewImage.Source = src;
+        _imageName = imageName;
         _ = LoadImageAsync(src);
     }
+
     private async Task LoadImageAsync(ImageSource source)
     {
         try
@@ -60,18 +63,18 @@ public partial class ImagePreviewPopup : PopupPage
 
     private async void SaveClicked(object? sender, EventArgs e)
     {
-       if (_currentImage == null)
+        if (_currentImage == null)
         {
             return;
         }
 
         try
         {
-            string fileName = $"avatar_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            string fileName = $"{_imageName}_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
 
 #if ANDROID
             // Android — сохраняем в Pictures и добавляем в галерею
-            var bytes = _currentImage.AsBytes(ImageFormat.Jpeg, quality: 85);
+            var bytes = _currentImage.AsBytes(ImageFormat.Jpeg, quality: 1);
 
             string picturesPath = Path.Combine(Android.OS.Environment.GetExternalStoragePublicDirectory(Android.OS.Environment.DirectoryPictures)!.AbsolutePath, fileName);
 

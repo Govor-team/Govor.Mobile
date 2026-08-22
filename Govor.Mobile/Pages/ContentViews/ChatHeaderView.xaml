@@ -35,17 +35,26 @@
 
             <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="10">
                 <Grid Grid.Column="0" WidthRequest="48" HeightRequest="48">
-                    <toolkit:AvatarView
-                        HeightRequest="46"
-                        WidthRequest="46"
-                        CornerRadius="23"
-                        BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
-                        Text="{Binding Avatar.AvatarText}"
-                        ImageSource="{Binding Avatar.AvatarImage}"
-                        BorderColor="#55FFFFFF"
-                        BorderWidth="1" />
+                        <toolkit:AvatarView
+                            HeightRequest="46"
+                            WidthRequest="46"
+                            CornerRadius="23"
+                            BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                            Text="{Binding Avatar.AvatarText}"
+                            TextTransform="Uppercase"
+                            FontSize="50"
+                            FontAttributes="Bold"
+                            FontFamily="CirilicOld"
+                            ImageSource="{Binding Avatar.AvatarImage}"
+                            BorderColor="#55FFFFFF"
+                            Shadow="{Shadow Brush=Black, Offset='0,3', Radius=10, Opacity=0.2}"
+                            BorderWidth="1">
+                            <toolkit:AvatarView.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding Avatar.OpenAvatarCommand}" />
+                            </toolkit:AvatarView.GestureRecognizers>
+                        </toolkit:AvatarView>
 
-                    <Border
+                        <Border
                         WidthRequest="12"
                         HeightRequest="12"
                         BackgroundColor="#43A25A"

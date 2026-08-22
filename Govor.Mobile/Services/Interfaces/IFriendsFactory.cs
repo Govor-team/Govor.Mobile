@@ -6,4 +6,5 @@ namespace Govor.Mobile.Services.Interfaces;
 public interface IFriendsFactory
 {
     Task<UserListItemViewModel> CreateAsync(UserProfileDto profile, Guid privateChatId);
+    void UpdatePreview(UserListItemViewModel friend, MessageResponse message);
 }

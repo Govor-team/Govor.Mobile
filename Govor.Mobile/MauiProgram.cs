@@ -15,6 +15,9 @@ using UXDivers.Popups.Maui;
 using Plugin.FirebasePushNotifications;
 using Plugin.LocalNotification;
 using Microsoft.Extensions.Logging;
+#if ANDROID
+using Microsoft.Maui.Controls;
+#endif
 
 namespace Govor.Mobile
 {

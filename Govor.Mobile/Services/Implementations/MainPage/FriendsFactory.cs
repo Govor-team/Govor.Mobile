@@ -11,18 +11,15 @@ public class FriendsFactory : IFriendsFactory
     private readonly IServiceProvider _provider;
     private readonly IMessagesRepository _messages;
     private readonly IWasOnlineFormater _lastSeen;
-    private readonly IPrivateChatApi _privateChatApi;
 
     public FriendsFactory(
         IServiceProvider provider,
         IMessagesRepository messages,
-        IPrivateChatApi privateChatApi,
         IWasOnlineFormater lastSeen)
     {
         _provider = provider;
         _messages = messages;
         _lastSeen = lastSeen;
-        _privateChatApi = privateChatApi;
     }
 
     public async Task<UserListItemViewModel> CreateAsync(UserProfileDto profile, Guid privateChatId)
@@ -39,7 +36,7 @@ public class FriendsFactory : IFriendsFactory
 
       
 
-        var vm = new UserListItemViewModel(avatar, null, profile.Id)
+        var vm = new UserListItemViewModel(avatar, null, profile.Id, chatId: privateChatId)
         {
             Title = profile.Username,
             IsOnline = profile.IsOnline
@@ -47,11 +44,8 @@ public class FriendsFactory : IFriendsFactory
 
         try
         {
-            // Получаем последние сообщения для приватного чата
             if (privateChatId != Guid.Empty)
-            {
-                _ = LoadLastMessageAsync(vm, privateChatId); // фоновой вызов
-            }
+                await LoadLastMessageAsync(vm, privateChatId);
         }
         catch (Exception ex)
         {
@@ -66,12 +60,23 @@ public class FriendsFactory : IFriendsFactory
         try
         {
             var lastMessage = (await _messages.GetMessagesLocalAsync(privateChatId, 1)).FirstOrDefault();
-            vm.Subtitle = lastMessage?.EncryptedContent;
-            vm.DateTime = lastMessage != null ? _lastSeen.FormatLastSeen(lastMessage.SentAt) : string.Empty;
+            if (lastMessage != null)
+                UpdatePreview(vm, lastMessage);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[FACTORY ERROR] Last message load failed: {ex.Message}");
         }
+    }
+
+    public void UpdatePreview(UserListItemViewModel friend, MessageResponse message)
+    {
+        if (friend.ChatId != message.RecipientId ||
+            (friend.LastMessageSentAt.HasValue && friend.LastMessageSentAt.Value > message.SentAt))
+            return;
+
+        friend.Subtitle = message.EncryptedContent;
+        friend.DateTime = _lastSeen.FormatLastSeen(message.SentAt);
+        friend.SetLastMessageSentAt(message.SentAt);
     }
 }

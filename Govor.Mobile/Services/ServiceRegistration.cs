@@ -27,7 +27,6 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Extensions.Http;
-using MainPage = Govor.Mobile.Pages.MainFlow.MainPage;
 
 namespace Govor.Mobile.Services;
 
@@ -205,7 +204,6 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<CodeInputPage>();
         builder.Services.AddSingleton<CodeInputModel>();
 
-        builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<MainPageModel>();
         builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<MainPageModel>());
         

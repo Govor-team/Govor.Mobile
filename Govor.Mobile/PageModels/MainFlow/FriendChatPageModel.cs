@@ -6,7 +6,6 @@ using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.ChatPage;
 using Govor.Mobile.Services.Interfaces.Profiles;
-using System.Collections.ObjectModel;
 
 namespace Govor.Mobile.PageModels.MainFlow;
 

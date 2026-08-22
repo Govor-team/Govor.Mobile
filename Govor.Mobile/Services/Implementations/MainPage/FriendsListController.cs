@@ -46,6 +46,8 @@ public class FriendsListController : IFriendsListController
         _realtime.OnFriendAdded += OnFriendAddedAsync;
         _realtime.OnFriendRemoved += OnFriendRemovedAsync;
         _realtime.OnUserAvatarUpdate += OnUserAvatarUpdateAsync;
+        _messages.OnNewMessage += OnMessagePreviewChanged;
+        _messages.OnMessageUpdated += OnMessagePreviewChanged;
     }
 
     public async Task InitializeAsync()
@@ -118,7 +120,7 @@ public class FriendsListController : IFriendsListController
 
             var profile = await _profileApi.DowloadProfileByUserIdAsync(userId);
             var privateChatRusult = await _privateChatApi.GetChatByFriendId(userId);
-            
+
             if (profile is null || !privateChatRusult.IsSuccess) return;
 
             var vm = await _factory.CreateAsync(profile, privateChatRusult.Value);
@@ -135,6 +137,17 @@ public class FriendsListController : IFriendsListController
         }
     }
 
+    private void OnMessagePreviewChanged(MessageResponse message)
+    {
+        if (message.RecipientType == RecipientType.Group)
+            return;
+
+        var friend = _cache.Values.FirstOrDefault(item => item.ChatId == message.RecipientId);
+        if (friend == null)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() => _factory.UpdatePreview(friend, message));
+    }
     private async Task OnFriendRemovedAsync(Guid userId)
     {
         try
@@ -181,6 +194,8 @@ public class FriendsListController : IFriendsListController
         _realtime.OnFriendAdded -= OnFriendAddedAsync;
         _realtime.OnFriendRemoved -= OnFriendRemovedAsync;
         _realtime.OnUserAvatarUpdate -= OnUserAvatarUpdateAsync;
+        _messages.OnNewMessage -= OnMessagePreviewChanged;
+        _messages.OnMessageUpdated -= OnMessagePreviewChanged;
     }
 
     public void Dispose()

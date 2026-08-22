@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.Services.Api;
@@ -42,6 +43,22 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     
     [ObservableProperty] private bool isLoadingMore;
     [ObservableProperty] private bool hasMoreMessages = true;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSelectionMode))]
+    [NotifyPropertyChangedFor(nameof(SelectedMessageCount))]
+    [NotifyPropertyChangedFor(nameof(CanEditMessage))]
+    private ObservableCollection<MessagesViewModel> selectedMessages = new();
+
+    [ObservableProperty] private bool isEditingMessage;
+    [ObservableProperty] private MessagesViewModel? editingMessage;
+
+    public bool IsSelectionMode => SelectedMessages.Count > 0;
+    public int SelectedMessageCount => SelectedMessages.Count;
+    public bool CanCopyMessages => SelectedMessages.Count > 0;
+    public bool CanForwardMessages => SelectedMessages.Count > 0;
+    public bool CanDeleteMessages => SelectedMessages.Count > 0;
+    public bool CanEditMessage => SelectedMessages.Count == 1 && !SelectedMessages[0].IsIncoming;
 
     public ObservableRangeCollection<MessagesGroupModel> MessageGroups => _controller.MessageGroups;
     [ObservableProperty] private ChatHeaderViewModel header;
@@ -150,6 +167,96 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     }
     private async Task OnGoBack() => await Shell.Current.GoToAsync("..");
 
+    [RelayCommand]
+    private void ToggleMessageSelection(MessagesViewModel message)
+    {
+        if (SelectedMessages.Contains(message))
+            SelectedMessages.Remove(message);
+        else
+            SelectedMessages.Add(message);
+
+        message.IsSelected = SelectedMessages.Contains(message);
+        UpdateSelectionModeVisibility();
+        OnPropertyChanged(nameof(IsSelectionMode));
+        OnPropertyChanged(nameof(SelectedMessageCount));
+        OnPropertyChanged(nameof(CanCopyMessages));
+        OnPropertyChanged(nameof(CanForwardMessages));
+        OnPropertyChanged(nameof(CanDeleteMessages));
+        EditMessageCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand]
+    private void ExitMessageSelection()
+    {
+        ClearSelection();
+        CancelMessageEditing();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanEditMessageCommand))]
+    private void EditMessage()
+    {
+        var message = SelectedMessages.SingleOrDefault();
+        if (message == null)
+            return;
+
+        EditingMessage = message;
+        IsEditingMessage = true;
+        MessageText = message.Text;
+        ClearSelection();
+    }
+
+    private bool CanEditMessageCommand() => CanEditMessage;
+
+    [RelayCommand]
+    private async Task CopyMessages()
+    {
+        var text = string.Join(Environment.NewLine, SelectedMessages.Select(message => message.Text));
+        if (!string.IsNullOrWhiteSpace(text))
+            await Clipboard.Default.SetTextAsync(text);
+    }
+
+    [RelayCommand]
+    private void ForwardMessages()
+    {
+        ClearSelection();
+    }
+
+    [RelayCommand]
+    private void DeleteMessages()
+    {
+        ClearSelection();
+    }
+
+    [RelayCommand]
+    private void CancelMessageEditing()
+    {
+        IsEditingMessage = false;
+        EditingMessage = null;
+        MessageText = string.Empty;
+    }
+
+    private void ClearSelection()
+    {
+        foreach (var message in SelectedMessages)
+            message.IsSelected = false;
+
+        SelectedMessages.Clear();
+        UpdateSelectionModeVisibility();
+        OnPropertyChanged(nameof(IsSelectionMode));
+        OnPropertyChanged(nameof(SelectedMessageCount));
+        OnPropertyChanged(nameof(CanCopyMessages));
+        OnPropertyChanged(nameof(CanForwardMessages));
+        OnPropertyChanged(nameof(CanDeleteMessages));
+        EditMessageCommand.NotifyCanExecuteChanged();
+    }
+
+    private void UpdateSelectionModeVisibility()
+    {
+        var isVisible = SelectedMessages.Count > 0;
+        foreach (var message in MessageGroups.SelectMany(group => group.Messages))
+            message.IsSelectionModeVisible = isVisible;
+    }
+
     private void SetOnline(Guid userId) => UpdateOnlineStatus(userId, true);
     private void SetOffline(Guid userId) => UpdateOnlineStatus(userId, false);
 
@@ -179,6 +286,13 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     private async Task SendMessageAsync()
     {
         if (string.IsNullOrWhiteSpace(MessageText) || !CanWrite) return;
+
+        if (IsEditingMessage && EditingMessage != null)
+        {
+            EditingMessage.Text = MessageText;
+            CancelMessageEditing();
+            return;
+        }
         
         var textToSend = MessageText;
         MessageText = string.Empty;

@@ -1,6 +1,8 @@
 ﻿using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.PageModels.MainFlow;
+using System.ComponentModel;
+using System.Windows.Input;
 
 namespace Govor.Mobile.Pages.MainFlow;
 
@@ -8,11 +10,17 @@ public partial class ChatPage : SmoothBackPage
 {
     private bool _isLoadingMore = false;
     private bool _hasMoreMessages = true;
+
+    public ICommand LongPressMessageCommand { get; }
+    public bool IsMessageSelectionMode { get; private set; }
     
     public ChatPage(ChatPageModel model)
     {
         InitializeComponent();
+        LongPressMessageCommand = new Command<MessagesViewModel>(OnMessageLongPressed);
         BindingContext = model;
+        model.PropertyChanged += ModelOnPropertyChanged;
+        UpdateSelectionModeUi(model.IsSelectionMode);
         
         CollectionView.Scrolled += CollectionView_Scrolled;
     }
@@ -112,5 +120,53 @@ public partial class ChatPage : SmoothBackPage
             if (bc.IsLoaded)
                 bc.OpenLinkCommand.Execute(e.Url);
         }
+    }
+    
+    private void MessageDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (BindingContext is not ChatPageModel model)
+            return;
+
+        if (sender is BindableObject view &&
+            view.BindingContext is MessagesViewModel message)
+        {
+            model.ToggleMessageSelectionCommand.Execute(message);
+        }
+    }
+
+    private void MessageTapped(object? sender, TappedEventArgs e)
+    {
+        if (BindingContext is not ChatPageModel model || !model.IsSelectionMode)
+            return;
+
+        if (sender is BindableObject view && view.BindingContext is MessagesViewModel message)
+            model.ToggleMessageSelectionCommand.Execute(message);
+    }
+
+    private void OnMessageLongPressed(MessagesViewModel? message)
+    {
+        if (message == null || BindingContext is not ChatPageModel model)
+            return;
+
+        model.ToggleMessageSelectionCommand.Execute(message);
+    }
+
+    private void ModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(ChatPageModel.IsSelectionMode))
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            IsMessageSelectionMode = sender is ChatPageModel model && model.IsSelectionMode;
+            UpdateSelectionModeUi(IsMessageSelectionMode);
+        });
+    }
+
+    private void UpdateSelectionModeUi(bool isSelectionMode)
+    {
+        ChatHeader.IsVisible = !isSelectionMode;
+        SelectionToolbar.IsVisible = isSelectionMode;
+        MessageInput.IsVisible = !isSelectionMode;
     }
 }

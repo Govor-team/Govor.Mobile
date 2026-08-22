@@ -61,8 +61,13 @@ public partial class App : Application
         }
     }
 
+    private int _authenticationNavigationStarted;
+
     private async void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)
     {
+        if (Interlocked.Exchange(ref _authenticationNavigationStarted, 1) != 0)
+            return;
+
         // Чтобы избежать множественных вызовов
         //_authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
 

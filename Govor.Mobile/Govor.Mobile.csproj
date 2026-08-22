@@ -216,7 +216,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\..\RiderProjects\BetterUIKit\BetterUIKit\BetterUIKit.csproj" />
+        <Reference Include="BetterUIKit">
+            <HintPath>..\libs\android\BetterUIKit.dll</HintPath>
+        </Reference>
 	  <ProjectReference Include="..\Govor.Mobile.UIKit\Govor.Mobile.UIKit.csproj" />
 	</ItemGroup>
 	

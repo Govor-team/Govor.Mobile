@@ -118,7 +118,8 @@
                                     VerticalOptions="Center"
                                     Spacing="10"
                                     Padding="30">
-                            <Label Text="Пока нет групп"
+                            <Label Text="В разработке"
+                                   FontSize="Title"
                                    TextColor="#80FFFFFF"
                                    HorizontalTextAlignment="Center" />
                         </VerticalStackLayout>

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+    <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" 
+                 xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" 
+                 xmlns:sho="http://sharpnado.com" 
+                 x:Class="Govor.Mobile.Pages.MainFlow.ContentViews.BottomNavigationBar">
+        <Border     Background="#11ffffff" 
+                    Stroke="#30FFFFFF" 
+                    StrokeThickness="1" 
+                    StrokeShape="RoundRectangle 22" 
+                    Padding="0">
+                <sho:MaterialFrame
+                    x:Name="GlassFrame" 
+                    MaterialTheme="AcrylicBlur" 
+                    MaterialBlurStyle="Dark" 
+                    AndroidBlurRadius="15" 
+                    WinUIHostBackdropBlur="True" 
+                    CornerRadius="22" 
+                    Elevation="2"
+                    Padding="6,4">
+                    <Grid x:Name="TabsContainer" />
+                </sho:MaterialFrame>
+        </Border>
+    </ContentView>

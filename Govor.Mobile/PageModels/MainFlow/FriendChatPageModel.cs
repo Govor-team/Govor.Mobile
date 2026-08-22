@@ -73,39 +73,82 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
     public async Task InitAsync()
     {
-        if (IsLoaded) return;
+        if (IsLoaded)
+            return;
+
+        var profileTask = _profileService.GetCurrentProfile();
+
+        Task<Result<Guid>?> chatTask = null;
 
         if (!IsGroup)
         {
-            var result = await _privateChatApi.GetChatByFriendId(ChatId);
+            chatTask = _privateChatApi.GetChatByFriendId(ChatId);
+        }
+        else
+        {
+            _ChatIdForHeader = ChatId;
+        }
+
+        if (chatTask != null)
+        {
+            var result = await chatTask;
+
             if (result.IsSuccess)
             {
                 _ChatIdForHeader = ChatId;
                 ChatId = result.Value;
             }
         }
-        else
-        {
-            _ChatIdForHeader = ChatId;
-        }
-        
-        Header = await _headerService.BuildAsync(_ChatIdForHeader, IsGroup, _GoBackCommand);
-        
-        var userProfile = await _profileService.GetCurrentProfile();
-        
-        await _controller.InitializeAsync(ChatId, userProfile.Id, IsGroup);
+
+        // Теперь header можно строить параллельно с profile
+        var headerTask = _headerService.BuildAsync(
+            _ChatIdForHeader,
+            IsGroup,
+            _GoBackCommand);
+
+        await Task.WhenAll(
+            headerTask,
+            profileTask);
+
+        var profile = await profileTask;
+
+        // Минимально необходимое для отображения страницы
+        Header = await headerTask;
 
         if (!IsGroup)
         {
-            UnsubscribeRealtimeEvents(); 
+            UnsubscribeRealtimeEvents();
+
             _realtime.OnUserOnline += SetOnline;
             _realtime.OnUserOffline += SetOffline;
             _realtime.OnUserAvatarUpdate += SetUserAvatarAsync;
         }
-        
-        IsLoaded = true;
-    }
 
+        IsLoaded = true;
+
+        // Не мешаем открытию UI
+        _ = InitializeControllerAsync(
+            ChatId,
+            profile.Id,
+            IsGroup);
+    }
+    private async Task InitializeControllerAsync(
+                                    Guid chatId,
+                                    Guid userId,
+                                    bool isGroup)
+    {
+        try
+        {
+            await _controller.InitializeAsync(
+                chatId,
+                userId,
+                isGroup);
+        }
+        catch (Exception ex)
+        {
+            // log
+        }
+    }
     private async Task OnGoBack() => await Shell.Current.GoToAsync("..");
 
     private void SetOnline(Guid userId) => UpdateOnlineStatus(userId, true);
@@ -113,7 +156,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
     private void UpdateOnlineStatus(Guid userId, bool online)
     {
-        if (ChatId != userId || Header == null) return;
+        if (_ChatIdForHeader != userId || Header == null) return;
 
         // SignalR работает в фоне, UI обновляем в MainThread
         MainThread.BeginInvokeOnMainThread(() =>
@@ -125,7 +168,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
     private async Task SetUserAvatarAsync(Guid userId, Guid avatarId)
     {
-        if (ChatId != userId || Header?.Avatar == null) return;
+        if (_ChatIdForHeader != userId || Header?.Avatar == null) return;
         
         await MainThread.InvokeOnMainThreadAsync(async () => 
         {

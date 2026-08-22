@@ -3,47 +3,110 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Govor.Mobile.Pages.ContentViews"
              xmlns:contentViewsModel="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
-             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" xmlns:sho="http://sharpnado.com"
              x:Class="Govor.Mobile.Pages.ContentViews.ChatHeaderView"
              x:DataType="contentViewsModel:ChatHeaderViewModel">
 
-    <Grid ColumnDefinitions="Auto, Auto, *, Auto" Padding="10,5" HeightRequest="60">
-        <Grid.Background>
-            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                <GradientStop Color="#4c669f" Offset="0.0" />
-                <GradientStop Color="#3b5998" Offset="1.0" />
-            </LinearGradientBrush>
-        </Grid.Background>
-
-        <ImageButton Source="back_icon.png" Command="{Binding GoBackCommand}" />
-
-        <Grid Grid.Column="1" Margin="0,0,10,0">
-            <toolkit:AvatarView
+    <Border
+        Background="#11ffffff"
+        StrokeShape="RoundRectangle 24"
+        StrokeThickness="1"
+        Stroke="#11ffffff"
+        Padding="0,0">
+        <sho:MaterialFrame
+             MaterialTheme="AcrylicBlur"
+             MaterialBlurStyle="Dark"
+             AndroidBlurRadius="10"
+             WinUIHostBackdropBlur="True"
+             CornerRadius="24"
+             Padding="8,4"
+             Elevation="2">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <ImageButton
                 Grid.Column="0"
-                HeightRequest="48" WidthRequest="48"
-                Margin="0,0,6,0" VerticalOptions="Center"
-                CornerRadius="30"
-                BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
-                Text="{Binding Avatar.AvatarText}"
-                ImageSource="{Binding Avatar.AvatarImage}"
-                BorderColor="Transparent" />
-            
-            <Border BackgroundColor="#4CAF50" 
-                    IsVisible="{Binding IsOnline}" 
-                    HorizontalOptions="End" 
-                    VerticalOptions="End" />
+                Source="back_icon.png"
+                WidthRequest="38"
+                HeightRequest="38"
+                Padding="9"
+                BackgroundColor="Transparent"
+                Opacity="0.7"
+                CornerRadius="19"
+                Command="{Binding GoBackCommand}" />
+
+            <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <Grid Grid.Column="0" WidthRequest="48" HeightRequest="48">
+                    <toolkit:AvatarView
+                        HeightRequest="46"
+                        WidthRequest="46"
+                        CornerRadius="23"
+                        BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                        Text="{Binding Avatar.AvatarText}"
+                        ImageSource="{Binding Avatar.AvatarImage}"
+                        BorderColor="#55FFFFFF"
+                        BorderWidth="1" />
+
+                    <Border
+                        WidthRequest="12"
+                        HeightRequest="12"
+                        BackgroundColor="#43A25A"
+                        Stroke="#281B172E"
+                        StrokeThickness="2"
+                        StrokeShape="Ellipse"
+                        IsVisible="{Binding IsOnline}"
+                        HorizontalOptions="End"
+                        VerticalOptions="End" />
+                </Grid>
+
+                <VerticalStackLayout
+                    Grid.Column="1"
+                    VerticalOptions="Center"
+                    Spacing="1">
+                    <Label
+                        Text="{Binding Title}"
+                        TextColor="#FFFFFF"
+                        FontSize="18"
+                        FontFamily="CirilicOld"
+                        FontAttributes="Bold"
+                        LineBreakMode="TailTruncation"
+                        MaxLines="1" />
+                    <Label
+                        Text="{Binding Subtitle}"
+                        TextColor="#D4C9E3"
+                        FontSize="11"
+                        LineBreakMode="TailTruncation"
+                        MaxLines="1" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <HorizontalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">
+                <ImageButton
+                    Source="call_icon.png"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="8"
+                    BackgroundColor="Transparent"
+                    IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}"
+                    Command="{Binding CallCommand}" />
+                <Button
+                    Text="Выйти"
+                    FontSize="11"
+                    Padding="8,0"
+                    HeightRequest="32"
+                    BackgroundColor="#351B172E"
+                    TextColor="#F1E8FF"
+                    IsVisible="{Binding IsGroup}"
+                    Command="{Binding LeaveCommand}" />
+                <Button
+                    Text="⋯"
+                    FontSize="24"
+                    WidthRequest="36"
+                    HeightRequest="36"
+                    Padding="0"
+                    BackgroundColor="Transparent"
+                    TextColor="#FFFFFF"
+                    Command="{Binding OpenMenuCommand}" />
+            </HorizontalStackLayout>
         </Grid>
-
-        <VerticalStackLayout Grid.Column="2" VerticalOptions="Center">
-            <Label Text="{Binding Title}" TextColor="White" FontAttributes="Bold" />
-            <Label Text="{Binding Subtitle}" TextColor="#E0E0E0" FontSize="12" />
-        </VerticalStackLayout>
-
-        <HorizontalStackLayout Grid.Column="3" Spacing="10">
-            <!-- When this is a 1:1 chat show call and leave buttons; otherwise hide call -->
-            <ImageButton Source="phone_icon.png" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" Command="{Binding CallCommand}" />
-            <Button Text="Выйти" IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}" Command="{Binding LeaveCommand}" BackgroundColor="Transparent" TextColor="White" />
-            <ImageButton Source="dots_vertical.png" Command="{Binding OpenMenuCommand}" />
-        </HorizontalStackLayout>
-    </Grid>
+            </sho:MaterialFrame>
+    </Border>
 </ContentView>

@@ -22,6 +22,7 @@
             <utilities:NullToBoolConverter x:Key="NullToBoolConverter" />
             <utilities:IndexToBoolConverter x:Key="IndexToBoolConverter"/>
             <utilities:SelectedToColorConverter x:Key="SelectedToColorConverter"/>
+            <utilities:SelectedIndexToColorConverter x:Key="SelectedIndexToColorConverter"/>
             <utilities:SelectedToFontAttributeConverter x:Key="SelectedToFontAttributeConverter" />
             <utilities:BoolInvertor x:Key="BoolInvertor"/>
             

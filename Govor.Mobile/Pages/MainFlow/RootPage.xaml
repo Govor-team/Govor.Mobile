@@ -1,131 +1,163 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:sho="http://sharpnado.com"
-             xmlns:tabsLayout="clr-namespace:Govor.Mobile.Pages.MainFlow.Layouts"
-             x:Class="Govor.Mobile.Pages.MainFlow.RootPage"
-             SafeAreaEdges="None"
-             BackgroundColor="#282A37"
-             Padding="0"
-             ControlTemplate="{StaticResource MainPageTemplate}">
-    <Grid SafeAreaEdges="None"
-          Padding="0,10,0,0"
-          BackgroundColor="Transparent">
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:tabsLayout="clr-namespace:Govor.Mobile.Pages.MainFlow.Layouts"
+    xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.MainFlow.ContentViews"
+    x:Class="Govor.Mobile.Pages.MainFlow.RootPage"
+    SafeAreaEdges="None"
+    Padding="0"
+    BackgroundColor="#282A37"
+    ControlTemplate="{StaticResource MainPageTemplate}">
 
-        <!-- ОСНОВНОЙ КОНТЕНТ -->
-        <sho:ViewSwitcher
-            x:Name="Switcher"
-            Animate="True"
+    <Grid
+        SafeAreaEdges="None"
+        Padding="0,10,0,0"
+        RowDefinitions="*"
+        BackgroundColor="Transparent">
+
+        <!-- ========================================================= -->
+        <!-- MAIN CONTENT                                               -->
+        <!-- ========================================================= -->
+
+        <contentViews:ContentViewSwitcher
+            Grid.Row="0"
             SelectedIndex="{Binding SelectedViewModelIndex, Mode=OneWay}">
+            <contentViews:ContentViewSwitcher.Views>
+                <tabsLayout:HomeView BindingContext="{Binding HomePageViewModel}" />
+                <tabsLayout:FriendsView BindingContext="{Binding FriendsPageViewModel}" />
+            </contentViews:ContentViewSwitcher.Views>
+        </contentViews:ContentViewSwitcher>
 
-            <tabsLayout:HomeView BindingContext="{Binding HomePageViewModel}" />
-            <tabsLayout:FriendsView BindingContext="{Binding FriendsPageViewModel}" />
-        </sho:ViewSwitcher>
 
-        <!--      
-        <contentViews:FloatingBottomBarView 
-            SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}"
-            TabCommand="{Binding ChangeTabCommand}"
-            ZIndex="10" />
-           -->
+        <!-- ========================================================= -->
+        <!-- FLOATING BOTTOM UI                                         -->
+        <!-- ========================================================= -->
 
-        <Grid VerticalOptions="End"
-              HorizontalOptions="Fill"
-              Margin="16,0,16,16"
-              ZIndex="10"
-              RowDefinitions="Auto, Auto">
-            <VerticalStackLayout Spacing="10" Grid.Row="0">
+        <Grid
+            Grid.Row="0"
+            ZIndex="100"
+            VerticalOptions="End"
+            HorizontalOptions="Fill"
+            Margin="16,0,16,16"
+            RowDefinitions="Auto,Auto">
 
-                <Border Background="Transparent"
-                        StrokeThickness="1"
-                        IsVisible="{Binding HasNewUpdate}"
-                        HorizontalOptions="CenterAndExpand">
-                    
+            <VerticalStackLayout
+                Grid.Row="0"
+                Spacing="10"
+                HorizontalOptions="Fill">
+
+
+                <!-- ================================================= -->
+                <!-- UPDATE NOTIFICATION                               -->
+                <!-- ================================================= -->
+
+                <Border
+                    IsVisible="{Binding HasNewUpdate}"
+                    HorizontalOptions="Center"
+                    Background="Transparent"
+                    StrokeThickness="1">
+
                     <Border.Stroke>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#30FFFFFF" Offset="0.0" />
-                            <GradientStop Color="#0CFFFFFF" Offset="0.5" />
-                            <GradientStop Color="#108080FF" Offset="1.0" />
+                        <LinearGradientBrush
+                            StartPoint="0,0"
+                            EndPoint="1,1">
+
+                            <GradientStop
+                                Color="#30FFFFFF"
+                                Offset="0.0" />
+
+                            <GradientStop
+                                Color="#0CFFFFFF"
+                                Offset="0.5" />
+
+                            <GradientStop
+                                Color="#108080FF"
+                                Offset="1.0" />
+
                         </LinearGradientBrush>
                     </Border.Stroke>
-                    
+
                     <Border.Shadow>
-                        <Shadow Brush="Black"
-                                Offset="0,4"
-                                Radius="8"
-                                Opacity="0.3" />
+                        <Shadow
+                            Brush="Black"
+                            Offset="0,4"
+                            Radius="8"
+                            Opacity="0.3" />
                     </Border.Shadow>
 
-                    <sho:MaterialFrame
-                        MaterialTheme="AcrylicBlur"
-                        MaterialBlurStyle="Dark"
-                        AndroidBlurRadius="15"
-                        CornerRadius="20"
+
+                    <Grid
+                        ColumnDefinitions="Auto,*,Auto"
+                        ColumnSpacing="12"
+                        VerticalOptions="Center"
                         Padding="16,10">
 
-                        <Grid ColumnDefinitions="Auto,*,Auto"
-                              ColumnSpacing="12"
-                              VerticalOptions="Center">
 
-                            <!-- Иконка -->
-                            <Image Grid.Column="0"
-                                   Source="download_icon.png"
-                                   HeightRequest="22"
-                                   WidthRequest="22"
-                                   VerticalOptions="Center" />
+                            <!-- UPDATE ICON -->
 
-                            <!-- Текст -->
-                            <Label Grid.Column="1"
-                                   Text="Доступна новая версия"
-                                   TextColor="White"
-                                   FontSize="15"
-                                   FontAttributes="Bold"
-                                   VerticalOptions="Center"
-                                   LineBreakMode="TailTruncation"
-                                   MaxLines="2" />
+                            <Image
+                                Grid.Column="0"
+                                Source="download_icon.png"
+                                WidthRequest="22"
+                                HeightRequest="22"
+                                VerticalOptions="Center" />
 
-                            <!-- Кнопка -->
-                            <Button Grid.Column="2"
-                                    Text="Скачать"
-                                    FontSize="14"
-                                    FontAttributes="Bold"
-                                    TextColor="White"
-                                    BackgroundColor="#00CC42"
-                                    CornerRadius="12"
-                                    HeightRequest="36"
-                                    Padding="14,0"
-                                    MinimumWidthRequest="90"
-                                    Command="{Binding DownloadUpdateCommand}" />
 
-                        </Grid>
-                    </sho:MaterialFrame>
+                            <!-- UPDATE TEXT -->
+
+                            <Label
+                                Grid.Column="1"
+                                Text="Доступна новая версия"
+                                TextColor="White"
+                                FontSize="15"
+                                FontAttributes="Bold"
+                                VerticalOptions="Center"
+                                LineBreakMode="TailTruncation"
+                                MaxLines="2" />
+
+
+                            <!-- UPDATE BUTTON -->
+
+                            <Button
+                                Grid.Column="2"
+                                Text="Скачать"
+                                FontSize="14"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                BackgroundColor="#00CC42"
+                                CornerRadius="12"
+                                HeightRequest="36"
+                                Padding="14,0"
+                                MinimumWidthRequest="90"
+                                Command="{Binding DownloadUpdateCommand}" />
+
+                    </Grid>
+
                 </Border>
-                
-                <Border StrokeThickness="0"
-                        Background="#AA282A37"
-                        StrokeShape="RoundRectangle 20"
-                        HeightRequest="60">
 
-                    <sho:TabHostView
-                        TabType="Fixed"
-                        IsSegmented="True"
-                        CornerRadius="40"
-                        BackgroundColor="Transparent"
-                        VerticalOptions="Center"
-                        HorizontalOptions="Fill"
-                        TouchColor="{StaticResource Primary}"
-                        SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
 
-                        <sho:TabHostView.Tabs>
-                            <sho:BottomTabItem IconSize="34" IconImageSource="chat_icon.png" />
-                            <sho:BottomTabItem IconSize="34" IconImageSource="friends_icon.png" />
-                            <sho:BottomTabItem IconSize="34" IconImageSource="call_icon.png" />
-                        </sho:TabHostView.Tabs>
-                    </sho:TabHostView>
-                </Border>
+                <!-- ================================================= -->
+                <!-- BOTTOM NAVIGATION                                 -->
+                <!-- ================================================= -->
+
+                <contentViews:BottomNavigationBar
+                    SelectedIndex="{Binding SelectedViewModelIndex, Mode=TwoWay}">
+                    <contentViews:BottomNavigationBar.Items>
+                        <contentViews:BottomNavigationItem
+                            Title="Чаты"
+                            Icon="chat_icon.png" />
+                        <contentViews:BottomNavigationItem
+                            Title="Контакты"
+                            Icon="friends_icon.png" />
+                    </contentViews:BottomNavigationBar.Items>
+                </contentViews:BottomNavigationBar>
 
             </VerticalStackLayout>
+
         </Grid>
+
     </Grid>
+
 </ContentPage>

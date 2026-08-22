@@ -4,7 +4,7 @@ using Govor.Mobile.PageModels.MainFlow;
 
 namespace Govor.Mobile.Pages.MainFlow;
 
-public partial class ChatPage : ContentPage
+public partial class ChatPage : SmoothBackPage
 {
     private bool _isLoadingMore = false;
     private bool _hasMoreMessages = true;

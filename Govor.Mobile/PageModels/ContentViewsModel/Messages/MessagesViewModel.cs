@@ -8,14 +8,14 @@ public partial class MessagesViewModel : ObservableObject
     private static readonly LinearGradientBrush _OutgoingBrush = new LinearGradientBrush(
             new GradientStopCollection
             {
-                new GradientStop(Color.FromArgb("#7F00FF"), 0.0f),
-                new GradientStop(Color.FromArgb("#594aa8"), 0.5f),
-                new GradientStop(Color.FromArgb("#313168"), 1.0f)
+                new GradientStop(Color.FromArgb("#B35D4A9A"), 0.55f),
+                new GradientStop(Color.FromArgb("#A34D5A92"), 0.67f), // 67????
+                new GradientStop(Color.FromArgb("#913B416F"), 1.0f)
             },
             new Point(0, 0),
             new Point(1, 1));
 
-    private static readonly SolidColorBrush _IncomingBrush = new SolidColorBrush(Color.FromArgb("#313244"));
+    private static readonly SolidColorBrush _IncomingBrush = new SolidColorBrush(Color.FromArgb("#A52B3448"));
 
     [ObservableProperty]
     private Guid id;

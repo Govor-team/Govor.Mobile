@@ -12,11 +12,13 @@ public class ChatHeaderService : IChatHeaderService
     private readonly IServiceProvider _provider;
     private readonly IUserProfileService _userProfileService;
     private readonly IWasOnlineFormater _formater;
-    
     //private readonly IGroupApiClient _groupApi;
     //private readonly IOnlineUserStore _onlineStore;
 
-    public ChatHeaderService(IServiceProvider provider, IUserProfileService userProfileService, IWasOnlineFormater formater)
+    public ChatHeaderService(
+        IServiceProvider provider,
+        IUserProfileService userProfileService,
+        IWasOnlineFormater formater)
     {
         _provider = provider;
         _userProfileService = userProfileService;
@@ -25,16 +27,16 @@ public class ChatHeaderService : IChatHeaderService
 
     public async Task<ChatHeaderViewModel> BuildAsync(Guid id, bool isGroup, IAsyncRelayCommand backCommand)
     {
-        var vm = new ChatHeaderViewModel { IsGroup = isGroup, GoBackCommand = backCommand };
+        var vm = new ChatHeaderViewModel { IsGroup = isGroup, GoBackCommand = backCommand, Id = id };
 
         if (isGroup)
         {
-            /*
-            var group = await _groupApi.GetGroupInfoAsync(id);
-            vm.Title = group.Name;
-            vm.AvatarSource = group.AvatarUrl;
-            vm.Subtitle = $"{group.MembersCount} участников";
-            */
+            var avatar = _provider.GetRequiredService<AvatarViewModel>();
+            await avatar.InitializeAsync("Групповой чат", null);
+
+            vm.Title = "Групповой чат";
+            vm.Subtitle = "Группа";
+            vm.Avatar = avatar;
         }
         else
         {
@@ -62,7 +64,7 @@ public class ChatHeaderService : IChatHeaderService
                 // swallow navigation errors
             }
         });
-
+        
         return vm;
     }
 }

@@ -1,54 +1,62 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+<local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Messages"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:local="clr-namespace:Govor.Mobile.Pages"
              xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
              x:Class="Govor.Mobile.Pages.MainFlow.ChatPage"
-             BackgroundColor="#282A37"
+             BackgroundColor="Transparent"
              ControlTemplate="{StaticResource MainPageTemplate}"
              Title="Chat"
              x:Name="chatpage"
              Shell.NavBarVisibilityAnimationEnabled="False"
+             SafeAreaEdges="None"
              Padding="{OnPlatform iOS='0,0,0,0', Android='0'}">
 
-    <Grid RowDefinitions="Auto,*" SafeAreaEdges="None">
+    <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="None" RowSpacing="0">
 
         <!-- HEADER -->
-        <contentViews:ChatHeaderView Grid.Row="0" BindingContext="{Binding Header}" />
+        <contentViews:ChatHeaderView
+            SafeAreaEdges="All"
+            Grid.Row="0"
+            BindingContext="{Binding Header}"
+            Margin="4,4,4,6" />
 
         <!-- CONTENT -->
-        <Grid Grid.Row="1" SafeAreaEdges="All" HorizontalOptions="FillAndExpand">
-            <Grid>
+        <Grid Grid.Row="1" Margin="0,-8,0,-11"  Padding="4,0" SafeAreaEdges="None" HorizontalOptions="Fill">
                 <!-- MESSAGES -->
                 <CollectionView
                     x:Name="CollectionView"
                     ItemsSource="{Binding MessageGroups}"
-                    ItemsLayout="VerticalList" 
-                    VerticalScrollBarVisibility="Never">
+                    ItemsLayout="VerticalList"
+                    SelectionMode="None"
+                    ItemSizingStrategy="MeasureAllItems"
+                    VerticalScrollBarVisibility="Never"
+                    Margin="0,2">
 
                     <CollectionView.Footer>
-                        <Grid HeightRequest="90" />
+                        <Grid HeightRequest="28" />
                     </CollectionView.Footer>
 
                     <CollectionView.Header>
                         <ActivityIndicator
                             IsVisible="{Binding IsLoadingMore}"
                             IsRunning="{Binding IsLoadingMore}"
-                            Color="White"
-                            Margin="0,10" />
+                            Color="#D9C7FF"
+                            Margin="0,12" />
                     </CollectionView.Header>
 
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="vm:MessagesGroupModel">
-                            <Grid Padding="8">
+                            <Grid Padding="8,5">
 
                                 <!-- STACK MESSAGES -->
                                 <VerticalStackLayout
                                     BindableLayout.ItemsSource="{Binding Messages}"
-                                    Spacing="4">
+                                    Spacing="3">
 
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate x:DataType="vm:MessagesViewModel">
@@ -57,32 +65,37 @@
                                                 <VerticalStackLayout HorizontalOptions="{Binding BubbleAlignment}" Spacing="2">
                                                     <Border
                                                         Background="{Binding BubbleBackground}"
-                                                        Padding="7"
+                                                        Stroke="#28FFFFFF"
+                                                        StrokeThickness="1"
+                                                        Padding="12,9"
                                                         HorizontalOptions="{Binding BubbleAlignment}">
 
                                                         <Border.StrokeShape>
                                                             <RoundRectangle CornerRadius="{Binding BubbleCorners}" />
                                                         </Border.StrokeShape>
 
-                                                        <Grid
-                                                              RowDefinitions="Auto,1,Auto">
+                                                        <Border.Shadow>
+                                                            <Shadow Brush="#70000000" Offset="0,3" Radius="8" Opacity="0.22" />
+                                                        </Border.Shadow>
+
+                                                        <Grid RowDefinitions="Auto,Auto" RowSpacing="5">
                                                             <markdown:MarkdownView
-                                                                MaximumWidthRequest="250"
-                                                                MinimumWidthRequest="45"
+                                                                MaximumWidthRequest="310"
+                                                                MinimumWidthRequest="42"
                                                                 HyperlinkColor="#6394B7"
                                                                 OnHyperLinkClicked="MarkdownView_OnHyperLinkClicked"
-                                                                TextColor="#cdd6d9"
+                                                                TextColor="#F5F0FF"
                                                                 MarkdownText="{Binding Text}" />
 
                                                             <!-- Время внутри тела сообщения -->
                                                             <Label
-                                                                Grid.Row="2"           
+                                                                Grid.Row="1"
                                                                 Text="{Binding Time}"
                                                                 FontSize="9"
-                                                                TextColor="#A0A0A0"
+                                                                TextColor="#BFB4D2"
                                                                 VerticalOptions="End"
                                                                 HorizontalOptions="{Binding BubbleAlignment}"
-                                                                Margin="0,0,0,0" />
+                                                                Margin="0,0,1,0" />
                                                         </Grid>
             
                                                     </Border>
@@ -90,8 +103,8 @@
                                                     <!-- Avatar under the last message in a group (time moved into bubble) -->
                                                     <HorizontalStackLayout IsVisible="{Binding ShowAvatar}"  Spacing="6">
                                                         <toolkit:AvatarView
-                                                            HeightRequest="28"
-                                                            WidthRequest="28"
+                                                            HeightRequest="26"
+                                                            WidthRequest="26"
                                                             BorderColor="Transparent"
                                                             CornerRadius="20"
                                                             HorizontalOptions="{Binding BubbleAlignment}"
@@ -123,7 +136,6 @@
                              />
                     </CollectionView.EmptyView>
                 </CollectionView>
-            </Grid>
 
             <!-- Floating scroll-to-bottom button -->
             <Button
@@ -135,36 +147,41 @@
                 WidthRequest="44"
                 HeightRequest="44"
                 CornerRadius="22"
-                BackgroundColor="#2B2B2B"
-                TextColor="#FFFFFF"
+                BackgroundColor="#B33E315B"
+                TextColor="#F5EFFF"
                 HorizontalOptions="End"
                 VerticalOptions="End"
-                Margin="12,100,12,80"
-                Opacity="0.9" />
+                Margin="12,12,12,12"
+                Opacity="0.95" />
 
-            <!-- Input -->
-            <Grid VerticalOptions="End"
-                  SafeAreaEdges="SoftInput"
-                  Margin="12,90,12,16"
-                  InputTransparent="False">
+        </Grid>
 
+        <!-- INPUT -->
+        <Grid Grid.Row="2"
+              SafeAreaEdges="SoftInput"
+              Margin="12,6,12,12"
+              InputTransparent="False">
                 <Border
-                    Background="#2B2B2B"
-                    StrokeThickness="0"
-                    StrokeShape="RoundRectangle 20"
-                    Padding="12,8">
+                    Background="#661B172E"
+                    Stroke="#55E6D8FF"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 24"
+                    Padding="10,6">
+                    <Border.Shadow>
+                        <Shadow Brush="#90000000" Offset="0,4" Radius="12" Opacity="0.35" />
+                    </Border.Shadow>
 
-                    <Grid ColumnDefinitions="*,Auto">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
 
                         <Editor
                             x:Name="MessageEditor"
                             Text="{Binding MessageText}"
                             Placeholder="Сообщение..."
                             TextColor="White"
-                            PlaceholderColor="#999"
+                            PlaceholderColor="#B5A9C5"
                             AutoSize="TextChanges"
                             MaximumHeightRequest="140"
-                            MinimumHeightRequest="40"
+                            MinimumHeightRequest="38"
                             BackgroundColor="Transparent"
                             Margin="0,0,8,0" />
 
@@ -173,14 +190,15 @@
                                 Command="{Binding SendMessageCommand}"
                                 Clicked="SendMessageButtonClicked"
                                 Text="➤"
-                                FontSize="18"
-                                WidthRequest="40"
-                                HeightRequest="40"
-                                BackgroundColor="Transparent"
-                                TextColor="#5FA8FF" />
+                                FontSize="20"
+                                WidthRequest="42"
+                                HeightRequest="42"
+                                CornerRadius="21"
+                                BackgroundColor="#995F4BB7"
+                                TextColor="#FFFFFF"
+                                Padding="0" />
                     </Grid>
                 </Border>
-            </Grid>
         </Grid>
     </Grid>
-</ContentPage>
+</local:SmoothBackPage>

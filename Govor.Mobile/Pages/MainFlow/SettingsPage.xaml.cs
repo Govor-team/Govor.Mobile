@@ -6,7 +6,7 @@ using Syncfusion.Maui.Toolkit.Buttons;
 
 namespace Govor.Mobile.Pages.MainFlow;
 
-public partial class SettingsPage : ContentPage
+public partial class SettingsPage : SmoothBackPage
 {
 	private bool _isInited = false;
 	public SettingsPage(SettingsPageModel vm)

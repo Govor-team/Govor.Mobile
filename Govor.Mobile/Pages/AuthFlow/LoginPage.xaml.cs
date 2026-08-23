@@ -2,7 +2,7 @@ using Govor.Mobile.PageModels.AuthFlow;
 
 namespace Govor.Mobile.Pages.AuthFlow;
 
-public partial class LoginPage : ContentPage
+public partial class LoginPage : SmoothBackPage
 {
 	public LoginPage(LoginPageModel vm)
 	{

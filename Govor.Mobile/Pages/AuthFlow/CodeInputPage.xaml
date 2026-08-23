@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
-             xmlns:syncfusion="clr-namespace:Syncfusion.Maui.Toolkit.BottomSheet;assembly=Syncfusion.Maui.Toolkit"
-             xmlns:broser="clr-namespace:Govor.Mobile.Pages"
-             xmlns:sharp="http://sharpnado.com"
-             x:Class="Govor.Mobile.Pages.AuthFlow.CodeInputPage"
-             BackgroundColor="#282A37"
-             BackgroundImageSource="{DynamicResource CurrentBackground}"
-             Title="CodeInputPage"
-             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
+<broser:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" 
+                xmlns:syncfusion="clr-namespace:Syncfusion.Maui.Toolkit.BottomSheet;assembly=Syncfusion.Maui.Toolkit"
+                xmlns:broser="clr-namespace:Govor.Mobile.Pages"
+                xmlns:sharp="http://sharpnado.com"
+                x:Class="Govor.Mobile.Pages.AuthFlow.CodeInputPage"
+                BackgroundColor="#282A37"
+                BackgroundImageSource="{DynamicResource CurrentBackground}"
+                Title="CodeInputPage"
+                Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">
     <Grid RowDefinitions="*,Auto,*"
             BackgroundColor="Transparent">
 
@@ -115,4 +115,4 @@
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </Grid>
-</ContentPage>
+</broser:SmoothBackPage>

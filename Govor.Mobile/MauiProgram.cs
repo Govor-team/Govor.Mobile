@@ -38,7 +38,7 @@ namespace Govor.Mobile
                 .UseLocalNotification()
                 .UseFirebasePushNotifications(options =>
                 {
-                    // Создаём канал для чатов (Android) — очень важно для мессенджера!
+                    // Создаём канал для чатов (Android) — очень важно
 #if ANDROID
                     options.Android.NotificationChannels = new[]
                     {
@@ -57,8 +57,7 @@ namespace Govor.Mobile
                         }
                     };
 #elif IOS || MACCATALYST
-    // если нужно что-то специфичное для iOS — добавь сюда
-    // обычно для iOS каналы не нужны (FCM сам управляет)
+   
 #elif WINDOWS || LINUX
     //
 #endif

@@ -2,7 +2,7 @@ using CommunityToolkit.Mvvm.Messaging;
 
 namespace Govor.Mobile.Pages.AuthFlow;
 
-public partial class CodeInputPage : ContentPage
+public partial class CodeInputPage : SmoothBackPage
 {
     private BrowserBottomSheet _browserControl;
     public CodeInputPage(CodeInputModel vm)

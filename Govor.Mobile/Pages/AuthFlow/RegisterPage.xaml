@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-             x:Class="Govor.Mobile.Pages.AuthFlow.RegisterPage"
-             xmlns:sharp="http://sharpnado.com"
-             BackgroundColor="#282A37"
-             BackgroundImageSource="{DynamicResource CurrentBackground}"
-             Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
+<global:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+                x:Class="Govor.Mobile.Pages.AuthFlow.RegisterPage"
+                xmlns:sharp="http://sharpnado.com"
+                xmlns:global="http://schemas.microsoft.com/dotnet/maui/global"
+                BackgroundColor="#282A37"
+                BackgroundImageSource="{DynamicResource CurrentBackground}"
+                Padding="{OnPlatform iOS='0,30,0,0', Android='0'}">    
     <Grid RowDefinitions="*,Auto,*"
       BackgroundColor="Transparent">
 
@@ -144,4 +145,4 @@
             </HorizontalStackLayout>
         </VerticalStackLayout>
     </Grid>
-</ContentPage>
+</global:SmoothBackPage>

@@ -1,6 +1,6 @@
 namespace Govor.Mobile.Pages.AuthFlow;
 
-public partial class RegisterPage : ContentPage
+public partial class RegisterPage : SmoothBackPage
 {
 	public RegisterPage(RegisterPageModel vm)
 	{

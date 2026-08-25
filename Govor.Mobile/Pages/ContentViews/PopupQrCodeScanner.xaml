@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<maui:PopupPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:maui="clr-namespace:UXDivers.Popups.Maui;assembly=UXDivers.Popups.Maui"
+    xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+    x:Class="Govor.Mobile.Pages.ContentViews.PopupQrCodeScanner"
+    BackgroundColor="{DynamicResource PopupBackdropColor}"
+    AppearingAnimation="{maui:FadeInPopupAnimation Duration=300}"
+    DisappearingAnimation="{maui:FadeOutPopupAnimation Duration=300}"
+    CloseWhenBackgroundIsClicked="True"
+    Padding="{OnPlatform iOS='0,30,0,0', Android='5', WinUI='100'}">
+
+    <Border
+        VerticalOptions="Center"
+        HorizontalOptions="Center"
+        WidthRequest="340"
+        HeightRequest="430"
+        Padding="20"
+        BackgroundColor="{DynamicResource PopupBorderColor}"
+        Stroke="{DynamicResource PopupBorderColor}"
+        StrokeThickness="1">
+
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="22" />
+        </Border.StrokeShape>
+
+        <Grid RowDefinitions="Auto,*,Auto"
+              RowSpacing="15">
+
+            <!-- HEADER -->
+
+            <VerticalStackLayout
+                Grid.Row="0"
+                Spacing="3">
+
+                <Label
+                    Text="Сканировать QR-код"
+                    FontSize="20"
+                    FontAttributes="Bold"
+                    TextColor="White"
+                    HorizontalTextAlignment="Center" />
+
+                <Label
+                    Text="Наведите камеру на QR-код пользователя Govor"
+                    FontSize="12"
+                    TextColor="#80FFFFFF"
+                    HorizontalTextAlignment="Center" />
+
+            </VerticalStackLayout>
+
+
+            <!-- CAMERA -->
+
+            <Border
+                Grid.Row="1"
+                Padding="0"
+                StrokeThickness="0"
+                BackgroundColor="Black"
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                WidthRequest="290"
+                HeightRequest="290">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="18" />
+                </Border.StrokeShape>
+
+                <Grid>
+
+                    <zxing:CameraBarcodeReaderView
+                        x:Name="BarcodeReader"
+                        CameraLocation="Rear"
+                        BarcodesDetected="BarcodeReader_BarcodesDetected"
+                        HorizontalOptions="Fill"
+                        VerticalOptions="Fill" />
+
+                    <!-- рамка сканирования -->
+
+                    <Grid
+                        InputTransparent="True"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center"
+                        WidthRequest="210"
+                        HeightRequest="210">
+
+                        <BoxView
+                            BackgroundColor="Transparent"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill" />
+
+                        <!-- corners -->
+
+                        <Border
+                            Stroke="White"
+                            StrokeThickness="2"
+                            Background="Transparent"
+                            HorizontalOptions="Fill"
+                            VerticalOptions="Fill">
+
+                            <Border.StrokeShape>
+                                <RoundRectangle CornerRadius="16" />
+                            </Border.StrokeShape>
+
+                        </Border>
+
+                    </Grid>
+
+                </Grid>
+
+            </Border>
+
+
+            <!-- FOOTER -->
+
+            <VerticalStackLayout
+                Grid.Row="2"
+                Spacing="8">
+
+                <Label
+                    x:Name="StatusLabel"
+                    Text="Ожидание QR-кода..."
+                    FontSize="13"
+                    TextColor="#90FFFFFF"
+                    HorizontalTextAlignment="Center" />
+
+            </VerticalStackLayout>
+
+        </Grid>
+
+    </Border>
+
+</maui:PopupPage>

@@ -133,6 +133,7 @@
                                                      Padding="8"
                                                      VerticalOptions="Center"
                                                      BackgroundColor="Transparent"
+                                                     Command="{Binding BindingContext.OpenQrCodeScannerCommand, Source={x:Reference RootControl}}"
                                                      Aspect="AspectFit">
                                             <VisualStateManager.VisualStateGroups>
                                                 <VisualStateGroupList>
@@ -157,6 +158,7 @@
                                                      Padding="8"
                                                      VerticalOptions="Center"
                                                      BackgroundColor="Transparent"
+                                                     Command="{Binding BindingContext.OpenIdQRCodeCommand, Source={x:Reference RootControl}}"
                                                      Aspect="AspectFit">
                                             <VisualStateManager.VisualStateGroups>
                                                 <VisualStateGroupList>

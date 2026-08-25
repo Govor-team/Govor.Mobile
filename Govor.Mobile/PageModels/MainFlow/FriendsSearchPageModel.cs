@@ -45,27 +45,27 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
     
     private readonly IFriendshipApiService _friendshipApiService;
     private readonly IFriendsRequestQueryService _queryService;
-    private readonly IWasOnlineFormater _lastSeenFormater;
+    private readonly IUserListItemViewModelFactory _userListItemFactory;
     private readonly IUserProfileService _profileService; 
     private readonly IProfileApiClient _profileApiClient;
     private readonly IFriendsHubService _friendsHubService;
 
     public FriendsSearchPageModel(
         IServiceProvider provider,
-        IWasOnlineFormater formater,
         IFriendsHubService friendsHubService,
         IUserProfileService profileService,
         IProfileApiClient profileApiClient,
         IFriendsRequestQueryService queryService,
-        IFriendshipApiService friendshipApiService)
+        IFriendshipApiService friendshipApiService,
+        IUserListItemViewModelFactory userListItemFactory)
     {
         _provider = provider;
         _friendsHubService = friendsHubService;
         _profileService = profileService;
         _profileApiClient = profileApiClient;
         _queryService = queryService;
-        _lastSeenFormater = formater;
         _friendshipApiService = friendshipApiService;
+        _userListItemFactory = userListItemFactory;
     }
     
     public void Dispose()
@@ -239,7 +239,7 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
         if (_initedUsers.TryGetValue(profile.Id, out var existing))
             return existing;
 
-        var vm = BuildByProfile(profile);
+        var vm = _userListItemFactory.Create(profile);
         _initedUsers[profile.Id] = vm;
         return vm;
     }
@@ -257,26 +257,6 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
         });
     }
 
-    private UserListItemViewModel BuildByProfile(UserProfileDto profile)
-    {
-        var avatarViewModel = _provider.GetService<AvatarViewModel>();
-        avatarViewModel?.InitializeAsync(profile.Username, profile.IconId);
-        
-        var userView = new UserListItemViewModel(
-            avatarViewModel,
-            null,
-            profile.Id)
-        {
-            Title = profile.Username,
-            Subtitle = profile.Description ?? string.Empty,
-            IsOnline = profile.IsOnline,
-        };
-        
-        _initedUsers[userView.UserId] = userView;
-        
-        return userView;
-    }
-    
     [RelayCommand]
     public async Task OpenIncomingProfile(UserListItemViewModel user)
     {
@@ -320,72 +300,87 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
         await IPopupService.Current.PushAsync(popup, waitUntilClosed: true);
         
     }
-    
 
-    
-[RelayCommand]
-private async Task SearchFriendsAsync(string query)
-{
-    SearchResults.Clear();
-
-    if (string.IsNullOrWhiteSpace(query))
+    [RelayCommand]
+    public async Task OpenIdQRCodeAsync()
     {
-        IsSearching = false;
-        return;
+        var profile = await _profileService.GetCurrentProfile();
+
+        var avatarViewModel = _provider.GetService<AvatarViewModel>();
+        _ = avatarViewModel.InitializeAsync(profile.Username, profile.IconId);
+
+        var model = new UserIdQRCodePopupModel(
+                profile.Id,
+                profile.Username,
+                avatarViewModel);
+
+        var popup = new PopupUserIdQRCode(model);
+
+        await IPopupService.Current.PushAsync(popup);
     }
 
-    IsSearching = true;
-    IsBusy = true;
-
-    try
+    [RelayCommand]
+    public async Task OpenQrCodeScannerAsync()
     {
-        var result = await _friendshipApiService.Search(query);
-        if (!result.IsSuccess || result.Value.Count == 0)
+        var model = new PopupQrCodeScannerModel(
+            _userListItemFactory,
+            _friendsHubService,
+            _profileService);
+
+        var popup = new PopupQrCodeScanner(model);
+
+        await IPopupService.Current.PushAsync(popup);
+    }
+
+    [RelayCommand]
+    private async Task SearchFriendsAsync(string query)
+    {
+        SearchResults.Clear();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            IsSearching = false;
             return;
+        }
 
-        // 1. Готовим все ViewModel-ы параллельно (самое большое ускорение)
-        var tasks = result.Value.Select(async dto =>
+        IsSearching = true;
+        IsBusy = true;
+
+        try
         {
-            var avatarVm = _provider.GetService<AvatarViewModel>();
-            await avatarVm.InitializeAsync(dto.Username, dto.IconId);
+            var result = await _friendshipApiService.Search(query);
+            if (!result.IsSuccess || result.Value.Count == 0)
+                return;
 
-            return new UserListItemViewModel(
-                userId: dto.Id,
-                avatar: avatarVm,
-                tag: null)
+            // 1. Готовим все ViewModel-ы параллельно (самое большое ускорение)
+            var tasks = result.Value.Select(dto =>
+                _userListItemFactory.CreateAsync(dto)).ToList();
+
+            // 2. Ждём все аватарки параллельно
+            var items = await Task.WhenAll(tasks);
+        
+            await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                Title    = dto.Username,
-                Subtitle = dto.Description,
-                DateTime = _lastSeenFormater.FormatLastSeen(dto.WasOnline),
-                IsOnline = dto.IsOnline
-            };
-        }).ToList();
-
-        // 2. Ждём все аватарки параллельно
-        var items = await Task.WhenAll(tasks);
+                SearchResults = new ObservableCollection<UserListItemViewModel>(items);
+                OnPropertyChanged(nameof(SearchResults));
+            });
         
-        await MainThread.InvokeOnMainThreadAsync(async () =>
+            // 3. Добавляем пачкой → минимизируем CollectionChanged
+            // Вариант А — самый простой (рекомендую начать с него)
+            /*foreach (var item in items)
+                SearchResults.Add(item);*/
+        }
+        catch (Exception ex)
         {
-            SearchResults = new ObservableCollection<UserListItemViewModel>(items);
-            OnPropertyChanged(nameof(SearchResults));
-        });
-        
-        // 3. Добавляем пачкой → минимизируем CollectionChanged
-        // Вариант А — самый простой (рекомендую начать с него)
-        /*foreach (var item in items)
-            SearchResults.Add(item);*/
+            // лог + сообщение пользователю
+            await Shell.Current.DisplayAlert("Ошибка", "Не удалось загрузить результаты", "OK");
+        }
+        finally
+        {
+            IsBusy = false;
+            IsSearching = false;   // или оставь true, если хочешь показать "ничего не найдено"
+        }
     }
-    catch (Exception ex)
-    {
-        // лог + сообщение пользователю
-        await Shell.Current.DisplayAlert("Ошибка", "Не удалось загрузить результаты", "OK");
-    }
-    finally
-    {
-        IsBusy = false;
-        IsSearching = false;   // или оставь true, если хочешь показать "ничего не найдено"
-    }
-}
 
     [RelayCommand]
     private void CloseSearch()

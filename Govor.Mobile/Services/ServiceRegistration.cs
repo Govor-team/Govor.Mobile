@@ -95,6 +95,7 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IBackgroundImageService, BackgroundService>();
         
         builder.Services.AddSingleton<IWasOnlineFormater, WasOnlineFormater>();
+        builder.Services.AddSingleton<IUserListItemViewModelFactory, UserListItemViewModelFactory>();
         
         builder.Services.AddSingleton<IFriendsListController, FriendsListController>();
         builder.Services.AddTransient<IFriendsFactory, FriendsFactory>();
@@ -207,7 +208,7 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<MainPageModel>();
         builder.Services.AddSingleton<IConnectivityChanged>(sp => sp.GetRequiredService<MainPageModel>());
         
-        builder.Services.AddSingleton<FriendsSearchPage>();
+        //builder.Services.AddSingleton<FriendsSearchPage>();
         builder.Services.AddSingleton<FriendsSearchPageModel>();
 
         builder.Services.AddSingleton<SettingsPage>();

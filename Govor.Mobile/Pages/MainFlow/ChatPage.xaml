@@ -198,10 +198,11 @@
                                                         <Grid RowDefinitions="Auto,Auto" RowSpacing="5">
                                                             <markdown:MarkdownView
                                                                 MaximumWidthRequest="310"
-                                                                MinimumWidthRequest="42"
+                                                                MinimumWidthRequest="67"
                                                                 HyperlinkColor="#6394B7"
                                                                 OnHyperLinkClicked="MarkdownView_OnHyperLinkClicked"
                                                                 TextColor="#F5F0FF"
+                                                                Style="{StaticResource DefaultMarkdownStyle}"
                                                                 MarkdownText="{Binding Text}" />
 
                                                             <!-- Время внутри тела сообщения -->

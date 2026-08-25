@@ -76,7 +76,7 @@
 		<PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="7.0.0" />
 		<PackageReference Include="CropperImage.MAUI" Version="1.1.0" />
 		<PackageReference Include="ImageCropper.Maui" Version="1.2.3" />
-		<PackageReference Include="Indiko.Maui.Controls.Markdown" Version="1.3.16" />
+		<PackageReference Include="Indiko.Maui.Controls.Markdown" Version="1.10.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
@@ -95,7 +95,8 @@
 		<PackageReference Include="UraniumUI.Blurs" Version="2.14.0" />
 		<PackageReference Include="UraniumUI.Material" Version="2.14.0" />
 		<PackageReference Include="UXDivers.Popups.Maui" Version="0.9.1" />
-		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+		
+		<PackageReference Include="Microsoft.Maui.Controls" Version="10.0.71" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -105,6 +106,7 @@
 		<PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="3.119.1" />
 		<PackageReference Include="Syncfusion.Maui.Core" Version="31.2.18" />
 		<PackageReference Include="Syncfusion.Maui.Toolkit" Version="1.0.8" />
+		<PackageReference Include="ZXing.Net.Maui.Controls" Version="0.10.4" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -122,10 +124,6 @@
 	    <DependentUpon>ImagePreviewView.xaml</DependentUpon>
 	    <SubType>Code</SubType>
 	  </Compile>
-	  <Compile Update="Pages\MainFlow\FriendsSearchPage.xaml.cs">
-	    <DependentUpon>FriendsSearchPage.xaml</DependentUpon>
-	    <SubType>Code</SubType>
-	  </Compile>
 	  <Compile Update="Pages\ContentViews\UserIncomingFriendPopup.xaml.cs">
 	    <DependentUpon>UserIncommingFriendPopup.xaml</DependentUpon>
 	    <SubType>Code</SubType>
@@ -141,6 +139,12 @@
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\BrowserBottomSheet.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\ContentViews\PopupQrCodeScanner.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Pages\ContentViews\PopupUserIdQRCode.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\MainFlow\ContentViews\BottomNavigationBar.xaml">
@@ -184,10 +188,6 @@
 	  </MauiXaml>
 	  <MauiXaml Update="PageModels\ContentViews\ImagePreviewView.xaml">
 	    <SubType>Designer</SubType>
-	  </MauiXaml>
-	  <MauiXaml Update="Pages\MainFlow\FriendsSearchPage.xaml">
-	    <SubType>Designer</SubType>
-	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\ContentViews\UserIncomingFriendPopup.xaml">
 	    <SubType>Designer</SubType>

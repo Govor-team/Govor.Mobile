@@ -9,7 +9,7 @@ public partial class BottomBarModel : ObservableObject
     [RelayCommand]
     private async Task OpenFriendsAsync()
     {
-        await Shell.Current.GoToAsync($"//{nameof(FriendsSearchPage)}", animate: true);
+        //await Shell.Current.GoToAsync($"//{nameof(FriendsSearchPage)}", animate: true);
         //Shell.Current.CurrentItem = _provider.GetService<FriendsSearchPage>();
     }
 

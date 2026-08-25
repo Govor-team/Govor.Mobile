@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<maui:PopupPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:maui="clr-namespace:UXDivers.Popups.Maui;assembly=UXDivers.Popups.Maui"
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    x:Class="Govor.Mobile.Pages.ContentViews.PopupUserIdQRCode"
+    BackgroundColor="{DynamicResource PopupBackdropColor}"
+    AppearingAnimation="{maui:FadeInPopupAnimation Duration=300}"
+    DisappearingAnimation="{maui:FadeOutPopupAnimation Duration=300}"
+    CloseWhenBackgroundIsClicked="True"
+    Padding="{OnPlatform iOS='0,30,0,0', Android='5', WinUI='100'}">
+
+    <Border
+        VerticalOptions="Center"
+        HorizontalOptions="Center"
+        WidthRequest="340"
+        Padding="24"
+        BackgroundColor="{DynamicResource PopupBorderColor}"
+        Stroke="{DynamicResource PopupBorderColor}"
+        StrokeThickness="1">
+
+        <Border.StrokeShape>
+            <RoundRectangle CornerRadius="22" />
+        </Border.StrokeShape>
+
+        <VerticalStackLayout
+            Spacing="16"
+            HorizontalOptions="Center">
+
+            <!-- Заголовок -->
+            <Label
+                Text="Мой QR-код"
+                FontSize="20"
+                FontAttributes="Bold"
+                TextColor="White"
+                HorizontalTextAlignment="Center" />
+
+            <!-- QR -->
+            <Border
+                WidthRequest="300"
+                HeightRequest="300"
+                Padding="10"
+                BackgroundColor="White"
+                StrokeThickness="0"
+                HorizontalOptions="Center">
+
+                <Border.StrokeShape>
+                    <RoundRectangle CornerRadius="12" />
+                </Border.StrokeShape>
+
+                <Image
+                    Source="{Binding QrCodeImage}"
+                    Aspect="AspectFit"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill" />
+
+            </Border>
+
+            <!-- Пользователь -->
+            <HorizontalStackLayout
+                Spacing="10"
+                HorizontalOptions="Center"
+                VerticalOptions="Center">
+
+                <toolkit:AvatarView
+                          HeightRequest="50"
+                          WidthRequest="50"
+                          CornerRadius="24"
+                          BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
+                          Text="{Binding Avatar.AvatarText}"
+                          TextTransform="Uppercase"
+                          FontSize="14"
+                          FontAttributes="Bold"
+                          FontFamily="CirilicOld"
+                          ImageSource="{Binding Avatar.AvatarImage}"
+                          BorderColor="#55FFFFFF"
+                          Shadow="{Shadow Brush=Black, Offset='0,3', Radius=10, Opacity=0.2}"
+                          BorderWidth="1"/>
+
+                <VerticalStackLayout
+                        VerticalOptions="Center"
+                        Spacing="2">
+
+                    <Label
+                        Text="{Binding Username}"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        TextTransform="Uppercase"
+                        FontFamily="CirilicOld"
+                        TextColor="White"
+                        LineBreakMode="TailTruncation"
+                        MaxLines="1" />
+
+                    <Label
+                        Text="Отсканируйте, чтобы добавить меня"
+                        FontSize="12"
+                        TextColor="#80FFFFFF"
+                        LineBreakMode="TailTruncation" />
+
+                </VerticalStackLayout>
+
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+
+    </Border>
+
+</maui:PopupPage>

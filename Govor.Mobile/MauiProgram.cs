@@ -15,6 +15,7 @@ using UXDivers.Popups.Maui;
 using Plugin.FirebasePushNotifications;
 using Plugin.LocalNotification;
 using Microsoft.Extensions.Logging;
+using ZXing.Net.Maui.Controls;
 #if ANDROID
 using Microsoft.Maui.Controls;
 #endif
@@ -85,6 +86,7 @@ namespace Govor.Mobile
                     fonts.AddFont("FluentSystemIcons-Regular.ttf", FluentUI.FontFamily);
                     fonts.AddFont("cyrillicold.ttf", "CirilicOld");
                 })
+                .UseBarcodeReader()
                 // Govor Core:
                 .RegisterDatabaseContext() 
                 .RegisterHttpClients()

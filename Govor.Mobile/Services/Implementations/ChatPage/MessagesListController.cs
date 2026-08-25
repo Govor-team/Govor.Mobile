@@ -368,4 +368,14 @@ public class MessagesListController : IMessagesListController, IDisposable
         _repository.OnMessageUpdated -= OnMessageUpdated;
         _repository.OnMessageDeleted -= OnMessageDeleted;
     }
+
+    public Task<Result<bool>> EditAsync(Guid messageId, string newText)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true)
+    {
+        throw new NotImplementedException();
+    }
 }

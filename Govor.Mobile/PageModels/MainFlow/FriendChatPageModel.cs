@@ -128,7 +128,6 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         var profile = await profileTask;
 
-        // Минимально необходимое для отображения страницы
         Header = await headerTask;
 
         if (!IsGroup)
@@ -142,7 +141,6 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         IsLoaded = true;
 
-        // Не мешаем открытию UI
         _ = InitializeControllerAsync(
             ChatId,
             profile.Id,

@@ -1,9 +1,12 @@
-﻿namespace Govor.Mobile.Models.Responses;
+﻿using Govor.Mobile.Models.Requests;
+
+namespace Govor.Mobile.Models.Responses;
 
 public class MessageRemovedResponse
 {
-    public Guid MessageId { get; set; }
-    public Guid SenderId { get; set; }
-    public Guid RecipientId { get; set; }
+    public required Guid MessageId { get; set; }
+    public required Guid SenderId { get; set; }
+    public required Guid RecipientId { get; set; }
+    public RemoveMessageRequestType RequestType { get; set; }
     public RecipientType RecipientType { get; set; }
 }

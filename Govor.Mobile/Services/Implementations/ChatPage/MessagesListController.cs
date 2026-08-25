@@ -159,8 +159,18 @@ public class MessagesListController : IMessagesListController, IDisposable
         await _repository.SendMessageAsync(request);
         return Result<bool>.Success(true);
     }
-    
-    
+
+    public async Task<Result<bool>> EditAsync(Guid messageId, string newText)
+    {
+       throw new NotImplementedException("EditAsync is not implemented yet.");
+    }
+
+    public async Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true)
+    {
+        await _repository.RemoveMessageAsync(messageId, forceRemove);
+        return Result<bool>.Success(true);
+    }
+
     private void OnNewMessageReceived(MessageResponse msg)
     {
         if (!IsRelevantChat(msg))
@@ -367,15 +377,5 @@ public class MessagesListController : IMessagesListController, IDisposable
         _repository.OnNewMessage -= OnNewMessageReceived; 
         _repository.OnMessageUpdated -= OnMessageUpdated;
         _repository.OnMessageDeleted -= OnMessageDeleted;
-    }
-
-    public Task<Result<bool>> EditAsync(Guid messageId, string newText)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true)
-    {
-        throw new NotImplementedException();
     }
 }

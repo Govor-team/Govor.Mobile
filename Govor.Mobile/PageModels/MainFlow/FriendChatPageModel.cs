@@ -220,9 +220,16 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     }
 
     [RelayCommand]
-    private void DeleteMessages()
+    private async Task DeleteMessages()
     {
         ClearSelection();
+
+        var messagesIds = SelectedMessages.Select(message => message.Id).ToList();
+
+        foreach (var messageId in messagesIds)
+        {
+            await _controller.RemoveAsync(messageId, forceRemove: true);
+        }
     }
 
     [RelayCommand]

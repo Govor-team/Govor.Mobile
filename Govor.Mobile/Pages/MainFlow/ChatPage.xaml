@@ -55,15 +55,15 @@
                   ColumnSpacing="2">
 
                 <!-- CLOSE -->
-                <Button
+                <ImageButton
                     Grid.Column="0"
-                    Text="‹"
-                    FontSize="31"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
+                    Source="back_icon.png"
+                    WidthRequest="38"
+                    HeightRequest="38"
+                    Padding="9"
+                    CornerRadius="19"
+                    Opacity="0.7"
                     BackgroundColor="Transparent"
-                    TextColor="White"
                     Command="{Binding ExitMessageSelectionCommand}" />
 
                 <!-- COUNT -->
@@ -76,59 +76,58 @@
                     VerticalOptions="Center"
                     HorizontalOptions="Start"
                     Margin="8,0,0,0" />
-
-                <!-- COPY -->
-                <Button
+                
+                <!-- EDIT -->
+                <ImageButton
                     Grid.Column="2"
-                    Text="⧉"
-                    FontSize="21"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
+                    Source="edit.png"
+                    WidthRequest="38"
+                    HeightRequest="38"
+                    Padding="8"
+                    Aspect="AspectFit"
+                    Opacity="0.9"
                     BackgroundColor="Transparent"
-                    TextColor="White"
+                    IsVisible="{Binding CanEditMessage}"
+                    Command="{Binding EditMessageCommand}" />
+                
+                <!-- COPY -->
+                <ImageButton
+                    Grid.Column="3"
+                    Source="copy.png"
+                    WidthRequest="38"
+                    HeightRequest="38"
+                    Padding="6"
+                    Aspect="AspectFit"
+                    Opacity="0.9"
+                    BackgroundColor="Transparent"
                     IsVisible="{Binding CanCopyMessages}"
                     Command="{Binding CopyMessagesCommand}" />
 
-                <!-- EDIT -->
-                <Button
-                    Grid.Column="3"
-                    Text="✎"
-                    FontSize="21"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
-                    BackgroundColor="Transparent"
-                    TextColor="White"
-                    IsVisible="{Binding CanEditMessage}"
-                    Command="{Binding EditMessageCommand}" />
-
                 <!-- FORWARD -->
-                <Button
+                <ImageButton
                     Grid.Column="4"
-                    Text="↗"
-                    FontSize="22"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
+                    Source="forward_message.png"
+                    WidthRequest="38"
+                    HeightRequest="38"
+                    Padding="6"
+                    Aspect="AspectFit"
+                    Opacity="0.9"
                     BackgroundColor="Transparent"
-                    TextColor="White"
                     IsVisible="{Binding CanForwardMessages}"
                     Command="{Binding ForwardMessagesCommand}" />
-
+                
                 <!-- DELETE -->
-                <Button
+                <ImageButton
                     Grid.Column="5"
-                    Text="⌫"
-                    FontSize="20"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    Padding="0"
+                    Source="trash.png"
+                    WidthRequest="38"
+                    HeightRequest="38"
+                    Padding="9"
+                    Aspect="AspectFit"
+                    Opacity="0.9"
                     BackgroundColor="Transparent"
-                    TextColor="#FF9EAE"
                     IsVisible="{Binding CanDeleteMessages}"
                     Command="{Binding DeleteMessagesCommand}" />
-
             </Grid>
         </Border>
 

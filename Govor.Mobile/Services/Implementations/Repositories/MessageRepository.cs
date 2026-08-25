@@ -107,6 +107,24 @@ public class MessagesRepository : IMessagesRepository
         }
     }
 
+    public async Task RemoveMessageAsync(Guid messageId, bool forceRemove = true)
+    {
+        var request = new RemoveMessageRequest { 
+            MessageId = messageId,
+            RequestType = forceRemove ?
+                RemoveMessageRequestType.ForceRemove : RemoveMessageRequestType.HideForMe 
+        };
+
+        var result = await _hub.Remove(request);
+
+        if (result.Status != HubResultStatus.Success)
+        {
+            // Здесь можно выбросить исключение, чтобы UI показал ошибку (Toast/Alert),
+            // так как локального сообщения "Error" мы больше не создаем.
+            //throw new Exception(result.ErrorMessage ?? "Не удалось удалить сообщение");
+        }
+    }
+
     public async Task SyncChatAsync(Guid chatId, bool group = false, int after = 50)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();

@@ -16,4 +16,5 @@ public interface IMessagesRepository
     Task<List<MessageResponse>> LoadHistoryAsync(Guid chatId, Guid? oldestMessageId, int before = 50, bool group = false);
     Task SendMessageAsync(MessageRequest request);
     Task RemoveMessageAsync(Guid messageId, bool forceRemove = true);
+    Task EditMessageAsync(Guid messageId, string newText);
 }

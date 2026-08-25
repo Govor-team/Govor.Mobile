@@ -107,6 +107,23 @@ public class MessagesRepository : IMessagesRepository
         }
     }
 
+    public async Task EditMessageAsync(Guid messageId, string newText)
+    {
+        var request = new EditMessageRequest {
+            MessageId = messageId,
+            NewEncryptedContent = newText 
+        };
+
+        var result = await _hub.Edit(request);
+
+        if (result.Status != HubResultStatus.Success)
+        {
+            // Здесь можно выбросить исключение, чтобы UI показал ошибку (Toast/Alert),
+            // так как локального сообщения "Error" мы больше не создаем.
+            //throw new Exception(result.ErrorMessage ?? "Не удалось удалить сообщение");
+        }
+    }
+
     public async Task RemoveMessageAsync(Guid messageId, bool forceRemove = true)
     {
         var request = new RemoveMessageRequest { 

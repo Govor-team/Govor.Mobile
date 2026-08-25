@@ -222,15 +222,20 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     [RelayCommand]
     private async Task DeleteMessages()
     {
-        ClearSelection();
+        var messageIds = SelectedMessages
+            .Select(message => message.Id)
+            .ToList();
 
-        var messagesIds = SelectedMessages.Select(message => message.Id).ToList();
-
-        foreach (var messageId in messagesIds)
+        foreach (var messageId in messageIds)
         {
-            await _controller.RemoveAsync(messageId, forceRemove: true);
+            await _controller.RemoveAsync(
+                messageId,
+                forceRemove: true);
         }
+
+        ClearSelection();
     }
+    
 
     [RelayCommand]
     private void CancelMessageEditing()
@@ -295,6 +300,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         if (IsEditingMessage && EditingMessage != null)
         {
             EditingMessage.Text = MessageText;
+            await _controller.EditAsync(EditingMessage.Id, MessageText);
             CancelMessageEditing();
             return;
         }

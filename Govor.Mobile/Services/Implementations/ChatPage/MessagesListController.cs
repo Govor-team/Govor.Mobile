@@ -162,7 +162,8 @@ public class MessagesListController : IMessagesListController, IDisposable
 
     public async Task<Result<bool>> EditAsync(Guid messageId, string newText)
     {
-       throw new NotImplementedException("EditAsync is not implemented yet.");
+        await _repository.EditMessageAsync(messageId, newText);
+        return Result<bool>.Success(true);
     }
 
     public async Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true)

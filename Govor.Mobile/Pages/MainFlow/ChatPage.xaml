@@ -52,7 +52,7 @@
 
             <Grid SafeAreaEdges="All"
                   ColumnDefinitions="46,*,46,46,46,46"
-                  ColumnSpacing="2">
+                  ColumnSpacing="4">
 
                 <!-- CLOSE -->
                 <ImageButton
@@ -87,7 +87,7 @@
                     Aspect="AspectFit"
                     Opacity="0.9"
                     BackgroundColor="Transparent"
-                    IsVisible="{Binding CanEditMessage}"
+                    IsVisible="True"
                     Command="{Binding EditMessageCommand}" />
                 
                 <!-- COPY -->
@@ -111,7 +111,7 @@
                     HeightRequest="38"
                     Padding="6"
                     Aspect="AspectFit"
-                    Opacity="0.9"
+                    Opacity="0.5"
                     BackgroundColor="Transparent"
                     IsVisible="{Binding CanForwardMessages}"
                     Command="{Binding ForwardMessagesCommand}" />
@@ -311,47 +311,57 @@
                         <Shadow Brush="#90000000" Offset="0,4" Radius="12" Opacity="0.35" />
                     </Border.Shadow>
 
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
 
-                        <Editor
-                            x:Name="MessageEditor"
-                            Text="{Binding MessageText}"
-                            Placeholder="Сообщение..."
-                            TextColor="White"
-                            PlaceholderColor="#B5A9C5"
-                            AutoSize="TextChanges"
-                            MaximumHeightRequest="140"
-                            MinimumHeightRequest="38"
+                    <Editor
+                        x:Name="MessageEditor"
+                        Text="{Binding MessageText}"
+                        Placeholder="Сообщение..."
+                        TextColor="White"
+                        PlaceholderColor="#B5A9C5"
+                        AutoSize="TextChanges"
+                        MaximumHeightRequest="140"
+                        MinimumHeightRequest="38"
+                        BackgroundColor="Transparent"
+                        Margin="0,0,8,0" />
+
+                    <!-- Кнопки -->
+                    <HorizontalStackLayout
+                        Grid.Column="1"
+                        Spacing="4"
+                        VerticalOptions="End">
+
+                        <!-- Отмена редактирования -->
+                        <Button
+                            IsVisible="{Binding IsEditingMessage}"
+                            Command="{Binding CancelMessageEditingCommand}"
+                            Text="×"
+                            FontSize="22"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            CornerRadius="21"
                             BackgroundColor="Transparent"
-                            Margin="0,0,8,0" />
+                            TextColor="#FFFFFF"
+                            Padding="0" />
 
-                        <Button Grid.Column="1"
-                                IsVisible="{Binding IsEditingMessage}"
-                                Command="{Binding CancelMessageEditingCommand}"
-                                Text="×"
-                                FontSize="22"
-                                WidthRequest="42"
-                                HeightRequest="42"
-                                CornerRadius="21"
-                                BackgroundColor="Transparent"
-                                TextColor="#FFFFFF"
-                                Padding="0" />
+                        <!-- Отправить -->
+                        <Button
+                            IsVisible="True"
+                            VerticalOptions="End"
+                            Command="{Binding SendMessageCommand}"
+                            Clicked="SendMessageButtonClicked"
+                            Text="➤"
+                            FontSize="20"
+                            WidthRequest="42"
+                            HeightRequest="42"
+                            CornerRadius="21"
+                            BackgroundColor="#995F4BB7"
+                            TextColor="#FFFFFF"
+                            Padding="0" />
 
-                        <Button Grid.Column="1"
-                                IsVisible="{Binding IsEditingMessage, Converter={StaticResource BoolInvertor}}"
-                                VerticalOptions="End"
-                                Command="{Binding SendMessageCommand}"
-                                Clicked="SendMessageButtonClicked"
-                                Text="➤"
-                                FontSize="20"
-                                WidthRequest="42"
-                                HeightRequest="42"
-                                CornerRadius="21"
-                                BackgroundColor="#995F4BB7"
-                                TextColor="#FFFFFF"
-                                Padding="0" />
-                    </Grid>
-                </Border>
+                    </HorizontalStackLayout>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </local:SmoothBackPage>

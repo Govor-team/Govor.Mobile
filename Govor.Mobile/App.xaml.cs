@@ -3,7 +3,7 @@ using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.Notification;
-using Plugin.LocalNotification;
+using Microsoft.Maui.Controls;
 
 namespace Govor.Mobile;
 
@@ -12,7 +12,12 @@ public partial class App : Application
     private readonly IAuthService _authService;
     private readonly IServiceProvider _serviceProvider;
     private readonly IAppStartupOrchestrator _initializer;
-    
+
+    private readonly SemaphoreSlim _stateSemaphore = new(1, 1);
+
+    private bool _isInitialized;
+    private bool? _requestedAuthenticationState;
+
     public App(
         IAuthService authService,
         IServiceProvider serviceProvider,
@@ -24,10 +29,9 @@ public partial class App : Application
         _authService = authService;
         _serviceProvider = serviceProvider;
         _initializer = startupOrchestrator;
-        
-        backgroundService.LoadCurrent(); 
 
-        // Показываем splash / loader
+        backgroundService.LoadCurrent();
+
         MainPage = new ContentPage
         {
             Content = new ActivityIndicator
@@ -43,70 +47,180 @@ public partial class App : Application
     protected override async void OnStart()
     {
         base.OnStart();
-        
-        _authService.AuthenticationStateChanged += OnAuthenticationStateChanged;
-        
+
+        if (_isInitialized)
+            return;
+
+        _isInitialized = true;
+
+        _authService.AuthenticationStateChanged +=
+            OnAuthenticationStateChanged;
+
         try
         {
+            Console.WriteLine("AUTH: Initialize START");
+
             await _authService.InitializeAsync();
-            OnAuthenticationStateChanged(_authService, _authService.IsAuthenticated);
+
+            Console.WriteLine(
+                $"AUTH: Initialize END = {_authService.IsAuthenticated}");
+
+            SetAuthenticationState(_authService.IsAuthenticated);
         }
         catch (Exception ex)
         {
-            // Логируем + показываем ошибку или дефолтный экран
+            Console.WriteLine($"AUTH INIT ERROR: {ex}");
+
             await MainThread.InvokeOnMainThreadAsync(async () =>
             {
-                await Current.MainPage.DisplayAlertAsync("Ошибка запуска", "Не удалось инициализировать приложение", "OK");
+                await AppShell.DisplayException(
+                    "Не удалось инициализировать приложение");
             });
         }
     }
 
-    private async void OnAuthenticationStateChanged(object? sender, bool isAuthenticated)
+    private void OnAuthenticationStateChanged(
+        object? sender,
+        bool isAuthenticated)
     {
-        // Чтобы избежать множественных вызовов
-        //_authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        Console.WriteLine(
+            $"AUTH EVENT: {isAuthenticated}");
 
-        await MainThread.InvokeOnMainThreadAsync(async () =>
+        SetAuthenticationState(isAuthenticated);
+    }
+
+    private void SetAuthenticationState(bool isAuthenticated)
+    {
+        _requestedAuthenticationState = isAuthenticated;
+
+        _ = ApplyAuthenticationStateAsync();
+    }
+
+    private async Task ApplyAuthenticationStateAsync()
+    {
+        // Если другой transition уже выполняется,
+        // он после завершения увидит актуальное состояние.
+        if (!await _stateSemaphore.WaitAsync(0))
+            return;
+
+        try
         {
-            if (isAuthenticated)
+            while (true)
             {
-                await NavigateToAuthenticatedAsync();
-            }
-            else
-            {
-                try
+                var targetState = _requestedAuthenticationState;
+
+                if (targetState is null)
+                    return;
+
+                var isAuthenticated = targetState.Value;
+
+                if (isAuthenticated)
                 {
-                    var push = _serviceProvider.GetService<IPushNotificationService>();
-                    if (push != null)
-                        await push.UnregisterAsync();
+                    if (MainPage is MainShell)
+                        return;
+
+                    Console.WriteLine("AUTH: Switching -> MainShell");
+
+                    await NavigateToAuthenticatedAsync();
                 }
-                catch
+                else
                 {
-                    // swallow: ensure logout flow doesn't crash if push service fails
+                    if (MainPage is AuthShell)
+                        return;
+
+                    Console.WriteLine("AUTH: Switching -> AuthShell");
+
+                    await NavigateToUnauthenticatedAsync();
                 }
 
-                MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+                // Проверяем, не изменилось ли состояние
+                // во время предыдущего transition.
+                if (_requestedAuthenticationState == targetState)
+                    return;
             }
-        });
+        }
+        finally
+        {
+            _stateSemaphore.Release();
+        }
     }
 
     private async Task NavigateToAuthenticatedAsync()
     {
         try
         {
+            Console.WriteLine("AUTH: Startup orchestrator START");
+
             await _initializer.StartAsync();
-            MainPage = _serviceProvider.GetRequiredService<MainShell>();
+
+            Console.WriteLine("AUTH: Startup orchestrator END");
+
+            // За время StartAsync пользователь мог выйти.
+            if (_requestedAuthenticationState != true)
+                return;
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                if (_requestedAuthenticationState != true)
+                    return;
+
+                MainPage =
+                    _serviceProvider.GetRequiredService<MainShell>();
+            });
+
+            Console.WriteLine("AUTH: MainShell assigned");
         }
         catch (Exception ex)
         {
-            await AppShell.DisplayException("Не удалось загрузить основной интерфейс");
-            MainPage = _serviceProvider.GetRequiredService<AuthShell>();
+            Console.WriteLine(
+                $"AUTH: MainShell initialization ERROR: {ex}");
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                MainPage =
+                    _serviceProvider.GetRequiredService<AuthShell>();
+            });
         }
+    }
+
+    private async Task NavigateToUnauthenticatedAsync()
+    {
+        try
+        {
+            var push =
+                _serviceProvider.GetService<IPushNotificationService>();
+
+            if (push != null)
+                await push.UnregisterAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                $"PUSH unregister ERROR: {ex}");
+        }
+
+        if (_requestedAuthenticationState != false)
+            return;
+
+        await MainThread.InvokeOnMainThreadAsync(() =>
+        {
+            if (_requestedAuthenticationState != false)
+                return;
+
+            MainPage =
+                _serviceProvider.GetRequiredService<AuthShell>();
+        });
+
+        Console.WriteLine("AUTH: AuthShell assigned");
     }
 
     protected override void OnSleep()
     {
-        // можно отписаться, если нужно
-        // _authService.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+        base.OnSleep();
+    }
+
+    protected override void OnResume()
+    {
+        base.OnResume();
     }
 }

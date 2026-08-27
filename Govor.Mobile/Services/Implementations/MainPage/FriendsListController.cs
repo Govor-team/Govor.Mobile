@@ -17,6 +17,7 @@ public class FriendsListController : IFriendsListController
     private readonly IFriendsFactory _factory;
     private readonly IFriendsRealtimeService _realtime;
     private readonly IPrivateChatApi _privateChatApi;
+    private readonly IUnreadMessagesService _unreadMessages;
     
     private readonly ConcurrentDictionary<Guid, UserListItemViewModel> _cache = new();
 
@@ -31,7 +32,8 @@ public class FriendsListController : IFriendsListController
         IPrivateChatApi privateChatApi,
         IMessagesRepository messages,
         IFriendsFactory factory,
-        IFriendsRealtimeService realtime)
+        IFriendsRealtimeService realtime,
+        IUnreadMessagesService unreadMessages)
     {
         _friendshipApi = friendshipApi;
         _profileApi = profileApi;
@@ -39,6 +41,7 @@ public class FriendsListController : IFriendsListController
         _factory = factory;
         _privateChatApi = privateChatApi;
         _realtime = realtime;
+        _unreadMessages = unreadMessages;
 
         // Подписка на события реального времени
         _realtime.OnUserOnline += id => OnlineStatusChanged?.Invoke(id, true);
@@ -48,6 +51,7 @@ public class FriendsListController : IFriendsListController
         _realtime.OnUserAvatarUpdate += OnUserAvatarUpdateAsync;
         _messages.OnNewMessage += OnMessagePreviewChanged;
         _messages.OnMessageUpdated += OnMessagePreviewChanged;
+        _unreadMessages.UnreadCountChanged += OnUnreadCountChanged;
     }
 
     public async Task InitializeAsync()
@@ -148,6 +152,19 @@ public class FriendsListController : IFriendsListController
 
         MainThread.BeginInvokeOnMainThread(() => _factory.UpdatePreview(friend, message));
     }
+
+    private void OnUnreadCountChanged(Guid chatId, bool isGroup, int count)
+    {
+        if (isGroup)
+            return;
+
+        var friend = _cache.Values.FirstOrDefault(item => item.ChatId == chatId);
+        if (friend == null)
+            return;
+
+        MainThread.BeginInvokeOnMainThread(() => friend.UnreadCount = count);
+    }
+
     private async Task OnFriendRemovedAsync(Guid userId)
     {
         try
@@ -196,6 +213,7 @@ public class FriendsListController : IFriendsListController
         _realtime.OnUserAvatarUpdate -= OnUserAvatarUpdateAsync;
         _messages.OnNewMessage -= OnMessagePreviewChanged;
         _messages.OnMessageUpdated -= OnMessagePreviewChanged;
+        _unreadMessages.UnreadCountChanged -= OnUnreadCountChanged;
     }
 
     public void Dispose()

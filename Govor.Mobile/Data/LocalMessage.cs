@@ -30,5 +30,6 @@ public class LocalMessage
     // Мы настроим их хранение как JSON внутри этого же класса.
     public List<MediaFile> MediaAttachments { get; set; } = new();
     public List<MessageReactionResponse> Reactions { get; set; } = new();
-    // MessageViews обычно не нужны оффлайн в полном объеме, но можно добавить так же
+    public List<MessageView> MessageViews { get; set; } = new();
+  
 }

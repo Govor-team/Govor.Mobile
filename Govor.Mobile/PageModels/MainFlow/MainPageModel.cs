@@ -162,7 +162,7 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
     
     public async Task OnInternetConnectedAsync()
     {
-        var profile = await _profileService.GetCurrentProfile();
+        var profile = await _profileService.GetCurrentProfileAsync();
         Name = profile?.Username ?? "Гость";
         
         await _controller.InitializeAsync();

@@ -203,7 +203,6 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
         }
     }
 
-    // ❗ теперь без потери ошибок
     private void OnTokenRefreshed(object sender, FirebasePushNotificationTokenEventArgs e)
     {
         _ = Task.Run(async () =>

@@ -4,7 +4,7 @@ namespace Govor.Mobile.Services.Interfaces.Profiles;
 
 public interface IUserProfileService
 {
-    Task<UserProfile> GetCurrentProfile();
+    Task<UserProfile> GetCurrentProfileAsync();
     Task<UserProfile> GetProfileAsync(Guid userId);
     Task UpdateProfileFromHub(UserProfileDelta profile); 
     event Action<UserProfile>? OnProfileUpdated;

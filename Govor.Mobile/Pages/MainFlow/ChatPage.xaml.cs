@@ -1,5 +1,4 @@
-﻿using Govor.Mobile.PageModels.ContentViewsModel;
-using Govor.Mobile.PageModels.ContentViewsModel.Messages;
+﻿using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.PageModels.MainFlow;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -65,6 +64,27 @@ public partial class ChatPage : SmoothBackPage
         catch
         {
             ScrollToEndButton.IsVisible = false;
+        }
+
+        if (BindingContext is ChatPageModel model &&
+            CollectionView.ItemsSource is IEnumerable<MessagesGroupModel> source)
+        {
+            var groups = source.ToList();
+            if (groups.Count > 0)
+            {
+                var firstIndex = Math.Max(0, e.FirstVisibleItemIndex);
+                var lastIndex = Math.Min(groups.Count - 1, e.LastVisibleItemIndex);
+                if (firstIndex <= lastIndex)
+                {
+                    var visibleMessages = groups
+                        .Skip(firstIndex)
+                        .Take(lastIndex - firstIndex + 1)
+                        .SelectMany(group => group.Messages)
+                        .ToList();
+
+                    await model.MarkMessagesAsReadAsync(visibleMessages);
+                }
+            }
         }
 
         if (_isLoadingMore || !_hasMoreMessages)

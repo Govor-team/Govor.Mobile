@@ -82,14 +82,41 @@
                            LineBreakMode="TailTruncation"/>
                 </VerticalStackLayout>
 
-                <VerticalStackLayout Grid.Column="2" Spacing="6" HorizontalOptions="End" VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="2"
+                     Spacing="4"
+                     HorizontalOptions="End"
+                     VerticalOptions="Center">
+
+                    <!-- Время последнего сообщения -->
                     <Label Text="{Binding DateTime}"
                            FontSize="12"
                            FontFamily="CirilicOld"
                            Opacity="0.6"
                            TextColor="White"
                            HorizontalTextAlignment="End"/>
-                    <ContentPresenter />
+
+                    <!-- Unread count -->
+                    <Border IsVisible="{Binding HasUnreadMessages}"
+                            Background="#cdd6f4"
+                            StrokeThickness="0"
+                            Padding="0"
+                            HeightRequest="20"
+                            MinimumWidthRequest="20"
+                            HorizontalOptions="End">
+
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="12" />
+                        </Border.StrokeShape>
+
+                        <Label Text="{Binding UnreadCount}"
+                               FontSize="11"
+                               FontAttributes="Bold"
+                               TextColor="#323244"
+                               HorizontalTextAlignment="Center"
+                               VerticalTextAlignment="Center"
+                               Padding="5,0" />
+                    </Border>
+
                 </VerticalStackLayout>
             </Grid>
         </Border>

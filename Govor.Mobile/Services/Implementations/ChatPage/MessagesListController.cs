@@ -16,7 +16,9 @@ public class MessagesListController : IMessagesListController, IDisposable
     private readonly IMessageStore _store;
     private readonly ILogger<MessagesListController> _logger;
     private readonly IMapper _mapper;
+    private readonly IUnreadMessagesService _unreadMessages;
     private bool _initialized = false;
+    private readonly HashSet<Guid> _readInProgress = new();
 
     public ObservableRangeCollection<MessagesGroupModel> MessageGroups { get; } = new();
     private HashSet<Guid> _messageIds { get; set; } = new();
@@ -29,12 +31,14 @@ public class MessagesListController : IMessagesListController, IDisposable
         IMessagesRepository repository,
         IMessageStore store,
         ILogger<MessagesListController> logger,
-        IMapper mapper)
+        IMapper mapper,
+        IUnreadMessagesService unreadMessages)
     {
         _repository = repository;
         _mapper = mapper;
         _store = store;
         _logger = logger;
+        _unreadMessages = unreadMessages;
     }
     
     public async Task InitializeAsync(Guid chatId, Guid currentUserId, bool isGroup)
@@ -158,6 +162,37 @@ public class MessagesListController : IMessagesListController, IDisposable
         
         await _repository.SendMessageAsync(request);
         return Result<bool>.Success(true);
+    }
+
+    public async Task MarkAsReadAsync(Guid userId, IEnumerable<Guid> messageIds)
+    {
+        if (userId == Guid.Empty)
+            return;
+
+        foreach (var messageId in messageIds.Distinct())
+        {
+            lock (_readInProgress)
+            {
+                if (!_readInProgress.Add(messageId))
+                    continue;
+            }
+
+            var success = false;
+            try
+            {
+                success = await _repository.ReadMessageAsync(messageId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to mark message {MessageId} as read", messageId);
+            }
+
+            if (!success)
+            {
+                lock (_readInProgress)
+                    _readInProgress.Remove(messageId);
+            }
+        }
     }
 
     public async Task<Result<bool>> EditAsync(Guid messageId, string newText)

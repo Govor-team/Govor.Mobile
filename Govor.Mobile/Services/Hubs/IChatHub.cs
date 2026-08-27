@@ -7,11 +7,12 @@ public interface IChatHub : IHubClient
 {
     public event Action<UserMessageResponse>? MessageSent;
     public event Action<UserMessageResponse>? ReceiveMessage;
-    
+    public event Action<MessageReadResponse>? MessageRead;
     public event Action<MessageRemovedResponse>? MessageRemoved;
     public event Action<MessageEditResponse>? MessageEdited;
 
     Task<HubResult<UserMessageResponse>> Send(MessageRequest request);
+    Task<HubResult<MessageReadResponse>> Read(ReadMessageRequest request);
     Task<HubResult<MessageRemovedResponse>> Remove(RemoveMessageRequest request);
     Task<HubResult<MessageEditResponse>> Edit(EditMessageRequest request);
 }

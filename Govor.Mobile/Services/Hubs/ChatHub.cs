@@ -78,6 +78,12 @@ public class ChatHub : IChatHub
             _logger.LogInformation("Edited message: {0}", dto.MessageId);
         });
 
+        _hubConnection.On("MessageReaded", (MessageReadResponse dto) =>
+        {
+            if (dto.MessageId != Guid.Empty && dto.ReaderId != Guid.Empty && dto.ViewId != Guid.Empty)
+                MessageRead?.Invoke(dto);
+        });
+
         _hubConnection.Reconnecting += error =>
         {
             Console.WriteLine("Connection lost...");
@@ -93,6 +99,7 @@ public class ChatHub : IChatHub
     }
 
     public event Action<UserMessageResponse>? MessageSent;
+    public event Action<MessageReadResponse>? MessageRead;
     public event Action<UserMessageResponse>? ReceiveMessage;
     public event Action<MessageRemovedResponse>? MessageRemoved;
     public event Action<MessageEditResponse>? MessageEdited;
@@ -107,6 +114,19 @@ public class ChatHub : IChatHub
         {
             _logger.LogError(ex, "Error calling Send");
             return HubResult<UserMessageResponse>.Error("Error during sending the message");
+        }
+    }
+
+    public async Task<HubResult<MessageReadResponse>> Read(ReadMessageRequest request)
+    {
+        try
+        {
+            return await _hubConnection.InvokeAsync<HubResult<MessageReadResponse>>("Read", request);
+        }
+        catch(Exception ex)
+        {
+            _logger.LogError(ex, "Error calling Read");
+            return HubResult<MessageReadResponse>.Error("Error during rading the message");
         }
     }
 

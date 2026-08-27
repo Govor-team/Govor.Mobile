@@ -95,6 +95,7 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IBackgroundImageService, BackgroundService>();
         
         builder.Services.AddSingleton<IWasOnlineFormater, WasOnlineFormater>();
+        builder.Services.AddSingleton<IUnreadMessagesService, UnreadMessagesService>();
         builder.Services.AddSingleton<IUserListItemViewModelFactory, UserListItemViewModelFactory>();
         
         builder.Services.AddSingleton<IFriendsListController, FriendsListController>();

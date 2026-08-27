@@ -4,12 +4,10 @@ using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
-using Govor.Mobile.Services.Interfaces.Notification;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Plugin.LocalNotification;
 
 namespace Govor.Mobile.Services.Implementations.Repositories;
 
@@ -20,7 +18,6 @@ public class MessagesRepository : IMessagesRepository
     private readonly IChatHub _hub;
     private readonly IMapper _mapper;
     private readonly IUserProfileService _profileService;
-    
     private readonly IMemoryCache _cache;
     private readonly MemoryCacheEntryOptions _cacheOptions = new()
     {
@@ -34,6 +31,7 @@ public class MessagesRepository : IMessagesRepository
     
     public event Action<MessageResponse>? OnNewMessage;
     public event Action<MessageResponse>? OnMessageUpdated;
+    public event Action<MessageView>? OnMessageViewed;
     public event Action<Guid>? OnMessageDeleted;
     
     public MessagesRepository(
@@ -55,7 +53,7 @@ public class MessagesRepository : IMessagesRepository
     private async Task<Guid> GetMyIdAsync()
     {
         if (_cachedCurrentUserId.HasValue) return _cachedCurrentUserId.Value;
-        var profile = await _profileService.GetCurrentProfile();
+        var profile = await _profileService.GetCurrentProfileAsync();
         _cachedCurrentUserId = profile.Id;
         return profile.Id;
     }
@@ -67,10 +65,41 @@ public class MessagesRepository : IMessagesRepository
         // При событии MessageSent (подтверждение отправки) мы просто сохраняем сообщение как новое входящее
         _hub.ReceiveMessage += async (msg) => await SafeExecute(() => SaveOrUpdateMessageAsync(msg));
         _hub.MessageSent += async (msg) => await SafeExecute(() => SaveOrUpdateMessageAsync(msg));
+        _hub.MessageRead += async (dto) => await SafeExecute(() => UpdateMessageViewersAsync(dto));
         _hub.MessageEdited += async (msg) => await SafeExecute(() => UpdateMessageContentAsync(msg));
         _hub.MessageRemoved += async (msg) => await SafeExecute(() => DeleteMessageAsync(msg.MessageId));
 
         _isInitialized = true;
+    }
+
+    private async Task UpdateMessageViewersAsync(MessageReadResponse dto)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+
+        var entity = await context.Messages.FirstOrDefaultAsync(m => m.Id == dto.MessageId);
+
+        if (entity is null)
+            return;
+
+        var isNewViewer = entity.MessageViews.All(mv => mv.UserId != dto.ReaderId);
+       
+        MessageView view = new MessageView
+        {
+            Id = dto.ViewId,
+            ChatId = entity.ChatId,
+            RecipientType = entity.RecipientType,
+            MessageId = dto.MessageId,
+            UserId = dto.ReaderId,
+            ViewedAt = dto.WhenWas,
+        };
+
+        if (isNewViewer)
+        {
+            entity.MessageViews.Add(view);
+            await context.SaveChangesAsync();
+
+            OnMessageViewed?.Invoke(view);
+        }
     }
 
     public async Task<List<MessageResponse>> GetMessagesLocalAsync(Guid chatId, int count = 50, bool group = false, Guid startMessage = default)
@@ -105,6 +134,22 @@ public class MessagesRepository : IMessagesRepository
             // так как локального сообщения "Error" мы больше не создаем.
             //throw new Exception(result.ErrorMessage ?? "Не удалось отправить сообщение");
         }
+    }
+
+    public async Task<bool> ReadMessageAsync(Guid messageId)
+    {
+        var request = new ReadMessageRequest { MessageId = messageId };
+
+        var result = await _hub.Read(request);
+
+        if (result.Status != HubResultStatus.Success)
+        {
+            // Здесь можно выбросить исключение, чтобы UI показал ошибку (Toast/Alert),
+            // так как локального сообщения "Error" мы больше не создаем.
+            //throw new Exception(result.ErrorMessage ?? "Не удалось удалить сообщение");
+        }
+
+        return result.Status == HubResultStatus.Success;
     }
 
     public async Task EditMessageAsync(Guid messageId, string newText)
@@ -353,8 +398,14 @@ public class MessagesRepository : IMessagesRepository
     
     private async Task SafeExecute(Func<Task> action)
     {
-        try { await action(); }
-        catch (Exception ex) { Console.WriteLine($"[Repo Error]: {ex.Message}"); }
+        try 
+        { 
+            await action(); 
+        }
+        catch (Exception ex) 
+        { 
+            Console.WriteLine($"[Repo Error]: {ex.Message}");
+        }
     }
 
     private string CacheKeyBuild(Guid chatId, bool group = false)

@@ -85,6 +85,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     public bool IsLoaded { get; set; }
 
     private Guid _ChatIdForHeader = Guid.Empty;
+    private Guid _peerUserId = Guid.Empty;
     private IAsyncRelayCommand _GoBackCommand { get; }
 
     public async Task InitAsync()
@@ -92,7 +93,10 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         if (IsLoaded)
             return;
 
-        var profileTask = _profileService.GetCurrentProfile();
+        if (!IsGroup)
+            _peerUserId = ChatId;
+
+        var profileTask = _profileService.GetCurrentProfileAsync();
 
         Task<Result<Guid>?> chatTask = null;
 
@@ -342,6 +346,18 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         IsLoadingMore = false;
         
         return result.Count;
+    }
+
+    public Task MarkMessagesAsReadAsync(IEnumerable<MessagesViewModel> messages)
+    {
+        if (IsGroup || _peerUserId == Guid.Empty)
+            return Task.CompletedTask;
+
+        var messageIds = messages
+            .Where(message => message.IsIncoming)
+            .Select(message => message.Id);
+
+        return _controller.MarkAsReadAsync(_peerUserId, messageIds);
     }
 
 

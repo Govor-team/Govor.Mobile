@@ -1,6 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Reflection;
-using Govor.Mobile.Models.Responses;
+﻿using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Models.Results;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
@@ -47,7 +45,7 @@ public class UserProfileService : IUserProfileService
         };
     }
 
-    public async Task<UserProfile> GetCurrentProfile()
+    public async Task<UserProfile> GetCurrentProfileAsync()
     {
         if (_currentId != Guid.Empty)
             return await GetProfileAsync(_currentId);

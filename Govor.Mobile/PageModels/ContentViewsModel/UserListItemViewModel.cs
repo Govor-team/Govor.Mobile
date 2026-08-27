@@ -14,13 +14,19 @@ public partial class UserListItemViewModel : ObservableObject
     public Guid ChatId { get; }
     public Guid FriendshipId;
 
-    public UserListItemViewModel(AvatarViewModel avatar,
-        TagViewModel tag, Guid userId = default, Guid friendshipId = default, Guid chatId = default)
+    public UserListItemViewModel(
+        AvatarViewModel avatar,
+        TagViewModel tag,
+        int unreadCount = 0,
+        Guid userId = default,
+        Guid friendshipId = default,
+        Guid chatId = default)
     {
         UserId = userId;
         FriendshipId = friendshipId;
         ChatId = chatId;
         Avatar = avatar;
+        UnreadCount = unreadCount;
         Tag = tag;
     }
 
@@ -36,6 +42,16 @@ public partial class UserListItemViewModel : ObservableObject
     [ObservableProperty]
     private string dateTime;
 
+    [ObservableProperty]
+    private int unreadCount;
+
+    public bool HasUnreadMessages => UnreadCount > 0;
+
+    partial void OnUnreadCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(HasUnreadMessages));
+    }
+
     public DateTime? LastMessageSentAt { get; private set; }
 
     public void SetLastMessageSentAt(DateTime? value)
@@ -43,7 +59,6 @@ public partial class UserListItemViewModel : ObservableObject
         LastMessageSentAt = value;
     }
 
-    // Actions
     [ObservableProperty]
     private bool showActions;
 }

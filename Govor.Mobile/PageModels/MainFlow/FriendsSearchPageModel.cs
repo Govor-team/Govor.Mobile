@@ -304,7 +304,7 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
     [RelayCommand]
     public async Task OpenIdQRCodeAsync()
     {
-        var profile = await _profileService.GetCurrentProfile();
+        var profile = await _profileService.GetCurrentProfileAsync();
 
         var avatarViewModel = _provider.GetService<AvatarViewModel>();
         _ = avatarViewModel.InitializeAsync(profile.Username, profile.IconId);

@@ -11,15 +11,18 @@ public class FriendsFactory : IFriendsFactory
     private readonly IServiceProvider _provider;
     private readonly IMessagesRepository _messages;
     private readonly IWasOnlineFormater _lastSeen;
+    private readonly IUnreadMessagesService _unreadMessages;
 
     public FriendsFactory(
         IServiceProvider provider,
         IMessagesRepository messages,
-        IWasOnlineFormater lastSeen)
+        IWasOnlineFormater lastSeen,
+        IUnreadMessagesService unreadMessages)
     {
         _provider = provider;
         _messages = messages;
         _lastSeen = lastSeen;
+        _unreadMessages = unreadMessages;
     }
 
     public async Task<UserListItemViewModel> CreateAsync(UserProfileDto profile, Guid privateChatId)
@@ -36,7 +39,8 @@ public class FriendsFactory : IFriendsFactory
 
       
 
-        var vm = new UserListItemViewModel(avatar, null, profile.Id, chatId: privateChatId)
+        var unreadCount = await _unreadMessages.InitializeAsync(privateChatId);
+        var vm = new UserListItemViewModel(avatar, null, unreadCount, userId: profile.Id, chatId: privateChatId)
         {
             Title = profile.Username,
             IsOnline = profile.IsOnline

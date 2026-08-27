@@ -28,5 +28,11 @@ public class LocalMessageConfiguration : IEntityTypeConfiguration<LocalMessage>
                 v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
                 v => JsonSerializer.Deserialize<List<MessageReactionResponse>>(v, (JsonSerializerOptions)null) ?? new List<MessageReactionResponse>()
             );
+
+        builder.Property(e => e.MessageViews)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<List<MessageView>>(v, (JsonSerializerOptions)null) ?? new List<MessageView>()
+            );
     }
 }

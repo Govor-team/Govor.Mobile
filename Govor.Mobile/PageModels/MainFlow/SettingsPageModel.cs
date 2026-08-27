@@ -86,7 +86,7 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     {
         try
         {
-            var profile = await _profileService.GetCurrentProfile();
+            var profile = await _profileService.GetCurrentProfileAsync();
 
             _profileUpdatedHandler = userProfile =>
             {

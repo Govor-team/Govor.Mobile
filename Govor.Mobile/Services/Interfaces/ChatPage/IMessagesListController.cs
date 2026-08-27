@@ -13,4 +13,5 @@ public interface IMessagesListController
     Task<Result<bool>> SendAsync(Guid chatId, string text);
     Task<Result<bool>> EditAsync(Guid messageId, string newText);
     Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true);
+    Task MarkAsReadAsync(Guid userId, IEnumerable<Guid> messageIds);
 }

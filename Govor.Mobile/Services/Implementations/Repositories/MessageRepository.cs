@@ -28,6 +28,27 @@ public class MessagesRepository : IMessagesRepository
     
     private bool _isInitialized = false;
     private Guid? _cachedCurrentUserId;
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+
+    public async Task ImportLegacyChatsAsync(IEnumerable<Guid> authorizedChatIds)
+    {
+        var path = Path.Combine(FileSystem.AppDataDirectory, "govor.db");
+        var chats = authorizedChatIds.Where(id => id != Guid.Empty).Distinct().ToArray();
+        if (!File.Exists(path) || chats.Length == 0) return;
+        try
+        {
+            // Import only chats that the server lists for the current account; retain the old file.
+            await using var legacy = new GovorDbContext(new DbContextOptionsBuilder<GovorDbContext>()
+                .UseSqlite($"Data Source={path};Mode=ReadOnly").Options);
+            var messages = await legacy.Messages.AsNoTracking().Where(m => chats.Contains(m.ChatId)).ToListAsync();
+            foreach (var group in messages.GroupBy(m => m.ChatId))
+                await SaveBatchAsync(_mapper.Map<List<MessageResponse>>(group.ToList()), group.Key, notify: false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Legacy message cache import failed: {ex.Message}");
+        }
+    }
     
     public event Action<MessageResponse>? OnNewMessage;
     public event Action<MessageResponse>? OnMessageUpdated;
@@ -74,32 +95,37 @@ public class MessagesRepository : IMessagesRepository
 
     private async Task UpdateMessageViewersAsync(MessageReadResponse dto)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
+        await _writeLock.WaitAsync();
+        try
+        {
+            await using var context = await _contextFactory.CreateDbContextAsync();
 
-        var entity = await context.Messages.FirstOrDefaultAsync(m => m.Id == dto.MessageId);
+            var entity = await context.Messages.FirstOrDefaultAsync(m => m.Id == dto.MessageId);
 
-        if (entity is null)
-            return;
+            if (entity is null)
+                return;
 
-        var isNewViewer = entity.MessageViews.All(mv => mv.UserId != dto.ReaderId);
+            var isNewViewer = entity.MessageViews.All(mv => mv.UserId != dto.ReaderId);
        
-        MessageView view = new MessageView
-        {
-            Id = dto.ViewId,
-            ChatId = entity.ChatId,
-            RecipientType = entity.RecipientType,
-            MessageId = dto.MessageId,
-            UserId = dto.ReaderId,
-            ViewedAt = dto.WhenWas,
-        };
+            MessageView view = new MessageView
+            {
+                Id = dto.ViewId,
+                ChatId = entity.ChatId,
+                RecipientType = entity.RecipientType,
+                MessageId = dto.MessageId,
+                UserId = dto.ReaderId,
+                ViewedAt = dto.WhenWas,
+            };
 
-        if (isNewViewer)
-        {
-            entity.MessageViews.Add(view);
-            await context.SaveChangesAsync();
+            if (isNewViewer)
+            {
+                entity.MessageViews.Add(view);
+                await context.SaveChangesAsync();
 
-            OnMessageViewed?.Invoke(view);
+                OnMessageViewed?.Invoke(view);
+            }
         }
+        finally { _writeLock.Release(); }
     }
 
     public async Task<List<MessageResponse>> GetMessagesLocalAsync(Guid chatId, int count = 50, bool group = false, Guid startMessage = default)
@@ -132,27 +158,32 @@ public class MessagesRepository : IMessagesRepository
         {
             // Здесь можно выбросить исключение, чтобы UI показал ошибку (Toast/Alert),
             // так как локального сообщения "Error" мы больше не создаем.
-            //throw new Exception(result.ErrorMessage ?? "Не удалось отправить сообщение");
+            throw new InvalidOperationException(result.ErrorMessage ?? "Не удалось отправить сообщение");
         }
+        if (result.Value is null || result.Value.MessageId == Guid.Empty)
+            throw new InvalidDataException("Сервер не подтвердил сохранение сообщения.");
+        await SaveOrUpdateMessageAsync(result.Value);
     }
 
     public async Task<bool> ReadMessageAsync(Guid messageId)
     {
+        var myId = await GetMyIdAsync();
+        await using (var context = await _contextFactory.CreateDbContextAsync())
+        {
+            var message = await context.Messages.AsNoTracking().FirstOrDefaultAsync(m => m.Id == messageId);
+            if (message is null || message.SenderId == myId) return false;
+            if (message.MessageViews.Any(v => v.UserId == myId)) return true;
+        }
         var request = new ReadMessageRequest { MessageId = messageId };
 
         var result = await _hub.Read(request);
 
-        if (result.Status != HubResultStatus.Success)
-        {
-            // Здесь можно выбросить исключение, чтобы UI показал ошибку (Toast/Alert),
-            // так как локального сообщения "Error" мы больше не создаем.
-            //throw new Exception(result.ErrorMessage ?? "Не удалось удалить сообщение");
-        }
-
-        return result.Status == HubResultStatus.Success;
+        if (result.Status != HubResultStatus.Success || result.Value is null) return false;
+        await UpdateMessageViewersAsync(result.Value);
+        return true;
     }
 
-    public async Task EditMessageAsync(Guid messageId, string newText)
+    public async Task<bool> EditMessageAsync(Guid messageId, string newText)
     {
         var request = new EditMessageRequest {
             MessageId = messageId,
@@ -167,6 +198,8 @@ public class MessagesRepository : IMessagesRepository
             // так как локального сообщения "Error" мы больше не создаем.
             //throw new Exception(result.ErrorMessage ?? "Не удалось удалить сообщение");
         }
+        
+        return result.Status == HubResultStatus.Success;
     }
 
     public async Task RemoveMessageAsync(Guid messageId, bool forceRemove = true)
@@ -197,7 +230,13 @@ public class MessagesRepository : IMessagesRepository
             .OrderByDescending(x => x.SentAt)
             .FirstOrDefaultAsync();
 
-        var query = new MessageQuery { StartMessageId = lastMsg?.Id, After = after };
+        after = Math.Clamp(after, 1, 100);
+        var query = new MessageQuery
+        {
+            StartMessageId = lastMsg?.Id,
+            Before = lastMsg is null ? after : 0,
+            After = lastMsg is null ? 0 : after
+        };
 
         var remoteResult = group 
             ? await _api.GetGroupMessages(chatId, query) 
@@ -255,7 +294,8 @@ public class MessagesRepository : IMessagesRepository
         var query = new MessageQuery
         {
             StartMessageId = oldestMessageId,
-            Before = before
+            Before = Math.Clamp(before, 1, 100),
+            After = 0
         };
 
         var result = group
@@ -278,6 +318,7 @@ public class MessagesRepository : IMessagesRepository
         var merged = localEntities
             .Select(x => _mapper.Map<MessageResponse>(x))
             .Concat(result.Value)
+            .Where(x => x.Id != oldestMessageId)
             .GroupBy(x => x.Id)
             .Select(g => g.First())
             .OrderByDescending(x => x.SentAt)
@@ -289,10 +330,17 @@ public class MessagesRepository : IMessagesRepository
 
     private async Task SaveBatchAsync(List<MessageResponse> messages, Guid chatId, bool notify = true)
     {
+        await _writeLock.WaitAsync();
+        try { await SaveBatchCoreAsync(messages, chatId, notify); }
+        finally { _writeLock.Release(); }
+    }
+
+    private async Task SaveBatchCoreAsync(List<MessageResponse> messages, Guid chatId, bool notify)
+    {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var newMessages = new List<LocalMessage>();
         
-        foreach (var msg in messages)
+        foreach (var msg in messages.DistinctBy(x => x.Id))
         {
             // Избегаем дубликатов при пакетной вставке
             if (await context.Messages.AnyAsync(x => x.Id == msg.Id)) continue;
@@ -324,8 +372,14 @@ public class MessagesRepository : IMessagesRepository
     // Единый метод для сохранения входящего или отправленного (подтвержденного) сообщения
     private async Task SaveOrUpdateMessageAsync(UserMessageResponse msg)
     {
+        await _writeLock.WaitAsync();
+        try { await SaveOrUpdateMessageCoreAsync(msg); }
+        finally { _writeLock.Release(); }
+    }
+
+    private async Task SaveOrUpdateMessageCoreAsync(UserMessageResponse msg)
+    {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var myId = await GetMyIdAsync();
         /*
         Guid chatId = (msg.RecipientType == RecipientType.Group) 
             ? msg.RecipientId 
@@ -384,7 +438,7 @@ public class MessagesRepository : IMessagesRepository
     }
     
     // --- helpers ---
-    private async void NotifyNewMessage(LocalMessage entity)
+    private void NotifyNewMessage(LocalMessage entity)
     {
         var response = _mapper.Map<MessageResponse>(entity);
         OnNewMessage?.Invoke(response);

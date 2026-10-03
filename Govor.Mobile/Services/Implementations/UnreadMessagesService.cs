@@ -4,12 +4,15 @@ using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Govor.Mobile.Services.Interfaces.Repositories;
+using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Implementations;
 
 public sealed class UnreadMessagesService : IUnreadMessagesService, IDisposable
 {
-    private const int DefaultUnreadCount = 10;
+    private const int DefaultUnreadCount = 0;
+    private readonly IJwtProviderService _session;
+    private readonly ConcurrentDictionary<Guid, byte> _receivedMessages = new();
     private readonly ConcurrentDictionary<(Guid ChatId, bool IsGroup), int> _counts = new();
     private readonly ConcurrentDictionary<(Guid ChatId, bool IsGroup), ConcurrentDictionary<Guid, byte>> _readMessages = new();
     private readonly IMessagesRepository _messagesRepository;
@@ -18,10 +21,13 @@ public sealed class UnreadMessagesService : IUnreadMessagesService, IDisposable
 
     public UnreadMessagesService(
         IMessagesRepository messagesRepository,
-        IUserProfileService userProfileService)
+        IUserProfileService userProfileService,
+        IJwtProviderService session)
     {
         _messagesRepository = messagesRepository;
         _userProfileService = userProfileService;
+        _session = session;
+        session.WasClearTokens += () => { _counts.Clear(); _readMessages.Clear(); _receivedMessages.Clear(); };
 
         _messagesRepository.OnMessageViewed += OnMessageViewed;
         _messagesRepository.OnNewMessage += OnNewMessage;
@@ -32,12 +38,12 @@ public sealed class UnreadMessagesService : IUnreadMessagesService, IDisposable
         if (response.RecipientId == Guid.Empty || response.Id == Guid.Empty)
             return;
 
-        if(response.SenderId == _userProfileService.GetCurrentProfileAsync().Result.Id)
+        if(response.SenderId == _session.CurrentUserId || !_receivedMessages.TryAdd(response.Id, 0))
             return;
 
         var key = (response.RecipientId, response.RecipientType == RecipientType.Group);
 
-        var count = _counts.AddOrUpdate(key, DefaultUnreadCount, (_, current) => current + 1);
+        var count = _counts.AddOrUpdate(key, 1, (_, current) => current + 1);
 
         UnreadCountChanged?.Invoke(
             response.RecipientId,
@@ -47,6 +53,7 @@ public sealed class UnreadMessagesService : IUnreadMessagesService, IDisposable
 
     private void OnMessageViewed(MessageView view)
     {
+        if (view.UserId != _session.CurrentUserId) return;
         MarkAsReadAsync(view.ChatId, view.MessageId, view.RecipientType == RecipientType.Group).ContinueWith(t =>
         {
             if (t.IsFaulted)
@@ -75,7 +82,7 @@ public sealed class UnreadMessagesService : IUnreadMessagesService, IDisposable
         if (!readMessages.TryAdd(messageId, 0))
             return Task.FromResult(false);
 
-        var count = _counts.AddOrUpdate(key, DefaultUnreadCount - 1, (_, current) => Math.Max(0, current - 1));
+        var count = _counts.AddOrUpdate(key, 0, (_, current) => Math.Max(0, current - 1));
         UnreadCountChanged?.Invoke(chatId, isGroup, count);
         return Task.FromResult(true);
     }

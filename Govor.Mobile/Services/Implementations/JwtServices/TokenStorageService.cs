@@ -1,11 +1,54 @@
 ﻿using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Govor.Mobile.Services.Implementations.JwtServices
 {
     public class TokenStorageService : ITokenStorageService
     {
         private const string RefreshTokenKey = "RefreshToken";
+        private const string SessionKey = "Govor.Session.v1";
+        private sealed record StoredSession(string AccessToken, string RefreshToken);
+
+        public async Task<bool> SaveTokensAsync(string accessToken, string refreshToken)
+        {
+            if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
+                return false;
+            try
+            {
+                // One encrypted entry prevents partially saved token pairs during rotation.
+                await SecureStorage.SetAsync(SessionKey,
+                    JsonSerializer.Serialize(new StoredSession(accessToken, refreshToken)));
+                SecureStorage.Remove(RefreshTokenKey);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unable to persist authentication session.");
+                return false;
+            }
+        }
+
+        public async Task<string?> GetAccessTokenAsync()
+        {
+            var session = await ReadSessionAsync();
+            return session?.AccessToken;
+        }
+
+        private async Task<StoredSession?> ReadSessionAsync()
+        {
+            try
+            {
+                var json = await SecureStorage.GetAsync(SessionKey);
+                return json is null ? null : JsonSerializer.Deserialize<StoredSession>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unable to read authentication session.");
+                SecureStorage.Remove(SessionKey);
+                return null;
+            }
+        }
         private readonly ILogger<TokenStorageService> _logger;
 
         public TokenStorageService(ILogger<TokenStorageService> logger)
@@ -44,7 +87,8 @@ namespace Govor.Mobile.Services.Implementations.JwtServices
         {
             try
             {
-                var token = await SecureStorage.GetAsync(RefreshTokenKey);
+                var session = await ReadSessionAsync();
+                var token = session?.RefreshToken ?? await SecureStorage.GetAsync(RefreshTokenKey);
 
                 if (string.IsNullOrEmpty(token))
                 {
@@ -70,6 +114,7 @@ namespace Govor.Mobile.Services.Implementations.JwtServices
             try
             {
                 SecureStorage.Remove(RefreshTokenKey);
+                SecureStorage.Remove(SessionKey);
                 _logger.LogInformation("Refresh token successfully deleted from SecureStorage.");
                 return true;
             }

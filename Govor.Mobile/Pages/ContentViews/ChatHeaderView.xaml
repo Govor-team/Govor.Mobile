@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Govor.Mobile.Pages.ContentViews"
              xmlns:contentViewsModel="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
+             xmlns:mainModels="clr-namespace:Govor.Mobile.PageModels.MainFlow"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" xmlns:sho="http://sharpnado.com"
              x:Class="Govor.Mobile.Pages.ContentViews.ChatHeaderView"
              x:DataType="contentViewsModel:ChatHeaderViewModel">
@@ -23,6 +24,7 @@
              Elevation="2">
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
             <ImageButton
+                x:Name="BackButton"
                 Grid.Column="0"
                 Source="back_icon.png"
                 WidthRequest="38"
@@ -79,15 +81,19 @@
                         LineBreakMode="TailTruncation"
                         MaxLines="1" />
                     <Label
+                        x:Name="ProfileSubtitle"
                         Text="{Binding Subtitle}"
                         TextColor="#D4C9E3"
                         FontSize="11"
                         LineBreakMode="TailTruncation"
                         MaxLines="1" />
+                    <Label x:Name="SelectionCount" x:DataType="mainModels:ChatPageModel"
+                           Text="{Binding SelectedMessageCount, StringFormat='Выбрано: {0}'}"
+                           TextColor="#D4C9E3" FontSize="11" IsVisible="False" />
                 </VerticalStackLayout>
             </Grid>
 
-            <HorizontalStackLayout Grid.Column="2" Spacing="2" VerticalOptions="Center">
+            <HorizontalStackLayout x:Name="ProfileActions" Grid.Column="2" Spacing="2" VerticalOptions="Center">
                 <ImageButton
                     Source="call_icon.png"
                     WidthRequest="36"
@@ -114,6 +120,21 @@
                     BackgroundColor="Transparent"
                     TextColor="#FFFFFF"
                     Command="{Binding OpenMenuCommand}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout x:Name="SelectionActions" x:DataType="mainModels:ChatPageModel"
+                                   Grid.Column="2" Spacing="0" VerticalOptions="Center" IsVisible="False">
+                <ImageButton Source="edit.png" WidthRequest="32" HeightRequest="38" Padding="7"
+                             BackgroundColor="Transparent" IsVisible="{Binding CanEditMessage}"
+                             Command="{Binding EditMessageCommand}" SemanticProperties.Description="Редактировать" />
+                <ImageButton Source="copy.png" WidthRequest="32" HeightRequest="38" Padding="6"
+                             BackgroundColor="Transparent" IsVisible="{Binding CanCopyMessages}"
+                             Command="{Binding CopyMessagesCommand}" SemanticProperties.Description="Копировать" />
+                <ImageButton Source="forward_message.png" WidthRequest="32" HeightRequest="38" Padding="6"
+                             BackgroundColor="Transparent" IsVisible="{Binding CanForwardMessages}"
+                             Command="{Binding ForwardMessagesCommand}" SemanticProperties.Description="Переслать" />
+                <ImageButton Source="trash.png" WidthRequest="32" HeightRequest="38" Padding="7"
+                             BackgroundColor="Transparent" IsVisible="{Binding CanDeleteMessages}"
+                             Command="{Binding DeleteMessagesCommand}" SemanticProperties.Description="Удалить" />
             </HorizontalStackLayout>
         </Grid>
             </sho:MaterialFrame>

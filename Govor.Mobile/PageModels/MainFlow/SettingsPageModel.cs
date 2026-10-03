@@ -218,7 +218,6 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
                 if (session.IsCurrent)
                 {
                     await _authService.LogoutAsync();
-                    Application.Current?.Quit();
                 }
                 else
                 {

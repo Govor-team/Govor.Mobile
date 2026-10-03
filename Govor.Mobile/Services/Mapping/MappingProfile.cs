@@ -3,6 +3,7 @@ using Govor.Mobile.Data;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.ContentViewsModel.Messages;
+using Govor.Mobile.Models;
 
 namespace Govor.Mobile.Services.Mapping;
 
@@ -10,6 +11,12 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        CreateMap<MessageViewResponse, MessageView>();
+        CreateMap<MessageView, MessageViewResponse>();
+        CreateMap<MediaAttachmentResponse, MediaFile>()
+            .ForMember(d => d.Id, o => o.MapFrom(s => s.MediaFileId));
+        CreateMap<MediaFile, MediaAttachmentResponse>()
+            .ForMember(d => d.MediaFileId, o => o.MapFrom(s => s.Id));
         CreateMap<MessageResponse, LocalMessage>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.LocalStatus, opt => opt.Ignore())
@@ -28,10 +35,6 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.RecipientId, opt => opt.MapFrom(src => src.ChatId));
         
         // 4. Маппинг для обновления существующих записей (используется в репозитории)
-        CreateMap<UserMessageResponse, LocalMessage>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.MessageId))
-            .ForMember(dest => dest.ChatId, opt => opt.MapFrom(src => src.RecipientId))
-            .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         
         // Маппинг сообщения
         CreateMap<MessageResponse, MessagesViewModel>()

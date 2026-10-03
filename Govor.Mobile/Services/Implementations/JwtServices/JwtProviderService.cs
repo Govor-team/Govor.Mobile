@@ -1,159 +1,158 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Govor.Mobile.Models.Responses;
+using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.Extensions.Logging;
-using System.Text;
-using System.Text.Json;
-using Govor.Mobile.Services.Interfaces;
 
 namespace Govor.Mobile.Services.Implementations.JwtServices;
 
 public sealed class JwtProviderService : IJwtProviderService
 {
-    public bool HasRefreshToken => !string.IsNullOrWhiteSpace(_refreshToken);
-    public event Action WasClearTokens;
-
     private readonly ILogger<JwtProviderService> _logger;
-    private readonly ITokenStorageService _storageService;
-    private readonly IServerIpProvider _ipProvider;
+    private readonly ITokenStorageService _storage;
+    private readonly IServerIpProvider _server;
     private readonly HttpClient _httpClient;
-
-    private readonly SemaphoreSlim _refreshLock = new(1, 1);
-
+    private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _accessToken;
     private string? _refreshToken;
-    private DateTimeOffset _accessTokenExpiration;
-
+    private DateTimeOffset _expiresAt;
     private static readonly TimeSpan ExpirationBuffer = TimeSpan.FromSeconds(30);
+    public bool HasRefreshToken => !string.IsNullOrWhiteSpace(_refreshToken);
+    public Guid? CurrentUserId
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_accessToken)) return null;
+            var jwt = new JwtSecurityTokenHandler().ReadJwtToken(_accessToken);
+            return Guid.TryParse(jwt.Claims.FirstOrDefault(c => c.Type == "userId")?.Value, out var id) ? id : null;
+        }
+    }
+    public event Action? WasClearTokens;
 
-    public JwtProviderService(
-        ILogger<JwtProviderService> logger,
-        IServerIpProvider serverIpProvider,
-        ITokenStorageService tokenStorage)
+    public JwtProviderService(ILogger<JwtProviderService> logger,
+        IServerIpProvider server, ITokenStorageService storage, IHttpClientFactory factory)
     {
         _logger = logger;
-        _storageService = tokenStorage;
-        _ipProvider = serverIpProvider;
-        _httpClient = new HttpClient();
+        _server = server;
+        _storage = storage;
+        _httpClient = factory.CreateClient("TokenRefresh");
     }
 
     public async Task InitializeAsync()
     {
-        _refreshToken = await _storageService.GetRefreshTokenAsync();
-    }
-
-    public async Task<string> GetAccessTokenAsync()
-    {
-        if (HasValidAccessToken())
-            return _accessToken!;
-
-        await _refreshLock.WaitAsync();
+        await _gate.WaitAsync();
         try
         {
-            // повторная проверка после ожидания
-            if (HasValidAccessToken())
+            _refreshToken = await _storage.GetRefreshTokenAsync();
+            _accessToken = await _storage.GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(_accessToken))
+            {
+                try { _expiresAt = ExtractExpiration(_accessToken); }
+                catch { _accessToken = null; }
+            }
+        }
+        finally { _gate.Release(); }
+    }
+
+    public Task<string> GetAccessTokenAsync() => GetTokenAsync(false, null);
+    public Task<string> RefreshAccessTokenAsync(string? rejectedToken) => GetTokenAsync(true, rejectedToken);
+
+    private async Task<string> GetTokenAsync(bool forceRefresh, string? rejectedToken)
+    {
+        await _gate.WaitAsync();
+        var sessionInvalidated = false;
+        try
+        {
+            // A concurrent request may already have rotated the rejected access token.
+            if (HasValidAccessToken() && (!forceRefresh || _accessToken != rejectedToken))
                 return _accessToken!;
+            if (!HasRefreshToken)
+                throw new UnauthorizedAccessException("Authentication session is missing.");
 
-            if (string.IsNullOrWhiteSpace(_refreshToken))
-                throw new InvalidOperationException("Refresh token is missing.");
-
-            var result = await RefreshInternalAsync();
-            if (!result.IsSuccess)
-                return null;
-
+            using var response = await _httpClient.PostAsJsonAsync(
+                $"{_server.IP.TrimEnd('/')}/api/auth/token/refresh", new { refreshToken = _refreshToken });
+            if (!response.IsSuccessStatusCode)
+            {
+                var invalid = response.StatusCode == HttpStatusCode.Unauthorized;
+                if (response.StatusCode == HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        using var error = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                        invalid = error.RootElement.TryGetProperty("errorCode", out var code) &&
+                            code.GetString() is "Auth.InvalidToken" or "Auth.EmptyToken";
+                    }
+                    catch (JsonException) { }
+                }
+                if (invalid)
+                {
+                    ClearInternal();
+                    sessionInvalidated = true;
+                    throw new UnauthorizedAccessException("Authentication session has expired. Please sign in again.");
+                }
+                // Network failures and server errors preserve the persisted session.
+                throw new HttpRequestException("Unable to refresh authentication session.", null, response.StatusCode);
+            }
+            var tokens = await response.Content.ReadFromJsonAsync<RefreshResponse>()
+                ?? throw new InvalidDataException("Empty token refresh response.");
+            await SetTokensInternalAsync(tokens.accessToken, tokens.refreshToken);
             return _accessToken!;
         }
         finally
         {
-            _refreshLock.Release();
+            _gate.Release();
+            if (sessionInvalidated) WasClearTokens?.Invoke();
         }
     }
 
-    public async Task ClearAsync()
+    public async Task InitializeWithTokensAsync(string accessToken, string refreshToken)
     {
-        _storageService.DeleteRefreshToken();
-
-        _accessToken = null;
-        _refreshToken = null;
-        _accessTokenExpiration = default;
-        
-        WasClearTokens?.Invoke();
-        _logger.LogInformation("JWT tokens cleared.");
-    }
-    
-    private bool HasValidAccessToken()
-    {
-        return !string.IsNullOrEmpty(_accessToken) &&
-               DateTimeOffset.UtcNow < _accessTokenExpiration - ExpirationBuffer;
-    }
-
-    private async Task<Result<RefreshResponse>> RefreshInternalAsync()
-    {
-        try
-        {
-            var body = JsonSerializer.Serialize(new
-            {
-                refreshToken = _refreshToken
-            });
-
-            var response = await _httpClient.PostAsync(
-                $"{_ipProvider.IP}/api/auth/token/refresh",
-                new StringContent(body, Encoding.UTF8, "application/json"));
-
-            if (!response.IsSuccessStatusCode)
-            {
-                await ClearAsync();
-                
-                return Result<RefreshResponse>.Failure(
-                    await response.Content.ReadAsStringAsync());
-            }
-            
-            var json = await response.Content.ReadAsStringAsync();
-            var data = JsonSerializer.Deserialize<RefreshResponse>(json)!;
-
-            await SetTokensInternalAsync(data.accessToken, data.refreshToken);
-
-            return Result<RefreshResponse>.Success(data);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "JWT refresh failed.");
-            return Result<RefreshResponse>.Failure(ex.Message);
-        }
+        await _gate.WaitAsync();
+        try { await SetTokensInternalAsync(accessToken, refreshToken); }
+        finally { _gate.Release(); }
     }
 
     private async Task SetTokensInternalAsync(string accessToken, string refreshToken)
     {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new InvalidDataException("Refresh token is empty.");
+        var expiration = ExtractExpiration(accessToken);
+        if (!await _storage.SaveTokensAsync(accessToken, refreshToken))
+            throw new IOException("Unable to save authentication session in secure storage.");
         _accessToken = accessToken;
         _refreshToken = refreshToken;
-
-        _accessTokenExpiration = ExtractExpiration(accessToken);
-
-        await _storageService.SaveRefreshTokenAsync(refreshToken);
-        _logger.LogInformation("JWT tokens updated successfully.");
+        _expiresAt = expiration;
+        _logger.LogInformation("Authentication session persisted.");
     }
 
-    private static DateTimeOffset ExtractExpiration(string accessToken)
+    public async Task ClearAsync()
     {
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(accessToken);
-
-        if (jwt.Payload.Exp is int exp)
-            return DateTimeOffset.FromUnixTimeSeconds(exp);
-
-        return DateTimeOffset.UtcNow.AddMinutes(5);
+        await _gate.WaitAsync();
+        try { ClearInternal(); }
+        finally { _gate.Release(); }
+        WasClearTokens?.Invoke();
     }
-    
-    public async Task InitializeWithTokensAsync(string accessToken, string refreshToken)
+
+    private void ClearInternal()
     {
-        await _refreshLock.WaitAsync();
-        try
-        {
-            await SetTokensInternalAsync(accessToken, refreshToken);
-        }
-        finally
-        {
-            _refreshLock.Release();
-        }
+        if (!_storage.DeleteRefreshToken())
+            throw new IOException("Unable to remove authentication session from secure storage.");
+        _accessToken = null;
+        _refreshToken = null;
+        _expiresAt = default;
+    }
+
+    private bool HasValidAccessToken() => !string.IsNullOrWhiteSpace(_accessToken) &&
+        DateTimeOffset.UtcNow < _expiresAt - ExpirationBuffer;
+
+    private static DateTimeOffset ExtractExpiration(string token)
+    {
+        var jwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
+        return jwt.Payload.Expiration is long exp
+            ? DateTimeOffset.FromUnixTimeSeconds(exp)
+            : throw new InvalidDataException("Access token has no expiration.");
     }
 }

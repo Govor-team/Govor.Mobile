@@ -6,6 +6,7 @@ using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.MainPage;
 using Govor.Mobile.Services.Interfaces.Repositories;
+using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Implementations.MainPage;
 
@@ -20,6 +21,10 @@ public class FriendsListController : IFriendsListController
     private readonly IUnreadMessagesService _unreadMessages;
     
     private readonly ConcurrentDictionary<Guid, UserListItemViewModel> _cache = new();
+    private readonly LocalAccountCache _local;
+    private readonly IJwtProviderService _session;
+    private Guid? _loadedAccount;
+    private sealed record CachedFriend(UserProfileDto Profile, Guid ChatId);
 
     public event Action? FriendsLoaded;           
     public event Action<UserListItemViewModel>? FriendAdded;
@@ -33,7 +38,9 @@ public class FriendsListController : IFriendsListController
         IMessagesRepository messages,
         IFriendsFactory factory,
         IFriendsRealtimeService realtime,
-        IUnreadMessagesService unreadMessages)
+        IUnreadMessagesService unreadMessages,
+        LocalAccountCache local,
+        IJwtProviderService session)
     {
         _friendshipApi = friendshipApi;
         _profileApi = profileApi;
@@ -42,6 +49,9 @@ public class FriendsListController : IFriendsListController
         _privateChatApi = privateChatApi;
         _realtime = realtime;
         _unreadMessages = unreadMessages;
+        _local = local;
+        _session = session;
+        session.WasClearTokens += () => { _cache.Clear(); _loadedAccount = null; };
 
         // Подписка на события реального времени
         _realtime.OnUserOnline += id => OnlineStatusChanged?.Invoke(id, true);
@@ -56,6 +66,7 @@ public class FriendsListController : IFriendsListController
 
     public async Task InitializeAsync()
     {
+        await LoadLocalAsync();
         _messages.Initialize();
 
         var friendsResult = await _friendshipApi.GetFriends();
@@ -64,9 +75,33 @@ public class FriendsListController : IFriendsListController
         if (!friendsResult.IsSuccess || !privateChatsResult.IsSuccess)
             return;
 
+        await _messages.ImportLegacyChatsAsync(privateChatsResult.Value.Select(c => c.ChatId));
+
+        _cache.Clear();
         await LoadFriendsAsync(friendsResult.Value, privateChatsResult.Value);
+        var snapshot = new List<CachedFriend>();
+        foreach (var item in _cache.Values)
+        {
+            var profile = await _profileApi.DowloadProfileByUserIdAsync(item.UserId);
+            if (profile is not null) snapshot.Add(new CachedFriend(profile, item.ChatId));
+        }
+        await _local.WriteAsync("friends", snapshot);
 
         FriendsLoaded?.Invoke();
+    }
+
+    public async Task LoadLocalAsync()
+    {
+        if (_loadedAccount == _session.CurrentUserId) return;
+        _cache.Clear();
+        _loadedAccount = _session.CurrentUserId;
+        var friends = await _local.ReadAsync<List<CachedFriend>>("friends");
+        if (friends is null) return;
+        foreach (var friend in friends)
+        {
+            var item = await _factory.CreateAsync(friend.Profile, friend.ChatId);
+            _cache[item.UserId] = item;
+        }
     }
 
     private async Task LoadFriendsAsync(IEnumerable<UserDto> friends, IEnumerable<PrivateChatDto> privateChats)

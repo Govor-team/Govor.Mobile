@@ -4,6 +4,7 @@ using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
 using Govor.Mobile.Services.Interfaces.Profiles;
 using Microsoft.Extensions.Caching.Memory;
+using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Implementations.Profiles;
 
@@ -21,15 +22,22 @@ public class UserProfileService : IUserProfileService
     private string UserProfileCacheKey(Guid id) => $"UserProfile_{id}";
     public event Action<UserProfile>? OnProfileUpdated;
     private Guid _currentId;
+    private readonly IJwtProviderService _session;
+    private readonly LocalAccountCache _local;
 
     public UserProfileService(
         IProfileApiClient apiClient,
         IPresenceHubService presenceHubService,
-        IMemoryCache memoryCache)
+        IMemoryCache memoryCache,
+        IJwtProviderService session,
+        LocalAccountCache local)
     {
         _apiClient = apiClient;
         _presenceHubService = presenceHubService;
         _cache = memoryCache;
+        _session = session;
+        _local = local;
+        session.WasClearTokens += () => _currentId = Guid.Empty;
 
         _presenceHubService.OnUserOnline += async userId =>
         {
@@ -47,6 +55,8 @@ public class UserProfileService : IUserProfileService
 
     public async Task<UserProfile> GetCurrentProfileAsync()
     {
+        if (_session.CurrentUserId is Guid currentId)
+            _currentId = currentId;
         if (_currentId != Guid.Empty)
             return await GetProfileAsync(_currentId);
 
@@ -82,9 +92,12 @@ public class UserProfileService : IUserProfileService
             return cachedProfile;
 
         var profileDto = await _apiClient.DowloadProfileByUserIdAsync(userId);
+        if (profileDto is null)
+            return await _local.ReadAsync<UserProfile>($"profile-{userId:N}");
         var profile = MapDtoToProfile(profileDto);
 
         _cache.Set(UserProfileCacheKey(userId), profile, GetMemoryOptions);
+        await _local.WriteAsync($"profile-{userId:N}", profile);
         return profile;
     }
 

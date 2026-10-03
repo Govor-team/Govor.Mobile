@@ -1,60 +1,48 @@
-﻿using System.Net;
+using System.Net;
+using System.Net.Http.Headers;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Api.Base;
 
-public class RefreshTokenHandler : DelegatingHandler
+public sealed class RefreshTokenHandler(IJwtProviderService jwtProvider) : DelegatingHandler
 {
-    private readonly IJwtProviderService _jwtProvider;
-    private readonly SemaphoreSlim _refreshLock = new(1,1);
-
-    public RefreshTokenHandler(IJwtProviderService jwtProvider)
-    {
-        _jwtProvider = jwtProvider;
-    }
-
     protected override async Task<HttpResponseMessage> SendAsync(
-        HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        HttpRequestMessage request, CancellationToken cancellationToken)
     {
+        var authenticated = request.Options.TryGetValue(HttpRequestOptionsKeys.RequireAuth, out var required) && required;
+        // Buffer once before sending so multipart and stream bodies can be replayed exactly once.
+        if (authenticated && request.Content is not null)
+            await request.Content.LoadIntoBufferAsync();
         var response = await base.SendAsync(request, cancellationToken);
-
-        if (response.StatusCode != HttpStatusCode.Unauthorized)
+        if (!authenticated || response.StatusCode != HttpStatusCode.Unauthorized)
             return response;
-
-        await _refreshLock.WaitAsync(cancellationToken);
-
+        string token;
         try
         {
-           /* var refreshed = await _jwtProvider.TryRefreshTokenAsync();
-            if (!refreshed)
-                return response;
-
-            var newRequest = await CloneRequestAsync(request);
-            return await base.SendAsync(newRequest, cancellationToken);*/
-           return response;
+            token = await jwtProvider.RefreshAccessTokenAsync(request.Headers.Authorization?.Parameter);
         }
-        finally
+        catch
         {
-            _refreshLock.Release();
+            response.Dispose();
+            throw;
         }
-    }
-
-    private async Task<HttpRequestMessage> CloneRequestAsync(HttpRequestMessage request)
-    {
-        var clone = new HttpRequestMessage(request.Method, request.RequestUri);
-
-        if (request.Content != null)
+        response.Dispose();
+        using var retry = new HttpRequestMessage(request.Method, request.RequestUri)
         {
-            var ms = new MemoryStream();
-            await request.Content.CopyToAsync(ms);
-            ms.Position = 0;
-            clone.Content = new StreamContent(ms);
-        }
-
+            Version = request.Version,
+            VersionPolicy = request.VersionPolicy
+        };
+        foreach (var option in request.Options)
+            retry.Options.Set(new HttpRequestOptionsKey<object?>(option.Key), option.Value);
         foreach (var header in request.Headers)
-            clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
-
-        return clone;
+            retry.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        if (request.Content is not null)
+        {
+            retry.Content = new ByteArrayContent(await request.Content.ReadAsByteArrayAsync(cancellationToken));
+            foreach (var header in request.Content.Headers)
+                retry.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+        }
+        retry.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await base.SendAsync(retry, cancellationToken);
     }
 }

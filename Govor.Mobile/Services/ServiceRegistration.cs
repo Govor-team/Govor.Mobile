@@ -35,8 +35,10 @@ internal static class ServiceRegistration
     public static MauiAppBuilder RegisterHttpClients(this MauiAppBuilder builder)
     {
         builder.Services.AddTransient<AuthHeaderHandler>();
+        builder.Services.AddTransient<RefreshTokenHandler>();
         
         var services = builder.Services;
+        services.AddHttpClient("TokenRefresh", client => client.Timeout = TimeSpan.FromSeconds(15));
 
         services.AddHttpClient<INetworkChecker, NetworkChecker>(client =>
         {
@@ -44,14 +46,10 @@ internal static class ServiceRegistration
         });
 
         services.AddHttpClient<IApiClient, ApiClient>(client => {
-#if RELEASE
-            client.Timeout = TimeSpan.FromSeconds(10); 
-#else
-            client.Timeout = TimeSpan.FromSeconds(200);
-#endif
+            client.Timeout = TimeSpan.FromSeconds(15);
         })
             .AddHttpMessageHandler<AuthHeaderHandler>()
-            .AddPolicyHandler(GetRetryPolicy());
+            .AddHttpMessageHandler<RefreshTokenHandler>();
             //.AddHttpMessageHandler<RefreshTokenHandler>();
 
         return builder;
@@ -70,8 +68,9 @@ internal static class ServiceRegistration
     
     public static MauiAppBuilder RegisterAppServices(this MauiAppBuilder builder)
     {
-        builder.Services.AddTransient<NetworkAvailabilityService>();
+        builder.Services.AddSingleton<NetworkAvailabilityService>();
         builder.Services.AddSingleton<IAppStartupOrchestrator, AppStartupOrchestrator>();
+        builder.Services.AddSingleton<IAppShellCoordinator, AppShellCoordinator>();
         
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddSingleton<IFriendsRequestQueryService, FriendsRequestQueryService>();
@@ -80,6 +79,7 @@ internal static class ServiceRegistration
         builder.Services.AddSingleton<IChatLoaderApi, ChatLoaderApi>();
 
         builder.Services.AddSingleton<ITokenStorageService, TokenStorageService>();
+        builder.Services.AddSingleton<LocalAccountCache>();
         builder.Services.AddSingleton<IBuilderDeviceInfoString, BuilderDeviceInfoString>();
         builder.Services.AddSingleton<IDeviceInfoParserService, DeviceInfoParserService>();
 
@@ -179,11 +179,7 @@ internal static class ServiceRegistration
 
     public static MauiAppBuilder RegisterDatabaseContext(this MauiAppBuilder builder)
     {
-        builder.Services.AddDbContextFactory<GovorDbContext>(options =>
-        {
-            var dbPath = Path.Combine(FileSystem.AppDataDirectory, "govor.db");
-            options.UseSqlite($"Data Source={dbPath}");
-        });
+        builder.Services.AddSingleton<IDbContextFactory<GovorDbContext>, AccountDbContextFactory>();
         
         return builder;
     }

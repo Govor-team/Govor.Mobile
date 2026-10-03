@@ -11,9 +11,8 @@ public class GovorDbContext : DbContext
     public DbSet<LocalMessage> Messages { get; set; } 
     //public DbSet<UserSession> CurrentSessions { get; set; }
 
-    public GovorDbContext(DbContextOptions<GovorDbContext> options) : base(options) 
+    public GovorDbContext(DbContextOptions<GovorDbContext> options) : base(options)
     {
-        Database.Migrate();
     }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

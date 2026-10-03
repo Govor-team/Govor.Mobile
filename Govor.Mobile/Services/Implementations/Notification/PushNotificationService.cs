@@ -7,6 +7,7 @@ using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces.Notification;
 using Plugin.FirebasePushNotifications;
 using Plugin.FirebasePushNotifications.Model;
+using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Implementations.Notification;
 
@@ -24,17 +25,20 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
     private readonly SemaphoreSlim _initLock = new(1, 1);
 
     private const string TokenCacheKey = "fcm_token_sent";
+    private readonly IJwtProviderService _session;
 
     public PushNotificationService(
         IFirebasePushNotification firebase,
         INotificationPermissions permissions,
         IPushTokenService pushTokenService,
-        INotificationChannels channels)
+        INotificationChannels channels,
+        IJwtProviderService session)
     {
         _firebase = firebase;
         _permissions = permissions;
         _pushTokenService = pushTokenService;
         _channels = channels;
+        _session = session;
     }
 
     public async Task OnInternetConnectedAsync()
@@ -46,14 +50,17 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
 
     public async Task InitializeAsync()
     {
-        if (_isInitialized)
+        if (!_session.HasRefreshToken)
             return;
 
         await _initLock.WaitAsync();
         try
         {
             if (_isInitialized)
+            {
+                await EnsureTokenSentAsync();
                 return;
+            }
 
             Console.WriteLine("[Push] Initializing...");
 
@@ -162,16 +169,16 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
             return;
         }
 
-        await SendTokenToServerAsync(token);
-
-        Preferences.Set(TokenCacheKey, token);
+        if (await SendTokenToServerAsync(token))
+            Preferences.Set(TokenCacheKey, token);
     }
 
-    private async Task SendTokenToServerAsync(string token)
+    private async Task<bool> SendTokenToServerAsync(string token)
     {
+        if (!_session.HasRefreshToken) return false;
         try
         {
-            Console.WriteLine($"[Push] Sending token: {token}");
+            Console.WriteLine("[Push] Registering token");
 
             var result = await _pushTokenService.PushToken(
                 token,
@@ -180,26 +187,13 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
 
             Console.WriteLine($"[Push] Token result: success={result.IsSuccess}, error={result.ErrorMessage}");
 
-            if (!result.IsSuccess)
-            {
-                // retry позже (не блокируем UI)
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(5000);
-                    await SendTokenToServerAsync(token);
-                });
-            }
+            return result.IsSuccess;
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Push] Send token failed: {ex}");
 
-            // retry
-            _ = Task.Run(async () =>
-            {
-                await Task.Delay(5000);
-                await SendTokenToServerAsync(token);
-            });
+            return false;
         }
     }
 
@@ -211,7 +205,7 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
             {
                 if (!string.IsNullOrWhiteSpace(e.Token))
                 {
-                    Console.WriteLine($"[Push] Token refreshed: {e.Token}");
+                    Console.WriteLine("[Push] Token refreshed");
                     await SendTokenIfNeededAsync(e.Token);
                 }
             }
@@ -263,9 +257,6 @@ public class PushNotificationService : IPushNotificationService, IConnectivityCh
 
     public async Task UnregisterAsync()
     {
-        if (!_isInitialized)
-            return;
-
         Console.WriteLine("[Push] Unregistering");
 
         if (_eventsSubscribed)

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Govor.Mobile.PageModels.ContentViewsModel;
 
@@ -56,7 +56,9 @@ public partial class UserListItemViewModel : ObservableObject
 
     public void SetLastMessageSentAt(DateTime? value)
     {
+        if (LastMessageSentAt == value) return;
         LastMessageSentAt = value;
+        OnPropertyChanged(nameof(LastMessageSentAt));
     }
 
     [ObservableProperty]

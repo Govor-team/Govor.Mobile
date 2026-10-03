@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using Govor.Mobile.PageModels.ContentViewsModel;
@@ -12,6 +12,7 @@ namespace Govor.Mobile.PageModels.MainFlow;
 
 [QueryProperty(nameof(ChatIdString), "chatId")]
 [QueryProperty(nameof(IsGroup), "isGroup")]
+[QueryProperty(nameof(PeerIdString), "peerId")]
 public partial class ChatPageModel : ObservableObject, IInitializableViewModel, IDisposable
 {
     private readonly IMessagesListController _controller;
@@ -85,40 +86,38 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     public bool IsLoaded { get; set; }
 
     private Guid _ChatIdForHeader = Guid.Empty;
+    private Guid _currentUserId;
+    public Task MarkVisibleMessagesReadAsync(int first, int last)
+    {
+        if (!IsLoaded || IsGroup || first < 0 || last < first) return Task.CompletedTask;
+        var ids = MessageGroups.Skip(first).Take(last - first + 1)
+            .SelectMany(g => g.Messages).Where(m => m.IsIncoming).Select(m => m.Id).ToArray();
+        return _controller.MarkAsReadAsync(_currentUserId, ids);
+    }
     private Guid _peerUserId = Guid.Empty;
+    public string PeerIdString { set { Guid.TryParse(value, out _peerUserId); } }
+    private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private IAsyncRelayCommand _GoBackCommand { get; }
 
     public async Task InitAsync()
     {
+        await _initializationLock.WaitAsync();
+        try { await InitializeCoreAsync(); }
+        finally { _initializationLock.Release(); }
+    }
+
+    private async Task InitializeCoreAsync()
+    {
         if (IsLoaded)
             return;
 
-        if (!IsGroup)
-            _peerUserId = ChatId;
-
         var profileTask = _profileService.GetCurrentProfileAsync();
-
-        Task<Result<Guid>?> chatTask = null;
-
-        if (!IsGroup)
+        if (!IsGroup && _peerUserId == Guid.Empty)
         {
-            chatTask = _privateChatApi.GetChatByFriendId(ChatId);
+            var chats = await _privateChatApi.GetPrivateChats();
+            _peerUserId = chats.Value?.FirstOrDefault(c => c.ChatId == ChatId)?.FriendId ?? Guid.Empty;
         }
-        else
-        {
-            _ChatIdForHeader = ChatId;
-        }
-
-        if (chatTask != null)
-        {
-            var result = await chatTask;
-
-            if (result.IsSuccess)
-            {
-                _ChatIdForHeader = ChatId;
-                ChatId = result.Value;
-            }
-        }
+        _ChatIdForHeader = IsGroup ? ChatId : _peerUserId;
 
         // Теперь header можно строить параллельно с profile
         var headerTask = _headerService.BuildAsync(
@@ -132,7 +131,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         var profile = await profileTask;
 
-        Header = await headerTask;
+        await MainThread.InvokeOnMainThreadAsync(() => Header = headerTask.Result);
 
         if (!IsGroup)
         {
@@ -143,12 +142,14 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
             _realtime.OnUserAvatarUpdate += SetUserAvatarAsync;
         }
 
-        IsLoaded = true;
-
-        _ = InitializeControllerAsync(
+        if (profile is null)
+            throw new InvalidOperationException("Не удалось загрузить профиль пользователя.");
+        await _controller.InitializeAsync(
             ChatId,
             profile.Id,
             IsGroup);
+        _currentUserId = profile.Id;
+        IsLoaded = true;
     }
     private async Task InitializeControllerAsync(
                                     Guid chatId,
@@ -181,6 +182,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         UpdateSelectionModeVisibility();
         OnPropertyChanged(nameof(IsSelectionMode));
         OnPropertyChanged(nameof(SelectedMessageCount));
+        OnPropertyChanged(nameof(CanEditMessage));
         OnPropertyChanged(nameof(CanCopyMessages));
         OnPropertyChanged(nameof(CanForwardMessages));
         OnPropertyChanged(nameof(CanDeleteMessages));
@@ -258,6 +260,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         UpdateSelectionModeVisibility();
         OnPropertyChanged(nameof(IsSelectionMode));
         OnPropertyChanged(nameof(SelectedMessageCount));
+        OnPropertyChanged(nameof(CanEditMessage));
         OnPropertyChanged(nameof(CanCopyMessages));
         OnPropertyChanged(nameof(CanForwardMessages));
         OnPropertyChanged(nameof(CanDeleteMessages));
@@ -303,9 +306,13 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         if (IsEditingMessage && EditingMessage != null)
         {
-            EditingMessage.Text = MessageText;
-            await _controller.EditAsync(EditingMessage.Id, MessageText);
-            CancelMessageEditing();
+            var resEdit = await _controller.EditAsync(EditingMessage.Id, MessageText);
+            
+            if (resEdit.IsSuccess)
+            {
+                EditingMessage.Text = MessageText;
+                CancelMessageEditing();
+            }
             return;
         }
         
@@ -314,7 +321,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
         var result = await _controller.SendAsync(ChatId, textToSend);
         
-        if (!result.IsSuccess)
+        if (!result.IsSuccess && string.IsNullOrEmpty(MessageText))
         {
             MessageText = textToSend; 
         }
@@ -347,19 +354,6 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         
         return result.Count;
     }
-
-    public Task MarkMessagesAsReadAsync(IEnumerable<MessagesViewModel> messages)
-    {
-        if (IsGroup || _peerUserId == Guid.Empty)
-            return Task.CompletedTask;
-
-        var messageIds = messages
-            .Where(message => message.IsIncoming)
-            .Select(message => message.Id);
-
-        return _controller.MarkAsReadAsync(_peerUserId, messageIds);
-    }
-
 
     // Очистка при закрытии страницы
     public void Dispose()

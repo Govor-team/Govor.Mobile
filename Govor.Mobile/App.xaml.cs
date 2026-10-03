@@ -1,34 +1,25 @@
-﻿using Govor.Mobile.Pages.AuthFlow;
-using Govor.Mobile.Pages.MainFlow;
-using Govor.Mobile.Services.Api;
+﻿using Govor.Mobile.Services;
 using Govor.Mobile.Services.Interfaces;
-using Govor.Mobile.Services.Interfaces.Notification;
 using Microsoft.Maui.Controls;
 
 namespace Govor.Mobile;
 
 public partial class App : Application
 {
-    private readonly IAuthService _authService;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IAppStartupOrchestrator _initializer;
-
-    private readonly SemaphoreSlim _stateSemaphore = new(1, 1);
-
-    private bool _isInitialized;
-    private bool? _requestedAuthenticationState;
+    private readonly IAppShellCoordinator _shellCoordinator;
+    private Window? _window;
+    private readonly NetworkAvailabilityService _network;
 
     public App(
-        IAuthService authService,
-        IServiceProvider serviceProvider,
         IBackgroundImageService backgroundService,
-        IAppStartupOrchestrator startupOrchestrator)
+        IAppShellCoordinator shellCoordinator,
+        NetworkAvailabilityService network)
     {
         InitializeComponent();
 
-        _authService = authService;
-        _serviceProvider = serviceProvider;
-        _initializer = startupOrchestrator;
+        _shellCoordinator = shellCoordinator;
+        _network = network;
+        _shellCoordinator.RootPageChanged += OnRootPageChanged;
 
         backgroundService.LoadCurrent();
 
@@ -48,170 +39,44 @@ public partial class App : Application
     {
         base.OnStart();
 
-        if (_isInitialized)
-            return;
-
-        _isInitialized = true;
-
-        _authService.AuthenticationStateChanged +=
-            OnAuthenticationStateChanged;
-
         try
         {
-            Console.WriteLine("AUTH: Initialize START");
-
-            await _authService.InitializeAsync();
-
-            Console.WriteLine(
-                $"AUTH: Initialize END = {_authService.IsAuthenticated}");
-
-            SetAuthenticationState(_authService.IsAuthenticated);
+            await _shellCoordinator.InitializeAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"AUTH INIT ERROR: {ex}");
-
-            await MainThread.InvokeOnMainThreadAsync(async () =>
+            System.Diagnostics.Debug.WriteLine($"APP INIT ERROR: {ex}");
+            var retry = new Button { Text = "Повторить запуск" };
+            retry.Clicked += async (_, _) =>
             {
-                await AppShell.DisplayException(
-                    "Не удалось инициализировать приложение");
-            });
-        }
-    }
-
-    private void OnAuthenticationStateChanged(
-        object? sender,
-        bool isAuthenticated)
-    {
-        Console.WriteLine(
-            $"AUTH EVENT: {isAuthenticated}");
-
-        SetAuthenticationState(isAuthenticated);
-    }
-
-    private void SetAuthenticationState(bool isAuthenticated)
-    {
-        _requestedAuthenticationState = isAuthenticated;
-
-        _ = ApplyAuthenticationStateAsync();
-    }
-
-    private async Task ApplyAuthenticationStateAsync()
-    {
-        // Если другой transition уже выполняется,
-        // он после завершения увидит актуальное состояние.
-        if (!await _stateSemaphore.WaitAsync(0))
-            return;
-
-        try
-        {
-            while (true)
+                retry.IsEnabled = false;
+                try { await _shellCoordinator.InitializeAsync(); }
+                finally { retry.IsEnabled = true; }
+            };
+            OnRootPageChanged(this, new ContentPage
             {
-                var targetState = _requestedAuthenticationState;
-
-                if (targetState is null)
-                    return;
-
-                var isAuthenticated = targetState.Value;
-
-                if (isAuthenticated)
+                Content = new VerticalStackLayout
                 {
-                    if (MainPage is MainShell)
-                        return;
-
-                    Console.WriteLine("AUTH: Switching -> MainShell");
-
-                    await NavigateToAuthenticatedAsync();
+                    Padding = 24,
+                    VerticalOptions = LayoutOptions.Center,
+                    Children = { new Label { Text = "Не удалось подготовить приложение. Повторите запуск." }, retry }
                 }
-                else
-                {
-                    if (MainPage is AuthShell)
-                        return;
-
-                    Console.WriteLine("AUTH: Switching -> AuthShell");
-
-                    await NavigateToUnauthenticatedAsync();
-                }
-
-                // Проверяем, не изменилось ли состояние
-                // во время предыдущего transition.
-                if (_requestedAuthenticationState == targetState)
-                    return;
-            }
-        }
-        finally
-        {
-            _stateSemaphore.Release();
-        }
-    }
-
-    private async Task NavigateToAuthenticatedAsync()
-    {
-        try
-        {
-            Console.WriteLine("AUTH: Startup orchestrator START");
-
-            await _initializer.StartAsync();
-
-            Console.WriteLine("AUTH: Startup orchestrator END");
-
-            // За время StartAsync пользователь мог выйти.
-            if (_requestedAuthenticationState != true)
-                return;
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                if (_requestedAuthenticationState != true)
-                    return;
-
-                MainPage =
-                    _serviceProvider.GetRequiredService<MainShell>();
-            });
-
-            Console.WriteLine("AUTH: MainShell assigned");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                $"AUTH: MainShell initialization ERROR: {ex}");
-
-            await MainThread.InvokeOnMainThreadAsync(() =>
-            {
-                MainPage =
-                    _serviceProvider.GetRequiredService<AuthShell>();
             });
         }
     }
 
-    private async Task NavigateToUnauthenticatedAsync()
+    protected override Window CreateWindow(IActivationState? activationState)
     {
-        try
-        {
-            var push =
-                _serviceProvider.GetService<IPushNotificationService>();
+        _window = new Window(MainPage);
+        return _window;
+    }
 
-            if (push != null)
-                await push.UnregisterAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(
-                $"PUSH unregister ERROR: {ex}");
-        }
+    private void OnRootPageChanged(object? sender, Page page)
+    {
+        MainPage = page;
 
-        if (_requestedAuthenticationState != false)
-            return;
-
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            if (_requestedAuthenticationState != false)
-                return;
-
-            MainPage =
-                _serviceProvider.GetRequiredService<AuthShell>();
-        });
-
-        Console.WriteLine("AUTH: AuthShell assigned");
+        if (_window is not null && _window.Page != page)
+            _window.Page = page;
     }
 
     protected override void OnSleep()
@@ -222,5 +87,6 @@ public partial class App : Application
     protected override void OnResume()
     {
         base.OnResume();
+        _ = _network.CheckInitialConnectivityAsync();
     }
 }

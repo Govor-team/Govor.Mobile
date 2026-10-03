@@ -104,6 +104,8 @@ public class AuthService : IAuthService
         }
         else
         {
+            await _jwtProvider.ClearAsync();
+            IsAuthenticated = false;
             throw new LogoutException(result.ErrorMessage ?? "Something happened");
         }
     }
@@ -111,6 +113,9 @@ public class AuthService : IAuthService
     public async Task InitializeAsync()
     {
         await _jwtProvider.InitializeAsync();
+        // Migrate installations that previously stored only the refresh token.
+        if (_jwtProvider.HasRefreshToken && _jwtProvider.CurrentUserId is null)
+            await _jwtProvider.GetAccessTokenAsync();
         _isAuthenticated = _jwtProvider.HasRefreshToken;
     }
 }

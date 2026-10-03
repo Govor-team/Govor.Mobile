@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.Models.Requests;
+using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.JwtServices;
@@ -29,20 +29,10 @@ public class ChatHub : IChatHub
             .WithAutomaticReconnect(retryPolicy)
             .Build();
 
-        _hubConnection.Closed += async (error) =>
+        _hubConnection.Closed += error =>
         {
-            _logger.LogWarning("SignalR connection closed: {0}", error?.Message);
-
-            try
-            {
-                await Task.Delay(5000);
-                await _hubConnection.StartAsync();
-                _logger.LogInformation("SignalR reconnected after token refresh.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to reconnect SignalR after token refresh.");
-            }
+            _logger.LogWarning(error, "SignalR connection closed.");
+            return Task.CompletedTask;
         };
 
         #region Events

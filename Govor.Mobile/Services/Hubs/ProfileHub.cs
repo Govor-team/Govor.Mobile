@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -33,19 +33,10 @@ public class ProfileHub : IProfileHubService
             .WithAutomaticReconnect()
             .Build();
         
-        _hubConnection.Closed += async (error) =>
+        _hubConnection.Closed += error =>
         {
-            _logger.LogWarning("SignalR connection closed: {0}", error?.Message);
-
-            try
-            {
-                await _hubConnection.StartAsync();
-                _logger.LogInformation("SignalR reconnected after token refresh.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to reconnect SignalR after token refresh.");
-            }
+            _logger.LogWarning(error, "SignalR connection closed.");
+            return Task.CompletedTask;
         };
         
         _hubConnection.On("DescriptionUpdated", (DescriptionUpdatePayload payload) =>

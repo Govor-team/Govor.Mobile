@@ -33,6 +33,7 @@ public class ApiClient : IApiClient
     // -----------------------------
     private async Task<HttpResult<T>> SendAsync<T>(HttpRequestMessage request)
     {
+        using var requestLifetime = request;
         try
         {
             using var response = await _httpClient.SendAsync(request);
@@ -119,11 +120,11 @@ public class ApiClient : IApiClient
     public async Task<HttpResult<bool>> DeleteAsync(string endpoint, bool authenticated = true)
     {
         var request = CreateRequest(HttpMethod.Delete, endpoint, authenticated);
-        var result = await SendAsync<string>(request);
+        var result = await SendAsync<JsonElement>(request);
 
         return result.IsSuccess
             ? HttpResult<bool>.Success(true)
-            : new HttpResult<bool>(false, result.Value ?? "", result.StatusCode);
+            : new HttpResult<bool>(false, result.ErrorMessage ?? "", result.StatusCode);
     }
 
     // -----------------------------

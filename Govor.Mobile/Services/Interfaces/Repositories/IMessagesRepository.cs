@@ -12,12 +12,13 @@ public interface IMessagesRepository
     public event Action<MessageView>? OnMessageViewed;
     public event Action<Guid>? OnMessageDeleted;        
     
-    void Initialize(); 
+    void Initialize();
+    Task ImportLegacyChatsAsync(IEnumerable<Guid> authorizedChatIds);
     Task<List<MessageResponse>> GetMessagesLocalAsync(Guid chatId, int count = 50, bool group = false, Guid startMessage = default);
     Task SyncChatAsync(Guid chatId, bool group = false, int after = 50);
     Task<List<MessageResponse>> LoadHistoryAsync(Guid chatId, Guid? oldestMessageId, int before = 50, bool group = false);
     Task SendMessageAsync(MessageRequest request);
     Task<bool> ReadMessageAsync(Guid messageId);
     Task RemoveMessageAsync(Guid messageId, bool forceRemove = true);
-    Task EditMessageAsync(Guid messageId, string newText);
+    Task<bool> EditMessageAsync(Guid messageId, string newText);
 }

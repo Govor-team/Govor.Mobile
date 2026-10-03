@@ -10,5 +10,6 @@ public interface IFriendsListController : IDisposable
     public event Action<UserListItemViewModel>? FriendRemoved;
     public event Action<Guid, bool>? OnlineStatusChanged;
     Task InitializeAsync();
+    Task LoadLocalAsync();
     public IReadOnlyList<UserListItemViewModel> GetLoadedFriends();
 }

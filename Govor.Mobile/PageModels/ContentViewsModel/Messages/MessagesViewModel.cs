@@ -34,6 +34,7 @@ public partial class MessagesViewModel : ObservableObject
     private Guid id;
 
     public Guid SenderId { get; init; }
+    public DateTime SentAt { get; init; }
 
     [ObservableProperty]
     private string text = string.Empty;

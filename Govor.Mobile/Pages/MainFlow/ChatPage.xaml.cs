@@ -7,6 +7,8 @@ namespace Govor.Mobile.Pages.MainFlow;
 
 public partial class ChatPage : SmoothBackPage
 {
+    private bool _pageVisible;
+    private int _firstVisible = -1, _lastVisible = -1;
     private bool _isLoadingMore = false;
     private bool _hasMoreMessages = true;
 
@@ -18,14 +20,34 @@ public partial class ChatPage : SmoothBackPage
         InitializeComponent();
         LongPressMessageCommand = new Command<MessagesViewModel>(OnMessageLongPressed);
         BindingContext = model;
+        ChatHeader.SelectionModel = model;
         model.PropertyChanged += ModelOnPropertyChanged;
         UpdateSelectionModeUi(model.IsSelectionMode);
         
         CollectionView.Scrolled += CollectionView_Scrolled;
+        model.MessageGroups.CollectionChanged += (_, _) => Dispatcher.Dispatch(ReadVisibleMessages);
+        _readTimer = Dispatcher.CreateTimer();
+        _readTimer.Interval = TimeSpan.FromSeconds(3);
+        _readTimer.Tick += (_, _) => ReadVisibleMessages();
     }
 
+    private readonly IDispatcherTimer _readTimer;
+    private async void ReadVisibleMessages()
+    {
+        if (!_pageVisible || BindingContext is not ChatPageModel model) return;
+        try { await model.MarkVisibleMessagesReadAsync(_firstVisible, _lastVisible); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Read acknowledgement failed: {ex.Message}"); }
+    }
+    protected override void OnDisappearing()
+    {
+        _pageVisible = false;
+        _readTimer.Stop();
+        base.OnDisappearing();
+    }
     protected override void OnAppearing()
     {
+        _pageVisible = true;
+        _readTimer.Start();
         if (BindingContext is ChatPageModel bc)
         {
             if (!bc.IsLoaded)
@@ -48,6 +70,9 @@ public partial class ChatPage : SmoothBackPage
     
     private async void CollectionView_Scrolled(object sender, ItemsViewScrolledEventArgs e)
     {
+        _firstVisible = e.FirstVisibleItemIndex;
+        _lastVisible = e.LastVisibleItemIndex;
+        ReadVisibleMessages();
         // Показ/скрытие floating-кнопки "скролл вниз"
         try
         {
@@ -66,32 +91,11 @@ public partial class ChatPage : SmoothBackPage
             ScrollToEndButton.IsVisible = false;
         }
 
-        if (BindingContext is ChatPageModel model &&
-            CollectionView.ItemsSource is IEnumerable<MessagesGroupModel> source)
-        {
-            var groups = source.ToList();
-            if (groups.Count > 0)
-            {
-                var firstIndex = Math.Max(0, e.FirstVisibleItemIndex);
-                var lastIndex = Math.Min(groups.Count - 1, e.LastVisibleItemIndex);
-                if (firstIndex <= lastIndex)
-                {
-                    var visibleMessages = groups
-                        .Skip(firstIndex)
-                        .Take(lastIndex - firstIndex + 1)
-                        .SelectMany(group => group.Messages)
-                        .ToList();
-
-                    await model.MarkMessagesAsReadAsync(visibleMessages);
-                }
-            }
-        }
-
         if (_isLoadingMore || !_hasMoreMessages)
             return;
 
         // Когда доскроллил к верхней границе (первые 11 элемента)
-        if (e.FirstVisibleItemIndex <= 10)
+        if (e.FirstVisibleItemIndex >= 0 && e.FirstVisibleItemIndex <= 10)
         {
             _isLoadingMore = true;
 
@@ -185,8 +189,6 @@ public partial class ChatPage : SmoothBackPage
 
     private void UpdateSelectionModeUi(bool isSelectionMode)
     {
-        ChatHeader.IsVisible = !isSelectionMode;
-        SelectionToolbar.IsVisible = isSelectionMode;
         MessageInput.IsVisible = !isSelectionMode;
     }
 }

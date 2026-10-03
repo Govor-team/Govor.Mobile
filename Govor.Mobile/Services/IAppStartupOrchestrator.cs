@@ -2,5 +2,6 @@
 
 public interface IAppStartupOrchestrator
 {
+    Task InitializeLocalAsync();
     Task StartAsync();
 }

@@ -20,7 +20,7 @@ public class NetworkChecker : INetworkChecker
     {
         try
         {
-            var response = await _httpClient.GetAsync(_serverIpProvider.IP + "/server/ping");
+            using var response = await _httpClient.GetAsync(_serverIpProvider.IP + "/server/ping");
             return response.IsSuccessStatusCode;
         }
         catch(Exception ex)

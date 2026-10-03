@@ -16,6 +16,7 @@ public class MessageStore : IMessageStore
 
     private readonly MemoryCacheEntryOptions _options = new()
     {
+        Size = 1,
         SlidingExpiration = TimeSpan.FromMinutes(30),
         Priority = CacheItemPriority.High
     };

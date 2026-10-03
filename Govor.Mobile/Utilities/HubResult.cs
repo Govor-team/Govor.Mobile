@@ -1,8 +1,9 @@
-﻿namespace Govor.Mobile.Utilities;
+namespace Govor.Mobile.Utilities;
 
 public class HubResult<T>
 {
     public HubResultStatus Status { get; set; }
+    [System.Text.Json.Serialization.JsonPropertyName("result")]
     public T? Value { get; set; }
     public string? ErrorMessage { get; set; }
     

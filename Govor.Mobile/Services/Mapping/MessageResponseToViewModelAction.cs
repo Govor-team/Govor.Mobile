@@ -1,40 +1,31 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.Services.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Govor.Mobile.Services.Mapping;
 
-public class MessageResponseToViewModelAction : IMappingAction<MessageResponse, MessagesViewModel>
+public sealed class MessageResponseToViewModelAction(
+    IAvatartVMCreater avatarCreator, ILogger<MessageResponseToViewModelAction> logger)
+    : IMappingAction<MessageResponse, MessagesViewModel>
 {
-    private readonly IAvatartVMCreater _avatartCreator;
-    public MessageResponseToViewModelAction(IAvatartVMCreater avatartVmCreater) => _avatartCreator = avatartVmCreater;
-    
-    public async void Process(MessageResponse source, MessagesViewModel destination, ResolutionContext context)
+    public void Process(MessageResponse source, MessagesViewModel destination, ResolutionContext context)
     {
-        // Безопасное получение Items
-        var items = context.TryGetItems(out _);
-        
-        if (items && context.Items.TryGetValue("CurrentUserId", out var idObj) && idObj is Guid myId)
-        {
-            destination.IsIncoming = source.SenderId != myId;
-        }
-        else
-        {
-            // Фоллбек, если ID не был передан (например, при тестах)
-            destination.IsIncoming = true; 
-        }
-        
+        destination.IsIncoming = !(context.TryGetItems(out var items) &&
+            items.TryGetValue("CurrentUserId", out var id) && id is Guid currentId && source.SenderId == currentId);
         destination.Time = source.SentAt.ToLocalTime().ToString("HH:mm");
+        // AutoMapper callbacks are synchronous. Observe asynchronous avatar failures explicitly.
+        _ = LoadAvatarAsync(source.SenderId, destination);
+    }
 
-        await MainThread.InvokeOnMainThreadAsync(async () =>
-            destination.Avatar = await _avatartCreator.CreateAvatar(source.SenderId));
-            
-        if (source.MediaAttachments?.Any() == true)
+    private async Task LoadAvatarAsync(Guid senderId, MessagesViewModel destination)
+    {
+        try
         {
-            // Маппим вложения, используя тот же контекст
-            // var attachments = context.Mapper.Map<List<MediaAttachmentViewModel>>(source.MediaAttachments);
-            // destination.Attachments = new ObservableCollection<MediaAttachmentViewModel>(attachments);
+            var avatar = await avatarCreator.CreateAvatar(senderId);
+            await MainThread.InvokeOnMainThreadAsync(() => destination.Avatar = avatar);
         }
+        catch (Exception ex) { logger.LogWarning(ex, "Unable to load message avatar."); }
     }
 }

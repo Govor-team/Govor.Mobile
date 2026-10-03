@@ -43,13 +43,13 @@ public class ChatHeaderService : IChatHeaderService
             var profile = await _userProfileService.GetProfileAsync(id);
             
             var avatar = _provider.GetRequiredService<AvatarViewModel>();
-            await avatar.InitializeAsync(profile.Username, profile.IconId);
+            await avatar.InitializeAsync(profile?.Username ?? "Чат", profile?.IconId);
             
-            vm.Title = profile.Username;
+            vm.Title = profile?.Username ?? "Чат";
             
             vm.Avatar = avatar;
-            vm.IsOnline = profile.IsOnline;
-            vm.Subtitle = _formater.FormatIsOnline(profile.IsOnline);
+            vm.IsOnline = profile?.IsOnline ?? false;
+            vm.Subtitle = _formater.FormatIsOnline(vm.IsOnline);
         }
 
         // Default leave command - navigate back. Consumers can override if needed.

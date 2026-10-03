@@ -57,7 +57,6 @@ public class MessagesListController : IMessagesListController, IDisposable
         // 1. Подгружаем локальные данные
         var localMessages = await _repository.GetMessagesLocalAsync(chatId, group: isGroup);
 
-        MessageGroups.Clear();
         
         var viewModels = localMessages
             .OrderBy(x => x.SentAt)
@@ -75,6 +74,7 @@ public class MessagesListController : IMessagesListController, IDisposable
         {
             this.MessageGroups.Clear();
             this.MessageGroups.AddRange(groups);
+            RefreshDateSeparators();
         }));
 
         _initialized = true;
@@ -114,7 +114,8 @@ public class MessagesListController : IMessagesListController, IDisposable
                var lastLoaded = groups.Last();
 
                // If the last loaded group can join with existing first group, merge them
-               if (lastLoaded.IsIncoming == firstExisting.IsIncoming && lastLoaded.SenderId == firstExisting.SenderId)
+               if (lastLoaded.IsIncoming == firstExisting.IsIncoming && lastLoaded.SenderId == firstExisting.SenderId &&
+                   lastLoaded.LocalDate == firstExisting.LocalDate)
                {
                    // move existing first group's messages into lastLoaded
                    foreach (var m in firstExisting.Messages)
@@ -140,12 +141,14 @@ public class MessagesListController : IMessagesListController, IDisposable
                        this.MessageGroups.InsertRange(0, head);
 
                    this.MessageGroups.Insert(head.Count, lastLoaded);
+                   RefreshDateSeparators();
                    return;
                }
            }
 
            // default: just insert loaded groups at the beginning
            this.MessageGroups.InsertRange(0, (IEnumerable<MessagesGroupModel>)groups);
+           RefreshDateSeparators();
        }));
         
        return groups.ToList();
@@ -160,8 +163,16 @@ public class MessagesListController : IMessagesListController, IDisposable
             RecipientType = _isGroup ? RecipientType.Group : RecipientType.User
         };
         
-        await _repository.SendMessageAsync(request);
-        return Result<bool>.Success(true);
+        try
+        {
+            await _repository.SendMessageAsync(request);
+            return Result<bool>.Success(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Message send failed.");
+            return Result<bool>.Failure(ex.Message);
+        }
     }
 
     public async Task MarkAsReadAsync(Guid userId, IEnumerable<Guid> messageIds)
@@ -197,8 +208,12 @@ public class MessagesListController : IMessagesListController, IDisposable
 
     public async Task<Result<bool>> EditAsync(Guid messageId, string newText)
     {
-        await _repository.EditMessageAsync(messageId, newText);
-        return Result<bool>.Success(true);
+        var result = await _repository.EditMessageAsync(messageId, newText);
+
+        if(result)
+            return Result<bool>.Success(result);
+
+        return Result<bool>.Failure($"Failed to edit message {messageId}");
     }
 
     public async Task<Result<bool>> RemoveAsync(Guid messageId, bool forceRemove = true)
@@ -224,7 +239,8 @@ public class MessagesListController : IMessagesListController, IDisposable
 
             // Try append to last group if possible
             var lastGroup = this.MessageGroups.LastOrDefault();
-            if (lastGroup != null && lastGroup.IsIncoming == vm.IsIncoming && lastGroup.SenderId == vm.SenderId)
+            if (lastGroup != null && lastGroup.IsIncoming == vm.IsIncoming && lastGroup.SenderId == vm.SenderId &&
+                lastGroup.LocalDate == vm.SentAt.ToLocalTime().Date)
             {
                 lastGroup.Messages.Add(vm);
 
@@ -243,6 +259,7 @@ public class MessagesListController : IMessagesListController, IDisposable
             {
                 var newGroup = new MessagesGroupModel
                 {
+                    LocalDate = vm.SentAt.ToLocalTime().Date,
                     IsIncoming = vm.IsIncoming,
                     SenderId = vm.SenderId,
                     Avatar = vm.Avatar
@@ -255,6 +272,7 @@ public class MessagesListController : IMessagesListController, IDisposable
             }
 
             _messageIds.Add(vm.Id);
+            RefreshDateSeparators();
         }));
     }
     
@@ -322,6 +340,7 @@ public class MessagesListController : IMessagesListController, IDisposable
                     }
 
                     _logger.LogInformation("Event: End - message removed: {0}", id);
+                    RefreshDateSeparators();
                     return;
                 }
             }
@@ -387,7 +406,8 @@ public class MessagesListController : IMessagesListController, IDisposable
         bool canJoin =
             lastGroup != null &&
             lastGroup.IsIncoming == message.IsIncoming &&
-            lastGroup.SenderId == message.SenderId;
+            lastGroup.SenderId == message.SenderId &&
+            lastGroup.LocalDate == message.SentAt.ToLocalTime().Date;
             
 
         if (canJoin)
@@ -398,6 +418,7 @@ public class MessagesListController : IMessagesListController, IDisposable
 
         var group = new MessagesGroupModel
         {
+            LocalDate = message.SentAt.ToLocalTime().Date,
             IsIncoming = message.IsIncoming,
             Avatar = message.Avatar,
             SenderId = message.SenderId,
@@ -406,6 +427,16 @@ public class MessagesListController : IMessagesListController, IDisposable
         group.Messages.Add(message);
 
         return group;
+    }
+
+    private void RefreshDateSeparators()
+    {
+        DateTime? previousDate = null;
+        foreach (var group in MessageGroups)
+        {
+            group.ShowsDateSeparator = group.LocalDate != previousDate;
+            previousDate = group.LocalDate;
+        }
     }
 
     public void Dispose()

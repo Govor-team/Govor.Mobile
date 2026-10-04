@@ -24,9 +24,6 @@ namespace Govor.Mobile
             Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
             Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
             
-            Window.SetFlags(Android.Views.WindowManagerFlags.LayoutNoLimits,
-                Android.Views.WindowManagerFlags.LayoutNoLimits);
-
             Window.SetFlags(Android.Views.WindowManagerFlags.HardwareAccelerated,
                 Android.Views.WindowManagerFlags.HardwareAccelerated);
             

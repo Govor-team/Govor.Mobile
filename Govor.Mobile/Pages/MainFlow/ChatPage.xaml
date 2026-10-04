@@ -18,19 +18,24 @@
              SafeAreaEdges="None"
              Padding="{OnPlatform iOS='0,0,0,0', Android='0'}">
 
-    <Grid RowDefinitions="Auto,*,Auto" SafeAreaEdges="None" RowSpacing="0">
+    <!-- One viewport owns system/keyboard insets. Nested controls must not add them again. -->
+    <Grid RowDefinitions="Auto,*,Auto"
+          SafeAreaEdges="{OnPlatform Android=None, Default=All}" RowSpacing="0">
+        <Grid.Behaviors>
+            <behaviors:ChatViewportBehavior />
+        </Grid.Behaviors>
 
         <!-- HEADER -->
         <contentViews:ChatHeaderView
             x:Name="ChatHeader"
-            SafeAreaEdges="All"
+            SafeAreaEdges="None"
             Grid.Row="0"
             BindingContext="{Binding Header}"
             Margin="4,4,4,6"
             />
 
         <!-- CONTENT -->
-        <Grid Grid.Row="1" Margin="0,-8,0,-11"  Padding="4,0" SafeAreaEdges="None" HorizontalOptions="Fill">
+        <Grid Grid.Row="1" Margin="0,-8,0,0" Padding="4,0" SafeAreaEdges="None" HorizontalOptions="Fill">
                 <!-- MESSAGES -->
                 <CollectionView
                     x:Name="CollectionView"
@@ -236,11 +241,12 @@
         <!-- INPUT -->
         <Grid Grid.Row="2"
               x:Name="MessageInput"
-              SafeAreaEdges="SoftInput"
-              Margin="12,6,12,12"
+              SafeAreaEdges="None"
+              Margin="12,6,12,8"
               InputTransparent="False"
               >
                 <Border
+                    SafeAreaEdges="None"
                     Background="#661B172E"
                     Stroke="#55E6D8FF"
                     StrokeThickness="1"
@@ -250,7 +256,7 @@
                         <Shadow Brush="#90000000" Offset="0,4" Radius="12" Opacity="0.35" />
                     </Border.Shadow>
 
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" SafeAreaEdges="None">
 
                     <Editor
                         x:Name="MessageEditor"
@@ -266,6 +272,7 @@
 
                     <!-- Кнопки -->
                     <HorizontalStackLayout
+                        SafeAreaEdges="None"
                         Grid.Column="1"
                         Spacing="4"
                         VerticalOptions="End">

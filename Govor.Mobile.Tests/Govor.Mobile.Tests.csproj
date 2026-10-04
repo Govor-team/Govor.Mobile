@@ -79,6 +79,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="../Govor.Mobile/Utilities/ChatViewportGeometry.cs" Link="Production/ChatViewportGeometry.cs"/>
         <Using Include="NUnit.Framework"/>
         <Using Include="Govor.Mobile.Utilities"/>
     </ItemGroup>

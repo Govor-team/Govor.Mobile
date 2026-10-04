@@ -6,15 +6,18 @@
              xmlns:mainModels="clr-namespace:Govor.Mobile.PageModels.MainFlow"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" xmlns:sho="http://sharpnado.com"
              x:Class="Govor.Mobile.Pages.ContentViews.ChatHeaderView"
+             SafeAreaEdges="None"
              x:DataType="contentViewsModel:ChatHeaderViewModel">
 
     <Border
+        SafeAreaEdges="None"
         Background="#11ffffff"
         StrokeShape="RoundRectangle 24"
         StrokeThickness="1"
         Stroke="#11ffffff"
         Padding="0,0">
         <sho:MaterialFrame
+             SafeAreaEdges="None"
              MaterialTheme="AcrylicBlur"
              MaterialBlurStyle="Dark"
              AndroidBlurRadius="10"
@@ -22,7 +25,7 @@
              CornerRadius="24"
              Padding="8,4"
              Elevation="2">
-        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" SafeAreaEdges="None">
             <ImageButton
                 x:Name="BackButton"
                 Grid.Column="0"
@@ -35,8 +38,8 @@
                 CornerRadius="19"
                 Command="{Binding GoBackCommand}" />
 
-            <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                <Grid Grid.Column="0" WidthRequest="48" HeightRequest="48">
+            <Grid Grid.Column="1" ColumnDefinitions="Auto,*" ColumnSpacing="10" SafeAreaEdges="None">
+                <Grid Grid.Column="0" WidthRequest="48" HeightRequest="48" SafeAreaEdges="None">
                         <toolkit:AvatarView
                             HeightRequest="46"
                             WidthRequest="46"
@@ -69,6 +72,7 @@
                 </Grid>
 
                 <VerticalStackLayout
+                    SafeAreaEdges="None"
                     Grid.Column="1"
                     VerticalOptions="Center"
                     Spacing="1">
@@ -93,7 +97,7 @@
                 </VerticalStackLayout>
             </Grid>
 
-            <HorizontalStackLayout x:Name="ProfileActions" Grid.Column="2" Spacing="2" VerticalOptions="Center">
+            <HorizontalStackLayout x:Name="ProfileActions" Grid.Column="2" Spacing="2" VerticalOptions="Center" SafeAreaEdges="None">
                 <ImageButton
                     Source="call_icon.png"
                     WidthRequest="36"
@@ -113,7 +117,7 @@
                     Command="{Binding OpenMenuCommand}" />
             </HorizontalStackLayout>
             <HorizontalStackLayout x:Name="SelectionActions" x:DataType="mainModels:ChatPageModel"
-                                   Grid.Column="2" Spacing="0" VerticalOptions="Center" IsVisible="False">
+                                   Grid.Column="2" Spacing="0" VerticalOptions="Center" IsVisible="False" SafeAreaEdges="None">
                 <ImageButton Source="edit.png" WidthRequest="32" HeightRequest="38" Padding="7"
                              BackgroundColor="Transparent" IsVisible="{Binding CanEditMessage}"
                              Command="{Binding EditMessageCommand}" SemanticProperties.Description="Редактировать" />

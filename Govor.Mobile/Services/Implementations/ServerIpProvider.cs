@@ -5,7 +5,7 @@ namespace Govor.Mobile.Services.Implementations;
 internal class ServerIpProvider : IServerIpProvider
 {
 #if RELEASE
-    public string IP => "http://10.8.0.5:5000";//"https://govor-team-govor-870e.twc1.net";
+    public string IP => "https://stalcker2288969-govor-7640.twc1.net";//"https://govor-team-govor-870e.twc1.net";
 #elif DEBUG
     public string IP => "http://10.0.2.2:7155"; //"http://10.8.0.5:5000";
 #endif

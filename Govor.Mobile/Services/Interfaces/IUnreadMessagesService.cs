@@ -5,5 +5,6 @@ public interface IUnreadMessagesService
     event Action<Guid, bool, int>? UnreadCountChanged;
 
     Task<int> InitializeAsync(Guid chatId, bool isGroup = false);
+    Task<int> GetCachedCountAsync(Guid chatId, bool isGroup = false);
     Task<bool> MarkAsReadAsync(Guid chatId, Guid messageId, bool isGroup = false);
 }

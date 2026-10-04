@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Govor.Mobile.PageModels.ContentViewsModel.Messages;
 
@@ -33,7 +33,15 @@ public partial class MessagesViewModel : ObservableObject
     [ObservableProperty]
     private Guid id;
 
+    public System.Collections.ObjectModel.ObservableCollection<ReactionChip> ReactionChips { get; } = new();
+
     public Guid SenderId { get; init; }
+    public bool IsOwnMessage { get; set; }
+    public bool IsGroupChat { get; set; }
+    public bool IsChannel { get; set; }
+    public bool ShowSenderName => Govor.Mobile.Models.Groups.MessagePresentation.Resolve(
+        IsGroupChat, IsChannel, IsOwnMessage).ShowAuthors && IsIncoming &&
+        GroupPosition is MessageGroupPosition.First or MessageGroupPosition.Single;
     public DateTime SentAt { get; init; }
 
     [ObservableProperty]
@@ -57,18 +65,21 @@ public partial class MessagesViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BubbleBackground))]
     [NotifyPropertyChangedFor(nameof(BubbleAlignment))]
+    [NotifyPropertyChangedFor(nameof(ReactionJustification))]
     [NotifyPropertyChangedFor(nameof(ShowAvatar))]
+    [NotifyPropertyChangedFor(nameof(ShowSenderName))]
     [NotifyPropertyChangedFor(nameof(TextColor))]
     private bool isIncoming;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(BubbleMargin))]
     [NotifyPropertyChangedFor(nameof(ShowAvatar))]
+    [NotifyPropertyChangedFor(nameof(ShowSenderName))]
     [NotifyPropertyChangedFor(nameof(BubbleCorners))]
     private MessageGroupPosition groupPosition;
 
     public bool ShowAvatar =>
-        IsIncoming &&
+        !IsChannel && IsIncoming &&
         (GroupPosition == MessageGroupPosition.Last ||
          GroupPosition == MessageGroupPosition.Single);
 
@@ -76,6 +87,9 @@ public partial class MessagesViewModel : ObservableObject
         GroupPosition == MessageGroupPosition.Middle
             ? new Thickness(0, 2)
             : new Thickness(0, 6);
+
+    public Microsoft.Maui.Layouts.FlexJustify ReactionJustification =>
+        IsIncoming ? Microsoft.Maui.Layouts.FlexJustify.Start : Microsoft.Maui.Layouts.FlexJustify.End;
 
     public bool HasAttachments => false;
 

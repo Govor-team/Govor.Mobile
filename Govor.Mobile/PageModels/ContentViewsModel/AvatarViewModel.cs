@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Govor.Mobile.Pages.ContentViews;
 using Govor.Mobile.Services.Interfaces;
@@ -11,6 +11,8 @@ public partial class AvatarViewModel : ObservableObject
 {
     private readonly ICurrentUserAvatarService _profileService;
     private readonly IDefaultAvatarGenerator _avatarGenerator;
+
+    [ObservableProperty] private string displayName = "";
 
     [ObservableProperty]
     private ImageSource? avatarImage;
@@ -35,6 +37,7 @@ public partial class AvatarViewModel : ObservableObject
 
     public async Task InitializeAsync(string? userName, Guid? iconId)
     {
+        DisplayName = userName ?? "";
         ApplyDefaultAvatar(userName);
         
         if (iconId.HasValue && iconId.Value != Guid.Empty)

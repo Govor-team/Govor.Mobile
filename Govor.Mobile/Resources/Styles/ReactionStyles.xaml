@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+                    xmlns:glass="http://sharpnado.com">
+    <Style x:Key="ReactionGlassBorder" TargetType="Border">
+        <Setter Property="Background" Value="#10FFFFFF" />
+        <Setter Property="Stroke" Value="#24FFFFFF" />
+        <Setter Property="StrokeThickness" Value="1" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 22" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style x:Key="ReactionGlassFrame" TargetType="glass:MaterialFrame">
+        <Setter Property="MaterialTheme" Value="AcrylicBlur" />
+        <Setter Property="MaterialBlurStyle" Value="Dark" />
+        <Setter Property="AndroidBlurRadius" Value="15" />
+        <Setter Property="WinUIHostBackdropBlur" Value="True" />
+        <Setter Property="CornerRadius" Value="22" />
+        <Setter Property="Elevation" Value="0" />
+        <Setter Property="Padding" Value="14" />
+    </Style>
+    <Style x:Key="ReactionActionButton" TargetType="Button">
+        <Setter Property="BackgroundColor" Value="Transparent" />
+        <Setter Property="TextColor" Value="#F5EFFF" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="MinimumHeightRequest" Value="44" />
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="BorderColor" Value="#20FFFFFF" />
+        <Setter Property="BorderWidth" Value="1" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters><Setter Property="BackgroundColor" Value="#385F4BB7" /></VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters><Setter Property="Opacity" Value="0.5" /></VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+    <Style x:Key="ReactionCaption" TargetType="Label">
+        <Setter Property="TextColor" Value="#D5CFDF" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+</ResourceDictionary>

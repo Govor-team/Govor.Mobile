@@ -1,4 +1,5 @@
 using Govor.Mobile.Models.Requests;
+using Govor.Mobile.Models.Reactions;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.JwtServices;
@@ -35,6 +36,18 @@ public class ChatHub : IChatHub
             return Task.CompletedTask;
         };
 
+        _hubConnection.On<MessageReactionsChangedResponse>("MessageReactionsChanged", dto => ReactionsChanged?.Invoke(dto));
+        _hubConnection.On<ChannelReactionPolicy>("ChannelReactionPolicyChanged", dto => ReactionPolicyChanged?.Invoke(dto));
+        _hubConnection.On<Govor.Mobile.Models.Groups.GroupProfileChangedResponse>("GroupProfileChanged", dto =>
+        {
+            _logger.LogInformation("Group profile changed: {GroupId}", dto.GroupId);
+            GroupProfileChanged?.Invoke(dto);
+        });
+        _hubConnection.On<Govor.Mobile.Models.Groups.GroupMemberChangedResponse>("GroupMemberChanged", dto =>
+        {
+            _logger.LogInformation("Group membership changed: {GroupId}, status {Status}", dto.GroupId, dto.Status);
+            GroupMemberChanged?.Invoke(dto);
+        });
         #region Events
 
         _hubConnection.On("ReceiveMessage", (UserMessageResponse dto) =>
@@ -73,6 +86,7 @@ public class ChatHub : IChatHub
             if (dto.MessageId != Guid.Empty && dto.ReaderId != Guid.Empty && dto.ViewId != Guid.Empty)
                 MessageRead?.Invoke(dto);
         });
+        _hubConnection.On<ChatReadResponse>("ChatRead", dto => ChatRead?.Invoke(dto));
 
         _hubConnection.Reconnecting += error =>
         {
@@ -82,6 +96,7 @@ public class ChatHub : IChatHub
 
         _hubConnection.Reconnected += id =>
         {
+            Reconnected?.Invoke();
             Console.WriteLine("Connection restored");
             return Task.CompletedTask;
         };
@@ -90,6 +105,7 @@ public class ChatHub : IChatHub
 
     public event Action<UserMessageResponse>? MessageSent;
     public event Action<MessageReadResponse>? MessageRead;
+    public event Action<ChatReadResponse>? ChatRead;
     public event Action<UserMessageResponse>? ReceiveMessage;
     public event Action<MessageRemovedResponse>? MessageRemoved;
     public event Action<MessageEditResponse>? MessageEdited;
@@ -146,6 +162,16 @@ public class ChatHub : IChatHub
         }
     }
     
+    public event Action<MessageReactionsChangedResponse>? ReactionsChanged;
+    public event Action<ChannelReactionPolicy>? ReactionPolicyChanged;
+    public event Action<Govor.Mobile.Models.Groups.GroupProfileChangedResponse>? GroupProfileChanged;
+    public event Action<Govor.Mobile.Models.Groups.GroupMemberChangedResponse>? GroupMemberChanged;
+    public event Action? Reconnected;
+    public Task<HubResult<MessageReactionsChangedResponse>> React(Guid messageId, Guid reactionId) =>
+        _hubConnection.InvokeAsync<HubResult<MessageReactionsChangedResponse>>("React", messageId, new { reactionId });
+    public Task<HubResult<MessageReactionsChangedResponse>> RemoveReaction(Guid messageId) =>
+        _hubConnection.InvokeAsync<HubResult<MessageReactionsChangedResponse>>("RemoveReaction", messageId);
+
     public async Task ConnectAsync()
     {
         if (_hubConnection.State == HubConnectionState.Disconnected)

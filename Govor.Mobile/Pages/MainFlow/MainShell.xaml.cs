@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.Services.Api;
+using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Hubs;
 
 namespace Govor.Mobile.Pages.MainFlow;
@@ -16,5 +16,9 @@ public partial class MainShell : Shell
 
         Routing.RegisterRoute(nameof(SettingsPage), typeof(SettingsPage));
         Routing.RegisterRoute("chat", typeof(ChatPage));
+        Routing.RegisterRoute("memberChat", typeof(ChatPage));
+        Routing.RegisterRoute(nameof(ReactionPacksPage), typeof(ReactionPacksPage));
+        Routing.RegisterRoute(nameof(GroupsExplorePage), typeof(GroupsExplorePage));
+        Routing.RegisterRoute(nameof(GroupProfilePage), typeof(GroupProfilePage));
     }
 }

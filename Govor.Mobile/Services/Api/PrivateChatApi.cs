@@ -1,31 +1,35 @@
-﻿using Govor.Mobile.Models.DTO;
+using Govor.Mobile.Models.DTO;
+using Govor.Mobile.Utilities;
 using Govor.Mobile.Services.Api.Base;
-using Markdig.Extensions.TaskLists;
+using Govor.Mobile.Services.Interfaces.JwtServices;
 
 namespace Govor.Mobile.Services.Api;
 
 public class PrivateChatApi : IPrivateChatApi
 {
     private readonly IApiClient _apiClient;
-    private readonly Dictionary<Guid, Guid> _privateChats = new();
+    private readonly Dictionary<(Guid Account, Guid Friend), Guid> _privateChats = new();
+    private readonly IJwtProviderService _session;
 
-    public PrivateChatApi(IApiClient apiClient)
+    public PrivateChatApi(IApiClient apiClient, IJwtProviderService session)
     {
-        _apiClient = apiClient;
+        _apiClient = apiClient; _session = session;
     }
 
     public async Task<Result<Guid>> GetChatByFriendId(Guid friendId)
     {
-        if (_privateChats.ContainsKey(friendId))
-            return Result<Guid>.Success(_privateChats[friendId]);
+        if (_session.CurrentUserId is not Guid account) return Result<Guid>.Failure("Нет активной сессии.");
+        var key = (account, friendId);
+        if (_privateChats.TryGetValue(key, out var cached)) return Result<Guid>.Success(cached);
         
         var path = $"/api/user/{friendId}/private-chat";
         var result = await _apiClient.GetAsync<Guid>(path, authenticated: true);
 
+        if (_session.CurrentUserId != account) return Result<Guid>.Failure("Аккаунт изменился. Откройте чат заново.");
         if (result.IsSuccess)
         {
-            _privateChats[friendId] = result.Value;
-            return Result<Guid>.Success(_privateChats[friendId]);
+            _privateChats[key] = result.Value;
+            return Result<Guid>.Success(_privateChats[key]);
         }
         else
         {

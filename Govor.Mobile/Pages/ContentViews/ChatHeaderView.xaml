@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:Govor.Mobile.Pages.ContentViews"
@@ -102,15 +102,6 @@
                     BackgroundColor="Transparent"
                     IsVisible="{Binding IsGroup, Converter={StaticResource BoolInvertor}}"
                     Command="{Binding CallCommand}" />
-                <Button
-                    Text="Выйти"
-                    FontSize="11"
-                    Padding="8,0"
-                    HeightRequest="32"
-                    BackgroundColor="#351B172E"
-                    TextColor="#F1E8FF"
-                    IsVisible="{Binding IsGroup}"
-                    Command="{Binding LeaveCommand}" />
                 <Button
                     Text="⋯"
                     FontSize="24"

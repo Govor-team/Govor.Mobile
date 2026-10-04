@@ -349,6 +349,21 @@
                     </CollectionView>
                 </VerticalStackLayout>
                 
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <sharp:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="14,8">
+                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" MinimumHeightRequest="44">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnReactionPacksClicked" />
+                            </Grid.GestureRecognizers>
+                            <Label Text="☺" TextColor="#E4D7FF" FontSize="28" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="Паки реакций" TextColor="White" FontSize="16" FontAttributes="Bold" />
+                                <Label Text="Эмодзи для ваших сообщений" Style="{StaticResource ReactionCaption}" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="2" Text="›" TextColor="#CDC3E0" FontSize="28" VerticalOptions="Center" />
+                        </Grid>
+                    </sharp:MaterialFrame>
+                </Border>
                 <Label VerticalOptions="End"
                        HorizontalOptions="Center"
                        HorizontalTextAlignment="Center"

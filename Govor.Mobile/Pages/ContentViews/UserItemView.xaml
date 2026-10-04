@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
@@ -65,21 +65,21 @@
                 </Grid>
 
                 <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                    <HorizontalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                         <Label Text="{Binding Title}"
                                FontSize="17"
                                FontAttributes="Bold"
                                FontFamily="CirilicOld"
                                TextColor="White"
-                               LineBreakMode="TailTruncation"/>
+                               LineBreakMode="TailTruncation" MaxLines="1"/>
 
-                        <contentViews:TagView BindingContext="{Binding Tag}" Margin="4,0,0,0"/>
-                    </HorizontalStackLayout>
+                        <contentViews:TagView Grid.Column="1" BindingContext="{Binding Tag}" Margin="4,0,0,0"/>
+                    </Grid>
 
                     <Label Text="{Binding Subtitle}"
                            FontSize="12"
                            TextColor="#B0FFFFFF"
-                           LineBreakMode="TailTruncation"/>
+                           LineBreakMode="TailTruncation" MaxLines="1"/>
                 </VerticalStackLayout>
 
                 <VerticalStackLayout Grid.Column="2"

@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.Services.Interfaces;
+using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Models.Responses;
 using Microsoft.Extensions.Logging;
 using System.Text;
@@ -138,6 +138,9 @@ public class ApiClient : IApiClient
         var request = CreateRequest(HttpMethod.Post, endpoint, authenticated, form);
         return SendAsync<UploadMediaResponse>(request);
     }
+
+    public Task<HttpResult<T>> PostMultipartAsync<T>(string endpoint, MultipartFormDataContent form, bool authenticated = true)
+        => SendAsync<T>(CreateRequest(HttpMethod.Post, endpoint, authenticated, form));
 
     // -----------------------------
     // STREAM DOWNLOAD

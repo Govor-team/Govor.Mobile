@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -27,6 +27,22 @@
         <Compile Include="../Govor.Mobile/Services/Api/Base/AuthHeaderHandler.cs" Link="Production/AuthHeaderHandler.cs"/>
         <Compile Include="../Govor.Mobile/Services/Api/Base/HttpRequestOptionsKeys.cs" Link="Production/HttpRequestOptionsKeys.cs"/>
         <Compile Include="../Govor.Mobile/Models/Responses/RefreshResponse.cs" Link="Production/RefreshResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Reactions/ReactionModels.cs" Link="Production/ReactionModels.cs"/>
+        <Compile Include="../Govor.Mobile/Utilities/CoalescingRefresh.cs" Link="Production/CoalescingRefresh.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Groups/MessagePresentation.cs" Link="Production/MessagePresentation.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Groups/MemberContactState.cs" Link="Production/MemberContactState.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Groups/GroupChanges.cs" Link="Production/GroupChanges.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Groups/GroupModels.cs" Link="Production/GroupModels.cs"/>
+        <Compile Include="../Govor.Mobile/Utilities/GroupInviteParser.cs" Link="Production/GroupInviteParser.cs"/>
+        <Compile Include="../Govor.Mobile/Utilities/HttpResult.cs" Link="Production/HttpResult.cs"/>
+        <Compile Include="../Govor.Mobile/Utilities/FileResult.cs" Link="Production/FileResult.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/UploadMediaResponse.cs" Link="Production/UploadMediaResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Api/Base/IApiClient.cs" Link="Production/IApiClient.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Api/GroupsApiService.cs" Link="Production/GroupsApiService.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Api/PrivateChatApi.cs" Link="Production/PrivateChatApi.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Api/IPrivateChatApi.cs" Link="Production/IPrivateChatApi.cs"/>
+        <Compile Include="../Govor.Mobile/Models/DTO/PrivateChatDto.cs" Link="Production/PrivateChatDto.cs"/>
+        <Compile Include="../Govor.Mobile/Utilities/Result.cs" Link="Production/Result.cs"/>
         <Compile Include="../Govor.Mobile/Utilities/HubResult.cs" Link="Production/HubResult.cs"/>
         <Compile Include="../Govor.Mobile/Utilities/ChatDateFormatter.cs" Link="Production/ChatDateFormatter.cs"/>
         <Compile Include="../Govor.Mobile/Data/AccountDbContextFactory.cs" Link="Production/AccountDbContextFactory.cs"/>
@@ -45,7 +61,26 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="../Govor.Mobile/Services/Implementations/UnreadMessagesService.cs" Link="Production/UnreadMessagesService.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Interfaces/IUnreadMessagesService.cs" Link="Production/IUnreadMessagesService.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Interfaces/Repositories/IMessagesRepository.cs" Link="Production/IMessagesRepository.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Hubs/IChatHub.cs" Link="Production/IChatHub.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Hubs/IHubClient.cs" Link="Production/IHubClient.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/ChatReadResponse.cs" Link="Production/ChatReadResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/UserMessageResponse.cs" Link="Production/UserMessageResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/MessageReadResponse.cs" Link="Production/MessageReadResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/MessageRemovedResponse.cs" Link="Production/MessageRemovedResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Responses/MessageEditResponse.cs" Link="Production/MessageEditResponse.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Requests/MessageRequest.cs" Link="Production/MessageRequest.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Requests/RemoveMessageRequest.cs" Link="Production/RemoveMessageRequest.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Requests/ReadMessageRequest.cs" Link="Production/ReadMessageRequest.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Requests/EditMessageRequest.cs" Link="Production/EditMessageRequest.cs"/>
+        <Compile Include="../Govor.Mobile/Models/MediaReference.cs" Link="Production/MediaReference.cs"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <Using Include="NUnit.Framework"/>
+        <Using Include="Govor.Mobile.Utilities"/>
     </ItemGroup>
 
 </Project>

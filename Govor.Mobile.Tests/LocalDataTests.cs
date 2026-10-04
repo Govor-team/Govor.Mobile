@@ -83,5 +83,29 @@ public class LocalDataTests
         session.CurrentUserId = firstUser;
         Assert.That(await restarted.ReadAsync<string[]>("profile"), Is.EqualTo(new[] { "Артемий" }));
     }
+    [Test]
+    public async Task InstalledReactionPacksAndSnapshotsSurviveRestartPerAccount()
+    {
+        var session = new Session();
+        var account = session.CurrentUserId;
+        var cache = new LocalAccountCache(session, NullLogger<LocalAccountCache>.Instance);
+        var packId = Guid.NewGuid();
+        var messageId = Guid.NewGuid();
+        await cache.WriteAsync("reaction-packs", new Govor.Mobile.Models.Reactions.ReactionPackCache
+        {
+            UpdatedAt = DateTime.UtcNow,
+            Packs = new() { new() { Id = packId, Name = "Cats", IsEnabled = true,
+                Reactions = new() { new() { Id = Guid.NewGuid(), Emoji = "😺", Kind = 0, IsEnabled = true } } } }
+        });
+        await cache.WriteAsync($"reaction-{messageId:N}", new Govor.Mobile.Models.Reactions.MessageReactionState
+            { MessageId = messageId, Version = 9, OwnVersion = 9, OwnReactionId = packId });
+        var restarted = new LocalAccountCache(session, NullLogger<LocalAccountCache>.Instance);
+        Assert.That((await restarted.ReadAsync<Govor.Mobile.Models.Reactions.ReactionPackCache>("reaction-packs"))!.Packs.Single().Id, Is.EqualTo(packId));
+        Assert.That((await restarted.ReadAsync<Govor.Mobile.Models.Reactions.MessageReactionState>($"reaction-{messageId:N}"))!.Version, Is.EqualTo(9));
+        session.CurrentUserId = Guid.NewGuid();
+        Assert.That(await restarted.ReadAsync<Govor.Mobile.Models.Reactions.ReactionPackCache>("reaction-packs"), Is.Null);
+        session.CurrentUserId = account;
+        Assert.That((await restarted.ReadAsync<Govor.Mobile.Models.Reactions.ReactionPackCache>("reaction-packs"))!.Packs.Single().Reactions.Single().Emoji, Is.EqualTo("😺"));
+    }
 }
 

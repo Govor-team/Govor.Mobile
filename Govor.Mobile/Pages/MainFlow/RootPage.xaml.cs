@@ -9,4 +9,10 @@ public partial class RootPage : ContentPage
 		InitializeComponent();
 		BindingContext = viewModel;
     }
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        if (BindingContext is RootPageViewModel model)
+            await model.HomePageViewModel.Groups.RefreshAsync();
+    }
 }

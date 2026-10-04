@@ -16,32 +16,79 @@ namespace Govor.Mobile.PageModels.MainFlow;
 public partial class ChatPageModel : ObservableObject, IInitializableViewModel, IDisposable
 {
     private readonly IMessagesListController _controller;
-    private readonly IChatHeaderService _headerService; 
+    private readonly IChatHeaderService _headerService;
     private readonly IFriendsRealtimeService _realtime;
     private readonly IWasOnlineFormater _wasOnlineFormater;
     private readonly IUserProfileService _profileService;
     private readonly IPrivateChatApi _privateChatApi;
+    private readonly Govor.Mobile.Services.Api.GroupsApiService _groups;
+    private readonly IServerIpProvider _server;
+    private readonly Govor.Mobile.Services.Implementations.GroupRealtimeService _groupUpdates;
+    private readonly Govor.Mobile.Services.Implementations.GroupMediaService _groupMedia;
+    private IDisposable? _groupSubscription;
+    private bool _visible;
+    public event Action? GroupAccessLost;
+
+    public void StartGroupUpdates()
+    {
+        _visible = true;
+        _groupSubscription?.Dispose();
+        if (IsGroup) _groupSubscription = _groupUpdates.Subscribe(ChatId, RefreshLiveGroupAsync);
+    }
+    public void StopGroupUpdates()
+    { _visible = false; _groupSubscription?.Dispose(); _groupSubscription = null; }
+
+    private async Task RefreshLiveGroupAsync(bool reconnect)
+    {
+        await _initializationLock.WaitAsync();
+        try
+        {
+            if (!_visible) return;
+            await RefreshGroupAccessAsync();
+            if (reconnect && IsLoaded) await _controller.SyncAsync();
+        }
+        catch (Govor.Mobile.Services.Api.GroupApiException ex) when
+            (ex.Status is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.NotFound)
+        {
+            if (_visible) GroupAccessLost?.Invoke();
+        }
+        finally { _initializationLock.Release(); }
+    }
+    public Govor.Mobile.Models.Groups.GroupProfile? GroupProfile { get; private set; }
+    public bool CanModerateGroup => Govor.Mobile.Models.Groups.GroupPermissions.CanModerate(GroupProfile);
 
     private string _chatIdString;
     public string ChatIdString
     {
         get => _chatIdString;
-        set 
+        set
         {
             _chatIdString = value;
             if (Guid.TryParse(value, out var guid))
             {
-                ChatId = guid; 
+                ChatId = guid;
             }
         }
     }
-    
+
     [ObservableProperty] private Guid chatId;
     [ObservableProperty] private bool isGroup;
-    
+
+    partial void OnChatIdChanged(Guid value) => ResetChatContext();
+    partial void OnIsGroupChanged(bool value) => ResetChatContext();
+    private void ResetChatContext()
+    {
+        IsLoaded = false;
+        GroupProfile = null;
+        Header = null!;
+        MessageGroups.Clear();
+        ClearSelection(); CancelMessageEditing();
+        StopGroupUpdates();
+    }
+
     [ObservableProperty] private string messageText;
     [ObservableProperty] private bool canWrite = true;
-    
+
     [ObservableProperty] private bool isLoadingMore;
     [ObservableProperty] private bool hasMoreMessages = true;
 
@@ -58,20 +105,24 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     public int SelectedMessageCount => SelectedMessages.Count;
     public bool CanCopyMessages => SelectedMessages.Count > 0;
     public bool CanForwardMessages => SelectedMessages.Count > 0;
-    public bool CanDeleteMessages => SelectedMessages.Count > 0;
-    public bool CanEditMessage => SelectedMessages.Count == 1 && !SelectedMessages[0].IsIncoming;
+    public bool CanDeleteMessages => SelectedMessages.Count > 0 && (!IsGroup || CanModerateGroup || SelectedMessages.All(m => m.IsOwnMessage));
+    public bool CanEditMessage => CanWrite && SelectedMessages.Count == 1 && SelectedMessages[0].IsOwnMessage;
 
     public ObservableRangeCollection<MessagesGroupModel> MessageGroups => _controller.MessageGroups;
     [ObservableProperty] private ChatHeaderViewModel header;
 
     public ChatPageModel(
-        IMessagesListController controller, 
+        IMessagesListController controller,
         IWasOnlineFormater wasOnlineFormater,
-        IFriendsRealtimeService realtime, 
+        IFriendsRealtimeService realtime,
         IUserProfileService profileService,
         IPrivateChatApi privateChatApi,
-        IChatHeaderService headerService)
+        IChatHeaderService headerService,
+        Govor.Mobile.Services.Api.GroupsApiService groups, IServerIpProvider server,
+        Govor.Mobile.Services.Implementations.GroupRealtimeService groupUpdates,
+        Govor.Mobile.Services.Implementations.GroupMediaService groupMedia)
     {
+        _groups = groups; _server = server; _groupUpdates = groupUpdates; _groupMedia = groupMedia;
         _controller = controller;
         _headerService = headerService;
         _realtime = realtime;
@@ -89,9 +140,9 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     private Guid _currentUserId;
     public Task MarkVisibleMessagesReadAsync(int first, int last)
     {
-        if (!IsLoaded || IsGroup || first < 0 || last < first) return Task.CompletedTask;
+        if (!IsLoaded || first < 0 || last < first) return Task.CompletedTask;
         var ids = MessageGroups.Skip(first).Take(last - first + 1)
-            .SelectMany(g => g.Messages).Where(m => m.IsIncoming).Select(m => m.Id).ToArray();
+            .SelectMany(g => g.Messages).Where(m => !m.IsOwnMessage).Select(m => m.Id).ToArray();
         return _controller.MarkAsReadAsync(_currentUserId, ids);
     }
     private Guid _peerUserId = Guid.Empty;
@@ -108,6 +159,9 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
 
     private async Task InitializeCoreAsync()
     {
+        if (IsGroup)
+            await RefreshGroupAccessAsync();
+        else CanWrite = true;
         if (IsLoaded)
             return;
 
@@ -147,10 +201,45 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         await _controller.InitializeAsync(
             ChatId,
             profile.Id,
-            IsGroup);
+            IsGroup,
+            IsGroup && GroupProfile?.IsChannel == true);
         _currentUserId = profile.Id;
         IsLoaded = true;
     }
+    public async Task RefreshGroupAccessAsync()
+    {
+        if (!IsGroup) return;
+        try
+        {
+            GroupProfile = await _groups.GetAsync(ChatId);
+            if (GroupProfile.MyRole == null) throw new GroupApiException("Вы больше не участник сообщества.", System.Net.HttpStatusCode.Forbidden);
+            CanWrite = Govor.Mobile.Models.Groups.GroupPermissions.CanWrite(GroupProfile);
+            if (Header != null)
+            {
+                Header.Title = GroupProfile.Name;
+                Header.Subtitle = GroupProfile.Summary;
+                await Header.Avatar.InitializeAsync(GroupProfile.Name, null);
+                Header.Avatar.AvatarImage = await _groupMedia.LoadAsync(GroupProfile);
+            }
+        }
+        catch (GroupApiException ex) when (ex.Status is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.NotFound)
+        {
+            GroupProfile = null; CanWrite = false;
+            MessageGroups.Clear(); ClearSelection(); CancelMessageEditing();
+            if (_controller is IDisposable disposable) disposable.Dispose();
+            if (Header != null) Header.Subtitle = "Нет доступа к сообществу";
+            throw;
+        }
+        finally
+        {
+            OnPropertyChanged(nameof(CanModerateGroup));
+            OnPropertyChanged(nameof(CanDeleteMessages));
+            OnPropertyChanged(nameof(CanEditMessage));
+            EditMessageCommand.NotifyCanExecuteChanged();
+            if (!CanWrite) CancelMessageEditing();
+        }
+    }
+
     private async Task InitializeControllerAsync(
                                     Guid chatId,
                                     Guid userId,
@@ -228,20 +317,31 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     [RelayCommand]
     private async Task DeleteMessages()
     {
-        var messageIds = SelectedMessages
-            .Select(message => message.Id)
-            .ToList();
-
-        foreach (var messageId in messageIds)
+        try
         {
-            await _controller.RemoveAsync(
-                messageId,
-                forceRemove: true);
-        }
+            if (!CanDeleteMessages) return;
+            if (IsGroup) await RefreshGroupAccessAsync();
+            var messageIds = SelectedMessages
+                .Select(message => message.Id)
+                .ToList();
 
-        ClearSelection();
+            foreach (var messageId in messageIds)
+            {
+                if (IsGroup)
+                    await _groups.RemoveMessageAsync(ChatId, messageId);
+                else
+                    await _controller.RemoveAsync(messageId, forceRemove: true);
+            }
+
+            ClearSelection();
+        }
+        catch (Exception ex)
+        {
+            if (IsGroup) { try { await RefreshGroupAccessAsync(); } catch { } }
+            await Shell.Current.CurrentPage.DisplayAlertAsync("Удаление", ex.Message, "OK");
+        }
     }
-    
+
 
     [RelayCommand]
     private void CancelMessageEditing()
@@ -292,8 +392,8 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     private async Task SetUserAvatarAsync(Guid userId, Guid avatarId)
     {
         if (_ChatIdForHeader != userId || Header?.Avatar == null) return;
-        
-        await MainThread.InvokeOnMainThreadAsync(async () => 
+
+        await MainThread.InvokeOnMainThreadAsync(async () =>
         {
             await Header.Avatar.InitializeAsync(Header.Title, avatarId);
         });
@@ -307,23 +407,33 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         if (IsEditingMessage && EditingMessage != null)
         {
             var resEdit = await _controller.EditAsync(EditingMessage.Id, MessageText);
-            
+
             if (resEdit.IsSuccess)
             {
                 EditingMessage.Text = MessageText;
                 CancelMessageEditing();
             }
+            else if (IsGroup)
+            {
+                try { await RefreshGroupAccessAsync(); } catch { }
+                await Shell.Current.CurrentPage.DisplayAlertAsync("Редактирование", resEdit.ErrorMessage ?? "Не удалось изменить сообщение.", "OK");
+            }
             return;
         }
-        
+
         var textToSend = MessageText;
         MessageText = string.Empty;
 
         var result = await _controller.SendAsync(ChatId, textToSend);
-        
-        if (!result.IsSuccess && string.IsNullOrEmpty(MessageText))
+
+        if (!result.IsSuccess)
         {
-            MessageText = textToSend; 
+            if (string.IsNullOrEmpty(MessageText)) MessageText = textToSend;
+            if (IsGroup)
+            {
+                try { await RefreshGroupAccessAsync(); } catch { }
+                await Shell.Current.CurrentPage.DisplayAlertAsync("Сообщение", result.ErrorMessage ?? "Не удалось отправить сообщение.", "OK");
+            }
         }
     }
 
@@ -342,7 +452,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
             IsLoadingMore = false;
             return 0;
         }
-        
+
         var result = await _controller.LoadOlderMessagesAsync(ChatId, oldestMessageId);
 
         if (result.Count == 0)
@@ -351,13 +461,15 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         }
 
         IsLoadingMore = false;
-        
+
         return result.Count;
     }
 
     // Очистка при закрытии страницы
     public void Dispose()
     {
+        StopGroupUpdates();
+        if (_controller is IDisposable disposable) disposable.Dispose();
         UnsubscribeRealtimeEvents();
     }
 
@@ -366,6 +478,13 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     {
         try
         {
+            try
+            {
+                var code = Govor.Mobile.Utilities.GroupInviteParser.Parse(url, _server.IP);
+                await Shell.Current.GoToAsync($"GroupsExplorePage?invite={Uri.EscapeDataString(code)}", false);
+                return;
+            }
+            catch (ArgumentException) { }
             if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
                 if (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)

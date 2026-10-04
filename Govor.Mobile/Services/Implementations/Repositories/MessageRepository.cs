@@ -16,6 +16,7 @@ public class MessagesRepository : IMessagesRepository
     private readonly IDbContextFactory<GovorDbContext> _contextFactory;
     private readonly IChatLoaderApi _api;
     private readonly IChatHub _hub;
+    private readonly Govor.Mobile.Services.Implementations.ReactionService _reactions;
     private readonly IMapper _mapper;
     private readonly IUserProfileService _profileService;
     private readonly IMemoryCache _cache;
@@ -59,6 +60,7 @@ public class MessagesRepository : IMessagesRepository
         IDbContextFactory<GovorDbContext> contextFactory,
         IChatLoaderApi api,
         IChatHub hub,
+        Govor.Mobile.Services.Implementations.ReactionService reactions,
         IMapper mapper,
         IMemoryCache cache,
         IUserProfileService profileService)
@@ -66,6 +68,7 @@ public class MessagesRepository : IMessagesRepository
         _contextFactory = contextFactory;
         _api = api;
         _hub = hub;
+        _reactions = reactions;
         _mapper = mapper;
         _cache = cache;
         _profileService = profileService;
@@ -342,6 +345,7 @@ public class MessagesRepository : IMessagesRepository
         
         foreach (var msg in messages.DistinctBy(x => x.Id))
         {
+            await _reactions.AcceptHistoryAsync(msg);
             // Избегаем дубликатов при пакетной вставке
             if (await context.Messages.AnyAsync(x => x.Id == msg.Id)) continue;
 

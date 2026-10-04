@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.PageModels.ContentViewsModel;
@@ -26,6 +26,7 @@ public class MessagesListController : IMessagesListController, IDisposable
     private Guid _currentChatId;
     private Guid _myId;
     private bool _isGroup;
+    private bool _isChannel;
     
     public MessagesListController(
         IMessagesRepository repository,
@@ -41,18 +42,26 @@ public class MessagesListController : IMessagesListController, IDisposable
         _unreadMessages = unreadMessages;
     }
     
-    public async Task InitializeAsync(Guid chatId, Guid currentUserId, bool isGroup)
+    public Task SyncAsync() => _repository.SyncChatAsync(_currentChatId, _isGroup);
+
+    public async Task InitializeAsync(Guid chatId, Guid currentUserId, bool isGroup, bool isChannel = false)
     {
-        _currentChatId = chatId;
-        _myId =  currentUserId;
-        
-        if (_initialized)
+        if (_initialized && _currentChatId == chatId && _myId == currentUserId && _isGroup == isGroup && _isChannel == isChannel)
             return;
-        
+        if (_initialized)
+        {
+            Dispose();
+            _initialized = false;
+            _messageIds.Clear();
+            _readInProgress.Clear();
+        }
+        _currentChatId = chatId;
+        _myId = currentUserId;
+
         _repository.OnNewMessage += OnNewMessageReceived;
         _repository.OnMessageUpdated += OnMessageUpdated;
         _repository.OnMessageDeleted += OnMessageDeleted;
-        _isGroup = isGroup;
+        _isGroup = isGroup; _isChannel = isChannel;
         
         // 1. Подгружаем локальные данные
         var localMessages = await _repository.GetMessagesLocalAsync(chatId, group: isGroup);
@@ -63,6 +72,8 @@ public class MessagesListController : IMessagesListController, IDisposable
             .Select(msg => _mapper.Map<MessagesViewModel>(msg, opt => 
             {
                 opt.Items["CurrentUserId"] = _myId;
+                opt.Items["IsGroup"] = _isGroup;
+                opt.Items["IsChannel"] = _isChannel;
             }))
             .ToList();
 
@@ -96,6 +107,8 @@ public class MessagesListController : IMessagesListController, IDisposable
             .Select(msg => _mapper.Map<MessagesViewModel>(msg, opt => 
             {
                 opt.Items["CurrentUserId"] = _myId;
+                opt.Items["IsGroup"] = _isGroup;
+                opt.Items["IsChannel"] = _isChannel;
             }))
             .ToList();
 
@@ -235,6 +248,8 @@ public class MessagesListController : IMessagesListController, IDisposable
             var vm = _mapper.Map<MessagesViewModel>(msg, opt =>
             {
                 opt.Items["CurrentUserId"] = _myId;
+                opt.Items["IsGroup"] = _isGroup;
+                opt.Items["IsChannel"] = _isChannel;
             });
 
             // Try append to last group if possible
@@ -290,7 +305,12 @@ public class MessagesListController : IMessagesListController, IDisposable
                     {
                         try
                         {
-                            _mapper.Map(msg, existing, opt => { opt.Items["CurrentUserId"] = _myId; });
+                            _mapper.Map(msg, existing, opt =>
+                            {
+                                opt.Items["CurrentUserId"] = _myId;
+                                opt.Items["IsGroup"] = _isGroup;
+                                opt.Items["IsChannel"] = _isChannel;
+                            });
                         }
                         catch (Exception ex)
                         {

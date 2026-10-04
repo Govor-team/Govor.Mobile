@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:Govor.Mobile.Pages"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.MainFlow"
+             xmlns:choice="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Reactions"
+             xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:pages="clr-namespace:Govor.Mobile.Pages.MainFlow"
+             xmlns:glass="http://sharpnado.com"
+             x:Class="Govor.Mobile.Pages.MainFlow.ReactionPacksPage"
+             x:Name="PacksPage" x:DataType="vm:ReactionPacksPageModel"
+             BackgroundColor="#10141F" SafeAreaEdges="None"
+             ControlTemplate="{StaticResource MainPageTemplate}"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto,*" RowSpacing="12" Padding="12,0" SafeAreaEdges="None">
+        <Grid SafeAreaEdges="Container" Padding="0,6,0,0">
+            <Border Style="{StaticResource ReactionGlassBorder}">
+                <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="8,6">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                        <ImageButton Source="back_icon.png" Clicked="CloseClicked"
+                                     WidthRequest="40" HeightRequest="40" Padding="10"
+                                     BackgroundColor="Transparent" SemanticProperties.Description="Назад" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="1" VerticalOptions="Center">
+                            <Label Text="Паки реакций" TextColor="White" FontSize="19" FontAttributes="Bold" />
+                            <Label Text="Ваши эмодзи для сообщений" Style="{StaticResource ReactionCaption}" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="2" Text="↻" FontSize="22" WidthRequest="44"
+                                Style="{StaticResource ReactionActionButton}" BorderWidth="0"
+                                Command="{Binding RefreshCommand}" SemanticProperties.Description="Обновить паки" />
+                    </Grid>
+                </glass:MaterialFrame>
+            </Border>
+        </Grid>
+
+        <ScrollView Grid.Row="1" VerticalScrollBarVisibility="Never" SafeAreaEdges="None">
+            <VerticalStackLayout Spacing="12" Padding="0,0,0,28">
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="6">
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                            <Button Text="Мои паки" Command="{Binding ShowMineCommand}"
+                                    Style="{StaticResource ReactionActionButton}" BorderWidth="0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding IsCatalog}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="#606E58B0" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                            <Button Grid.Column="1" Text="Каталог" Command="{Binding ShowCatalogCommand}"
+                                    Style="{StaticResource ReactionActionButton}" BorderWidth="0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding IsCatalog}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="#606E58B0" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Grid>
+                    </glass:MaterialFrame>
+                </Border>
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="8,0">
+                        <SearchBar Text="{Binding SearchText}" Placeholder="Найти пак"
+                                   TextColor="White" PlaceholderColor="#CBC5D8" BackgroundColor="Transparent" />
+                    </glass:MaterialFrame>
+                </Border>
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}">
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Добавить по коду" TextColor="White" FontAttributes="Bold" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <Entry Text="{Binding ShareCode}" Placeholder="Код общего пака"
+                                       TextColor="White" PlaceholderColor="#CBC5D8" BackgroundColor="Transparent" />
+                                <Button Grid.Column="1" Text="Открыть" Command="{Binding OpenSharedCommand}"
+                                        Style="{StaticResource ReactionActionButton}" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </glass:MaterialFrame>
+                </Border>
+                <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#D9C7FF" />
+                <Label Text="{Binding Status}" IsVisible="{Binding HasStatus}" Style="{StaticResource ReactionCaption}" Margin="4,0" />
+                <Label Text="Паки не найдены" IsVisible="{Binding IsEmpty}" TextColor="White"
+                       HorizontalOptions="Center" Margin="0,20" />
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Packs}" Spacing="12">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ReactionPackItemViewModel">
+                            <Border Style="{StaticResource ReactionGlassBorder}">
+                                <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}">
+                                    <VerticalStackLayout Spacing="10">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <Label Text="{Binding Name}" FontSize="19" FontAttributes="Bold" TextColor="White" />
+                                            <Label Grid.Column="1" Text="{Binding Badge}" Style="{StaticResource ReactionCaption}" VerticalOptions="Center" />
+                                        </Grid>
+                                        <Label Text="{Binding Description}" Style="{StaticResource ReactionCaption}" />
+                                        <FlexLayout Direction="Row" Wrap="Wrap" BindableLayout.ItemsSource="{Binding Preview}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="choice:ReactionChoiceViewModel">
+                                                    <views:ReactionChoiceView />
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
+                                        <Button Text="{Binding ActionText}" IsVisible="{Binding CanToggle}"
+                                                Style="{StaticResource ReactionActionButton}"
+                                                Command="{Binding Source={x:Reference PacksPage}, Path=ViewModel.TogglePackCommand, x:DataType=pages:ReactionPacksPage}"
+                                                CommandParameter="{Binding .}" />
+                                        <Button Text="Копировать код пака" Style="{StaticResource ReactionActionButton}"
+                                                Command="{Binding Source={x:Reference PacksPage}, Path=ViewModel.CopyCodeCommand, x:DataType=pages:ReactionPacksPage}"
+                                                CommandParameter="{Binding .}" />
+                                    </VerticalStackLayout>
+                                </glass:MaterialFrame>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</local:SmoothBackPage>

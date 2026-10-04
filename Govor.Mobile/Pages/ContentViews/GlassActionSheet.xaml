@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:glass="http://sharpnado.com"
+             x:Class="Govor.Mobile.Pages.ContentViews.GlassActionSheet"
+             x:Name="Sheet" x:DataType="views:GlassActionSheet" SafeAreaEdges="None">
+    <Grid>
+        <BoxView Color="#60000000" BackgroundColor="Transparent">
+            <BoxView.GestureRecognizers>
+                <TapGestureRecognizer Tapped="DismissTapped"/>
+            </BoxView.GestureRecognizers>
+        </BoxView>
+        <Border x:Name="Card" Style="{StaticResource ReactionGlassBorder}"
+                HorizontalOptions="Center" VerticalOptions="Center" MaximumHeightRequest="520" Margin="16">
+            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                <ScrollView Margin="14" VerticalScrollBarVisibility="Never">
+                    <VerticalStackLayout Spacing="8">
+                        <views:UserItemView BindingContext="{Binding MemberRow}" IsVisible="{Binding HasMember}"/>
+                        <Label Text="{Binding Heading}" IsVisible="{Binding HasHeading}" FontSize="19"
+                               FontAttributes="Bold" TextColor="White" Margin="4,0"/>
+                        <Label Text="{Binding Detail}" IsVisible="{Binding HasDetail}"
+                               Style="{StaticResource ReactionCaption}" Margin="4,0,4,6"/>
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Actions}" Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="views:GlassSheetAction">
+                                    <Button Text="{Binding Title}" Style="{StaticResource ReactionActionButton}"
+                                            TextColor="{Binding TextColor}" IsEnabled="{Binding Enabled}"
+                                            Command="{Binding Source={x:Reference Sheet}, Path=ChooseCommand, x:DataType=views:GlassActionSheet}"
+                                            CommandParameter="{Binding Id}"/>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Button Text="Отмена" Clicked="CancelClicked" Style="{StaticResource ReactionActionButton}"
+                                BorderColor="Transparent"/>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </glass:MaterialFrame>
+        </Border>
+    </Grid>
+</ContentView>

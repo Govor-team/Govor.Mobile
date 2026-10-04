@@ -14,6 +14,7 @@ public class MessageResponse
     public Guid? ReplyToMessageId { get; set; }
     
     public List<MediaAttachmentResponse> MediaAttachments { get; set; } = new();
+    public long ReactionsVersion { get; set; }
     public List<MessageReactionResponse> Reactions { get; set; } = new();
     public List<MessageViewResponse> MessageViews { get; set; } = new();
 }

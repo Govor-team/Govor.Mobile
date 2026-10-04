@@ -15,6 +15,9 @@ public partial class SettingsPage : SmoothBackPage
 		BindingContext = vm;
 	}
 
+    private async void OnReactionPacksClicked(object? sender, TappedEventArgs e) =>
+        await Shell.Current.GoToAsync(nameof(ReactionPacksPage));
+
     protected override async void OnAppearing()
     {
         base.OnAppearing();

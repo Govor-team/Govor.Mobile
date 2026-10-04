@@ -2,6 +2,8 @@
 
 <local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:behaviors="clr-namespace:Govor.Mobile.Behaviors"
+             xmlns:pages="clr-namespace:Govor.Mobile.Pages.MainFlow"
              xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Messages"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
@@ -71,11 +73,7 @@
                                         <DataTemplate x:DataType="vm:MessagesViewModel">
                                             <VerticalStackLayout Spacing="2" HorizontalOptions="Fill">
 
-                                                <VerticalStackLayout HorizontalOptions="{Binding BubbleAlignment}" Spacing="2">
-                                                    <VerticalStackLayout.GestureRecognizers>
-                                                    <TapGestureRecognizer
-                                                             Tapped="MessageTapped" />
-                                                </VerticalStackLayout.GestureRecognizers>
+                                                <VerticalStackLayout HorizontalOptions="Fill" Spacing="2">
                                                     
                                                 <HorizontalStackLayout HorizontalOptions="{Binding BubbleAlignment}" Spacing="8">
                                                     <Border
@@ -93,12 +91,17 @@
                                                         </Border.Shadow>
 
                                                         <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Tapped="MessageTapped" />
                                                             <TapGestureRecognizer
                                                                 NumberOfTapsRequired="2"
                                                                 Tapped="MessageDoubleTapped" />
                                                         </Border.GestureRecognizers>
-                                                        <Grid RowDefinitions="Auto,Auto" RowSpacing="5">
-                                                            <markdown:MarkdownView
+                                                        <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+                                                            <Label Text="{Binding Avatar.DisplayName}" IsVisible="{Binding ShowSenderName}"
+                                                                   FontSize="12" FontAttributes="Bold" TextColor="#D9C7FF"
+                                                                   MaxLines="1" LineBreakMode="TailTruncation"/>
+
+                                                            <markdown:MarkdownView Grid.Row="1"
                                                                 MaximumWidthRequest="310"
                                                                 MinimumWidthRequest="67"
                                                                 HyperlinkColor="#6394B7"
@@ -109,7 +112,7 @@
 
                                                             <!-- Время внутри тела сообщения -->
                                                             <Label
-                                                                Grid.Row="1"
+                                                                Grid.Row="2"
                                                                 Text="{Binding Time}"
                                                                 FontSize="9"
                                                                 TextColor="#BFB4D2"
@@ -128,6 +131,9 @@
                                                             StrokeThickness="2"
                                                             Background="#331B172E"
                                                             VerticalOptions="Center">
+                                                            <Border.GestureRecognizers>
+                                                                <TapGestureRecognizer Tapped="MessageTapped" />
+                                                            </Border.GestureRecognizers>
                                                             <Border.StrokeShape>
                                                                 <RoundRectangle CornerRadius="14" />
                                                             </Border.StrokeShape>
@@ -141,8 +147,31 @@
                                                         </Border>
                                                     </HorizontalStackLayout>
 
+                                                    <FlexLayout Direction="Row" Wrap="Wrap" AlignItems="Center"
+                                                        HorizontalOptions="Fill" JustifyContent="{Binding ReactionJustification}"
+                                                        BindableLayout.ItemsSource="{Binding ReactionChips}">
+                                                        <BindableLayout.ItemTemplate>
+                                                            <DataTemplate x:DataType="vm:ReactionChip">
+                                                                <Border Background="{Binding Background}" StrokeThickness="0"
+                                                                    StrokeShape="RoundRectangle 13" Padding="8,4" Margin="2,2" FlexLayout.Shrink="0">
+                                                                    <Border.Behaviors>
+                                                                        <behaviors:ReactionPressBehavior TapCommand="{Binding Source={x:Reference chatpage}, Path=ToggleReactionCommand, x:DataType=pages:ChatPage}" />
+                                                                    </Border.Behaviors>
+                                                                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
+                                                                        <Image Source="{Binding Image}" IsVisible="{Binding HasImage}"
+                                                                            WidthRequest="22" HeightRequest="22" IsAnimationPlaying="True" />
+                                                                        <Label Grid.Column="1" Text="{Binding Text}" TextColor="White" FontSize="15"
+                                                                               LineBreakMode="NoWrap" VerticalOptions="Center" />
+                                                                        <Label Grid.Column="2" Text="{Binding CountText}" TextColor="White" FontSize="12"
+                                                                               LineBreakMode="NoWrap" VerticalOptions="Center" />
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </BindableLayout.ItemTemplate>
+                                                    </FlexLayout>
+
                                                     <!-- Avatar under the last message in a group (time moved into bubble) -->
-                                                    <HorizontalStackLayout IsVisible="{Binding ShowAvatar}"  Spacing="6">
+                                                    <HorizontalStackLayout IsVisible="{Binding ShowAvatar}" HorizontalOptions="{Binding BubbleAlignment}" Spacing="6">
                                                         <toolkit:AvatarView
                                                             HeightRequest="26"
                                                             WidthRequest="26"
@@ -151,7 +180,11 @@
                                                             HorizontalOptions="{Binding BubbleAlignment}"
                                                             BackgroundColor="{Binding Avatar.AvatarBackgroundColor}"
                                                             Text="{Binding Avatar.AvatarText}"
-                                                            ImageSource="{Binding Avatar.AvatarImage}" />
+                                                            ImageSource="{Binding Avatar.AvatarImage}">
+                                                            <toolkit:AvatarView.GestureRecognizers>
+                                                                <TapGestureRecognizer Tapped="SenderAvatarTapped"/>
+                                                            </toolkit:AvatarView.GestureRecognizers>
+                                                        </toolkit:AvatarView>
                                                     </HorizontalStackLayout>
                                                 </VerticalStackLayout>
 
@@ -197,6 +230,9 @@
 
         </Grid>
 
+        <Label Grid.Row="2" Text="Публикация сообщений недоступна для вашей роли"
+               IsVisible="{Binding CanWrite, Converter={StaticResource BoolInvertor}}"
+               TextColor="#C9C3D5" HorizontalTextAlignment="Center" Margin="16,10,16,24" />
         <!-- INPUT -->
         <Grid Grid.Row="2"
               x:Name="MessageInput"

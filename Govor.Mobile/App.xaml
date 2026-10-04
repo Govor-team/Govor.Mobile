@@ -15,6 +15,7 @@
                 <ResourceDictionary Source="Resources/Styles/Styles.xaml" />
                 <ResourceDictionary Source="Resources/Styles/AppStyles.xaml" />
                 <ResourceDictionary Source="Resources/Styles/MarkdownStyles.xaml" />
+                <ResourceDictionary Source="Resources/Styles/ReactionStyles.xaml" />
                 <controls:DarkTheme />
                 <controls:PopupStyles />
             </ResourceDictionary.MergedDictionaries>

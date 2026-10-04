@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,8 +25,10 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
     public MainPageModel(
         IFriendsListController controller,
         IUserProfileService profileService,
-        IJwtProviderService session)
+        IJwtProviderService session,
+        Govor.Mobile.PageModels.MainFlow.Groups.GroupsHomeModel groups)
     {
+        Groups = groups;
         _controller = controller;
         _profileService = profileService;
         session.WasClearTokens += () => MainThread.BeginInvokeOnMainThread(() =>
@@ -40,6 +42,8 @@ public partial class MainPageModel : ObservableObject, IInitializableViewModel, 
         _controller.FriendRemoved += OnFriendRemoved;
         _controller.OnlineStatusChanged += OnOnlineStatusChanged;
     }
+
+    public Govor.Mobile.PageModels.MainFlow.Groups.GroupsHomeModel Groups { get; }
 
     public bool IsLoaded { get; set; }
 

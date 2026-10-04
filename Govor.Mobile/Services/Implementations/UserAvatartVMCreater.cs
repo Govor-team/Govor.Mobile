@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.PageModels.ContentViewsModel;
+using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
 
@@ -30,7 +30,7 @@ public class UserAvatartVMCreater : IAvatartVMCreater
         {
             try
             {
-                await vm.InitializeAsync(vm.AvatarText, avatarId);
+                await vm.InitializeAsync(vm.DisplayName, avatarId);
             }
             catch (Exception ex)
             {

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Input;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.Services.Api;
 using Govor.Mobile.Services.Interfaces;
@@ -12,17 +12,19 @@ public class ChatHeaderService : IChatHeaderService
     private readonly IServiceProvider _provider;
     private readonly IUserProfileService _userProfileService;
     private readonly IWasOnlineFormater _formater;
+    private readonly GroupsApiService _groups;
+    private readonly Govor.Mobile.Services.Implementations.GroupMediaService _groupMedia;
     //private readonly IGroupApiClient _groupApi;
     //private readonly IOnlineUserStore _onlineStore;
 
     public ChatHeaderService(
         IServiceProvider provider,
         IUserProfileService userProfileService,
-        IWasOnlineFormater formater)
+        IWasOnlineFormater formater, GroupsApiService groups, Govor.Mobile.Services.Implementations.GroupMediaService groupMedia)
     {
         _provider = provider;
         _userProfileService = userProfileService;
-        _formater = formater;
+        _formater = formater; _groups = groups; _groupMedia = groupMedia;
     }
 
     public async Task<ChatHeaderViewModel> BuildAsync(Guid id, bool isGroup, IAsyncRelayCommand backCommand)
@@ -32,11 +34,14 @@ public class ChatHeaderService : IChatHeaderService
         if (isGroup)
         {
             var avatar = _provider.GetRequiredService<AvatarViewModel>();
-            await avatar.InitializeAsync("Групповой чат", null);
-
-            vm.Title = "Групповой чат";
-            vm.Subtitle = "Группа";
+            var group = await _groups.GetAsync(id);
+            await avatar.InitializeAsync(group.Name, null);
+            avatar.AvatarImage = await _groupMedia.LoadAsync(group);
+            vm.Title = group.Name;
+            vm.Subtitle = group.Summary;
             vm.Avatar = avatar;
+            vm.OpenMenuCommand = new AsyncRelayCommand(() =>
+                Govor.Mobile.PageModels.MainFlow.Groups.GroupScreenModel.OpenProfileAsync(id));
         }
         else
         {

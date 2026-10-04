@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Reactions"
+             xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:glass="http://sharpnado.com"
+             x:Class="Govor.Mobile.Pages.ContentViews.MessageReactionMenu"
+             x:Name="MessageMenu" x:DataType="vm:MessageReactionMenuModel"
+             SafeAreaEdges="None">
+    <ContentView.Resources>
+        <Style x:Key="CompactMenuButton" TargetType="Button" BasedOn="{StaticResource ReactionActionButton}">
+            <Setter Property="MinimumHeightRequest" Value="36" />
+            <Setter Property="HeightRequest" Value="36" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Padding" Value="8,0" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+    </ContentView.Resources>
+    <Grid>
+        <BoxView Color="#48000000" BackgroundColor="Transparent">
+            <BoxView.GestureRecognizers><TapGestureRecognizer Command="{Binding CloseCommand}" /></BoxView.GestureRecognizers>
+        </BoxView>
+        <Border x:Name="MenuCard" Style="{StaticResource ReactionGlassBorder}"
+                WidthRequest="320" MaximumHeightRequest="440"
+                HorizontalOptions="Center" VerticalOptions="Center">
+            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                <ScrollView Margin="12" VerticalScrollBarVisibility="Never">
+                    <VerticalStackLayout x:Name="MenuContent" Spacing="6" VerticalOptions="Start">
+                        <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" IsVisible="{Binding ShowPackTabs}">
+                            <HorizontalStackLayout BindableLayout.ItemsSource="{Binding Packs}" Spacing="6">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReactionPackTabViewModel">
+                                        <Button Text="{Binding Name}" Style="{StaticResource CompactMenuButton}"
+                                                Command="{Binding Source={x:Reference MessageMenu}, Path=ViewModel.SelectPackCommand, x:DataType=views:MessageReactionMenu}"
+                                                CommandParameter="{Binding .}">
+                                            <Button.Triggers>
+                                                <DataTrigger TargetType="Button" Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="BackgroundColor" Value="#606E58B0" />
+                                                </DataTrigger>
+                                            </Button.Triggers>
+                                        </Button>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                        <SearchBar Text="{Binding SearchText}" Placeholder="Найти эмодзи"
+                                   TextColor="White" PlaceholderColor="#CBC5D8" BackgroundColor="Transparent" FontSize="12" HeightRequest="40" />
+                        <ScrollView HeightRequest="{Binding ChoicesHeight}" VerticalScrollBarVisibility="Never">
+                            <FlexLayout Direction="Row" Wrap="Wrap" BindableLayout.ItemsSource="{Binding Choices}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:ReactionChoiceViewModel">
+                                        <views:ReactionChoiceView FlexLayout.Shrink="0"
+                                            TapCommand="{Binding Source={x:Reference MessageMenu}, Path=ViewModel.ChooseReactionCommand, x:DataType=views:MessageReactionMenu}" />
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        </ScrollView>
+                        <Label Text="{Binding Status}" Style="{StaticResource ReactionCaption}" FontSize="10" Margin="4,0" />
+                        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#D9C7FF" />
+                        <BoxView HeightRequest="1" Color="#20FFFFFF" BackgroundColor="Transparent" />
+                        <Button Text="Убрать мою реакцию" IsVisible="{Binding CanRemoveReaction}"
+                                Command="{Binding RemoveReactionCommand}" Style="{StaticResource CompactMenuButton}" />
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                            <Button Text="Копировать" Command="{Binding RequestActionCommand}"
+                                    CommandParameter="{x:Static vm:MessageMenuAction.Copy}" Style="{StaticResource CompactMenuButton}" />
+                            <Button Grid.Column="1" Text="Выбрать" Command="{Binding RequestActionCommand}"
+                                    CommandParameter="{x:Static vm:MessageMenuAction.Select}" Style="{StaticResource CompactMenuButton}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="6" IsVisible="{Binding HasMessageActions}">
+                            <Button Text="Редактировать" IsVisible="{Binding CanEdit}" Command="{Binding RequestActionCommand}"
+                                    CommandParameter="{x:Static vm:MessageMenuAction.Edit}" Style="{StaticResource CompactMenuButton}" />
+                            <Button Grid.Column="1" Text="Удалить" IsVisible="{Binding CanDelete}" Command="{Binding RequestActionCommand}"
+                                    CommandParameter="{x:Static vm:MessageMenuAction.Delete}" Style="{StaticResource CompactMenuButton}" />
+                        </Grid>
+                        <Button Text="Закрыть" Command="{Binding CloseCommand}" Style="{StaticResource CompactMenuButton}" BorderWidth="0" />
+                    </VerticalStackLayout>
+                </ScrollView>
+            </glass:MaterialFrame>
+        </Border>
+    </Grid>
+</ContentView>

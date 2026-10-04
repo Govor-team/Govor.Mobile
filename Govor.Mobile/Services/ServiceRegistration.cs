@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Maui;
+using CommunityToolkit.Maui;
 using Govor.Mobile.Data;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.PageModels.MainFlow;
@@ -80,6 +80,17 @@ internal static class ServiceRegistration
 
         builder.Services.AddSingleton<ITokenStorageService, TokenStorageService>();
         builder.Services.AddSingleton<LocalAccountCache>();
+        builder.Services.AddSingleton<ReactionService>();
+        builder.Services.AddSingleton<GroupsApiService>();
+        builder.Services.AddSingleton<GroupMediaService>();
+        builder.Services.AddSingleton<GroupRealtimeService>();
+        builder.Services.AddSingleton<GroupRowFactory>();
+        builder.Services.AddTransient<GroupMemberContactService>();
+        builder.Services.AddSingleton<Govor.Mobile.PageModels.MainFlow.Groups.GroupsHomeModel>();
+        builder.Services.AddTransient<Govor.Mobile.PageModels.MainFlow.Groups.GroupsExploreModel>();
+        builder.Services.AddTransient<Govor.Mobile.PageModels.MainFlow.Groups.GroupProfileModel>();
+        builder.Services.AddTransient<GroupsExplorePage>();
+        builder.Services.AddTransient<GroupProfilePage>();
         builder.Services.AddSingleton<IBuilderDeviceInfoString, BuilderDeviceInfoString>();
         builder.Services.AddSingleton<IDeviceInfoParserService, DeviceInfoParserService>();
 
@@ -216,6 +227,7 @@ internal static class ServiceRegistration
 
         builder.Services.AddTransient<ChatPageModel>();
         builder.Services.AddTransient<ChatPage>();
+        builder.Services.AddTransient<ReactionPacksPage>();
         
         builder.Services.AddTransient<AuthShell>();
         builder.Services.AddTransient<MainShell>();

@@ -1,0 +1,30 @@
+<?xml version="1.0" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:vm="clr-namespace:Govor.Mobile.PageModels.MainFlow.Groups" xmlns:rows="clr-namespace:Govor.Mobile.Pages.ContentViews" xmlns:views="clr-namespace:Govor.Mobile.Pages.MainFlow.Layouts" x:Class="Govor.Mobile.Pages.MainFlow.Layouts.GroupsHomeView" x:Name="GroupsView" x:DataType="vm:GroupsHomeModel">
+    <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Button Text="Найти или создать" Command="{Binding ExploreCommand}" Style="{StaticResource ReactionActionButton}"/>
+            <Button Grid.Column="1" Text="↻" Command="{Binding RefreshCommand}" Style="{StaticResource ReactionActionButton}" WidthRequest="44"/>
+        </Grid>
+        <Label Grid.Row="1" Text="{Binding Status}" IsVisible="{Binding HasStatus}" Style="{StaticResource ReactionCaption}"/>
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Groups}" SelectionMode="None" VerticalScrollBarVisibility="Never">
+            <CollectionView.EmptyView>
+                <Label Text="Пока нет сообществ. Найдите публичное или откройте приглашение." TextColor="#C9C3D5" HorizontalTextAlignment="Center" Margin="20"/>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="vm:GroupListItem">
+                    <Grid>
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding Source={x:Reference GroupsView}, Path=ViewModel.OpenCommand, x:DataType=views:GroupsHomeView}" CommandParameter="{Binding .}"/>
+                        </Grid.GestureRecognizers>
+                        <rows:UserItemView BindingContext="{Binding Row}"/>
+                    </Grid>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+            <CollectionView.Footer>
+                <VerticalStackLayout Padding="0,4,0,90">
+                    <Button Text="Ещё сообщества" Command="{Binding Source={x:Reference GroupsView}, Path=ViewModel.MoreCommand, x:DataType=views:GroupsHomeView}" IsVisible="{Binding Source={x:Reference GroupsView}, Path=ViewModel.HasMore, x:DataType=views:GroupsHomeView}" Style="{StaticResource ReactionActionButton}"/>
+                </VerticalStackLayout>
+            </CollectionView.Footer>
+        </CollectionView>
+    </Grid>
+</ContentView>

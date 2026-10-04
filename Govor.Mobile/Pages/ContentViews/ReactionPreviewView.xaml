@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:glass="http://sharpnado.com"
+             x:Class="Govor.Mobile.Pages.ContentViews.ReactionPreviewView"
+             x:DataType="views:ReactionPreviewModel"
+             InputTransparent="True" SafeAreaEdges="None" ZIndex="100">
+    <Grid>
+        <BoxView Color="#70000000" BackgroundColor="Transparent" />
+        <Border Style="{StaticResource ReactionGlassBorder}" Margin="24"
+                MaximumWidthRequest="300" HorizontalOptions="Fill" VerticalOptions="Center">
+            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                <VerticalStackLayout Margin="20" Spacing="12">
+                    <Grid HeightRequest="220">
+                        <Image Source="{Binding Image}" IsVisible="{Binding HasImage}"
+                               Aspect="AspectFit" IsAnimationPlaying="True" />
+                        <Label Text="{Binding Text}" FontSize="112" TextColor="White"
+                               IsVisible="{Binding HasImage, Converter={StaticResource BoolInvertor}}"
+                               HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Grid>
+                    <Label Text="{Binding Name}" TextColor="White" FontSize="16"
+                           HorizontalTextAlignment="Center" MaxLines="2" LineBreakMode="TailTruncation" />
+                    <Label Text="Отпустите, чтобы закрыть" Style="{StaticResource ReactionCaption}"
+                           HorizontalTextAlignment="Center" />
+                </VerticalStackLayout>
+            </glass:MaterialFrame>
+        </Border>
+    </Grid>
+</ContentView>

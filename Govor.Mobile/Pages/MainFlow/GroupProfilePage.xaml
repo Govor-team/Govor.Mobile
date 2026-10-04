@@ -1,0 +1,140 @@
+<?xml version="1.0" ?>
+<local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui" xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml" xmlns:local="clr-namespace:Govor.Mobile.Pages" xmlns:vm="clr-namespace:Govor.Mobile.PageModels.MainFlow.Groups" xmlns:models="clr-namespace:Govor.Mobile.Models.Groups" xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews" xmlns:glass="http://sharpnado.com" xmlns:pages="clr-namespace:Govor.Mobile.Pages.MainFlow" x:Class="Govor.Mobile.Pages.MainFlow.GroupProfilePage" x:Name="Screen" x:DataType="vm:GroupProfileModel" BackgroundColor="#10141F" SafeAreaEdges="None" Shell.NavBarIsVisible="False" ControlTemplate="{StaticResource MainPageTemplate}">
+    <Grid x:Name="PageLayout" RowDefinitions="Auto,*" Padding="12,0" RowSpacing="10" SafeAreaEdges="None">
+        <Grid SafeAreaEdges="Container" Padding="0,6,0,0">
+            <Border Style="{StaticResource ReactionGlassBorder}">
+                <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="6" ColumnSpacing="8">
+                        <ImageButton Source="back_icon.png" Clicked="BackClicked" WidthRequest="40" HeightRequest="40" Padding="10" BackgroundColor="Transparent"/>
+                        <Label Grid.Column="1" Text="Сообщество" TextColor="White" FontSize="18" FontAttributes="Bold" VerticalOptions="Center"/>
+                        <ActivityIndicator Grid.Column="2" WidthRequest="28" IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" Color="#D9C7FF"/>
+                    </Grid>
+                </glass:MaterialFrame>
+            </Border>
+        </Grid>
+        <ScrollView Grid.Row="1" VerticalScrollBarVisibility="Never" SafeAreaEdges="None">
+            <VerticalStackLayout Spacing="12" Padding="0,0,0,30" IsEnabled="{Binding IsBusy, Converter={StaticResource BoolInvertor}}">
+                <Label Text="{Binding Status}" IsVisible="{Binding HasStatus}" Style="{StaticResource ReactionCaption}" Margin="4,0"/>
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                        <VerticalStackLayout Margin="12" Spacing="8">
+                            <Image Source="{Binding Avatar}" IsVisible="{Binding HasAvatar}" WidthRequest="88" HeightRequest="88" Aspect="AspectFill" HorizontalOptions="Center"/>
+                            <Entry Text="{Binding Name}" MaxLength="100" IsReadOnly="{Binding IsOwner, Converter={StaticResource BoolInvertor}}" TextColor="White" FontSize="21" BackgroundColor="Transparent"/>
+                            <Label Text="{Binding Group.Summary}" Style="{StaticResource ReactionCaption}"/>
+                            <Editor Text="{Binding Description}" MaxLength="500" IsReadOnly="{Binding IsOwner, Converter={StaticResource BoolInvertor}}" TextColor="White" BackgroundColor="Transparent" AutoSize="TextChanges" MinimumHeightRequest="60"/>
+                            <Label Text="Обязательный канал сервера" IsVisible="{Binding Group.IsRequiredChannel}" Style="{StaticResource ReactionCaption}"/>
+                            <VerticalStackLayout IsVisible="{Binding IsOwner}" Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <Label Text="Приватное сообщество" TextColor="White" VerticalOptions="Center"/>
+                                    <Switch Grid.Column="1" IsToggled="{Binding IsPrivate}"/>
+                                </Grid>
+                                <Button Text="Сохранить профиль" Command="{Binding SaveCommand}" Style="{StaticResource ReactionActionButton}"/>
+                                <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                    <Button Text="Новый аватар" Command="{Binding UploadAvatarCommand}" Style="{StaticResource ReactionActionButton}"/>
+                                    <Button Text="Убрать аватар" Command="{Binding DeleteAvatarCommand}" Style="{StaticResource ReactionActionButton}" Grid.Column="1" IsVisible="{Binding HasAvatar}"/>
+                                </Grid>
+                            </VerticalStackLayout>
+                            <Button Text="Вступить" Command="{Binding JoinCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding CanJoin}"/>
+                            <Button Text="Открыть чат" Command="{Binding OpenChatCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding IsMember}"/>
+                            <Button Text="Выйти из сообщества" Command="{Binding LeaveCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding CanLeave}"/>
+                            <Button Text="Обновить" Command="{Binding RefreshCommand}" Style="{StaticResource ReactionActionButton}"/>
+                        </VerticalStackLayout>
+                    </glass:MaterialFrame>
+                </Border>
+                <VerticalStackLayout IsVisible="{Binding IsMember}" Spacing="12">
+                    <FlexLayout Direction="Row" Wrap="Wrap">
+                        <Button Text="Участники" Command="{Binding ShowActiveMembersCommand}" Style="{StaticResource ReactionActionButton}" FlexLayout.Shrink="0" Margin="2"/>
+                        <Button Text="Баны" Command="{Binding ShowBannedMembersCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding CanModerate}" FlexLayout.Shrink="0" Margin="2"/>
+                        <Button Text="Ссылки" Command="{Binding ShowInvitesCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding CanModerate}" FlexLayout.Shrink="0" Margin="2"/>
+                        <Button Text="Реакции" Command="{Binding ShowReactionsCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding CanSetPolicy}" FlexLayout.Shrink="0" Margin="2"/>
+                    </FlexLayout>
+                    <VerticalStackLayout IsVisible="{Binding ShowMembers}" Spacing="8">
+                        <Label Text="Участники" TextColor="White" FontSize="18" FontAttributes="Bold"/>
+                        <Label Text="Заблокированные" IsVisible="{Binding BannedOnly}" Style="{StaticResource ReactionCaption}"/>
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Members}" Spacing="6">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="vm:GroupMemberItem">
+                                    <Grid>
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding Source={x:Reference Screen}, Path=ViewModel.ManageMemberCommand, x:DataType=pages:GroupProfilePage}" CommandParameter="{Binding .}"/>
+                                        </Grid.GestureRecognizers>
+                                        <views:UserItemView BindingContext="{Binding Row}"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                        <Button Text="Ещё участников" Command="{Binding MoreMembersCommand}" Style="{StaticResource ReactionActionButton}" IsVisible="{Binding HasMoreMembers}"/>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout IsVisible="{Binding ShowInvitations}" Spacing="12">
+                        <Border Style="{StaticResource ReactionGlassBorder}">
+                            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                                <VerticalStackLayout Margin="12" Spacing="8">
+                                    <Label Text="Новое приглашение" TextColor="White" FontSize="18"/>
+                                    <Entry Text="{Binding InvitationDescription}" Placeholder="Описание ссылки" MaxLength="500" TextColor="White" PlaceholderColor="#CBC5D8" BackgroundColor="Transparent"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                        <VerticalStackLayout>
+                                            <Label Text="Дней (1–365)" Style="{StaticResource ReactionCaption}"/>
+                                            <Entry Text="{Binding InvitationDays}" Keyboard="Numeric" TextColor="White" BackgroundColor="Transparent"/>
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="1">
+                                            <Label Text="Лимит (0 — без лимита)" Style="{StaticResource ReactionCaption}"/>
+                                            <Entry Text="{Binding InvitationLimit}" Keyboard="Numeric" TextColor="White" BackgroundColor="Transparent"/>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                    <Button Text="Создать ссылку" Command="{Binding CreateInviteCommand}" Style="{StaticResource ReactionActionButton}"/>
+                                </VerticalStackLayout>
+                            </glass:MaterialFrame>
+                        </Border>
+                        <VerticalStackLayout BindableLayout.ItemsSource="{Binding Invitations}" Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="models:GroupInvitation">
+                                    <Border Style="{StaticResource ReactionGlassBorder}" Padding="12" Background="#402B3448">
+                                        <VerticalStackLayout Spacing="6">
+                                            <Label Text="{Binding Description}" TextColor="White" FontAttributes="Bold"/>
+                                            <Label Text="{Binding Summary}" Style="{StaticResource ReactionCaption}"/>
+                                            <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                                <Button Text="Копировать" Style="{StaticResource ReactionActionButton}" IsEnabled="{Binding IsActive}" Command="{Binding Source={x:Reference Screen}, Path=ViewModel.CopyInviteCommand, x:DataType=pages:GroupProfilePage}" CommandParameter="{Binding .}"/>
+                                                <Button Grid.Column="1" Text="Отозвать" Style="{StaticResource ReactionActionButton}" IsEnabled="{Binding IsActive}" Command="{Binding Source={x:Reference Screen}, Path=ViewModel.RevokeInviteCommand, x:DataType=pages:GroupProfilePage}" CommandParameter="{Binding .}"/>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout IsVisible="{Binding ShowPolicy}" Spacing="12">
+                        <Border Style="{StaticResource ReactionGlassBorder}">
+                            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="0">
+                                <VerticalStackLayout Margin="12" Spacing="8">
+                                    <Label Text="Реакции канала" TextColor="White" FontSize="18"/>
+                                    <Picker SelectedIndex="{Binding ReactionMode}" TextColor="White" BackgroundColor="Transparent">
+                                        <Picker.Items>
+                                            <x:String>Все реакции</x:String>
+                                            <x:String>Реакции выключены</x:String>
+                                            <x:String>Только выбранные</x:String>
+                                        </Picker.Items>
+                                    </Picker>
+                                    <SearchBar IsVisible="{Binding SelectReactions}" Text="{Binding ReactionSearchText}" Placeholder="Найти реакцию"
+                                               TextColor="White" PlaceholderColor="#CBC5D8" BackgroundColor="Transparent" FontSize="13"/>
+                                    <Label IsVisible="{Binding SelectReactions}" Text="{Binding PolicySelectionSummary}" Style="{StaticResource ReactionCaption}"/>
+                                    <FlexLayout IsVisible="{Binding SelectReactions}" Direction="Row" Wrap="Wrap" BindableLayout.ItemsSource="{Binding PolicyChoices}">
+                                        <BindableLayout.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:PolicyReactionChoice">
+                                                <Grid WidthRequest="52" HeightRequest="68" Margin="3,2" RowDefinitions="40,28" FlexLayout.Shrink="0">
+                                                    <views:ReactionChoiceView BindingContext="{Binding Reaction}" HorizontalOptions="Center"
+                                                        TapCommand="{Binding Source={RelativeSource AncestorType={x:Type vm:PolicyReactionChoice}}, Path=ToggleCommand}"/>
+                                                    <CheckBox Grid.Row="1" IsChecked="{Binding Selected}" Color="#A38DF0" HorizontalOptions="Center"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </BindableLayout.ItemTemplate>
+                                    </FlexLayout>
+                                    <Button Text="Сохранить реакции" Command="{Binding SavePolicyCommand}" Style="{StaticResource ReactionActionButton}"/>
+                                </VerticalStackLayout>
+                            </glass:MaterialFrame>
+                        </Border>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</local:SmoothBackPage>

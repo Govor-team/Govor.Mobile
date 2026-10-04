@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:behaviors="clr-namespace:Govor.Mobile.Behaviors"
+             xmlns:views="clr-namespace:Govor.Mobile.Pages.ContentViews"
+             xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Reactions"
+             x:Class="Govor.Mobile.Pages.ContentViews.ReactionChoiceView"
+             x:Name="ReactionChoice" x:DataType="vm:ReactionChoiceViewModel"
+             WidthRequest="40" HeightRequest="40">
+    <ContentView.Behaviors>
+        <behaviors:ReactionPressBehavior TapCommand="{Binding Source={x:Reference ReactionChoice}, Path=TapCommand, x:DataType=views:ReactionChoiceView}" />
+    </ContentView.Behaviors>
+    <Border StrokeThickness="0" StrokeShape="RoundRectangle 14" Background="{Binding Highlight}">
+        <Grid Padding="4" SemanticProperties.Description="{Binding Name}">
+            <Label Text="{Binding Text}" FontSize="23" TextColor="White"
+                   IsVisible="{Binding HasMedia, Converter={StaticResource BoolInvertor}}"
+                   HorizontalOptions="Center" VerticalOptions="Center" />
+            <Image Source="{Binding MediaPath}" IsVisible="{Binding HasMedia}"
+                   WidthRequest="26" HeightRequest="26" HorizontalOptions="Center" VerticalOptions="Center"
+                   IsAnimationPlaying="True" Aspect="AspectFit" />
+        </Grid>
+    </Border>
+</ContentView>

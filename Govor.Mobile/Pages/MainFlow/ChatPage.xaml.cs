@@ -1,4 +1,6 @@
-﻿using Govor.Mobile.PageModels.ContentViewsModel.Messages;
+using Govor.Mobile.Models.Reactions;
+using Govor.Mobile.Services.Implementations;
+using Govor.Mobile.PageModels.ContentViewsModel.Messages;
 using Govor.Mobile.PageModels.MainFlow;
 using System.ComponentModel;
 using System.Windows.Input;
@@ -13,15 +15,20 @@ public partial class ChatPage : SmoothBackPage
     private bool _hasMoreMessages = true;
 
     public ICommand LongPressMessageCommand { get; }
+    public ICommand ToggleReactionCommand { get; }
     public bool IsMessageSelectionMode { get; private set; }
     
-    public ChatPage(ChatPageModel model)
+    public ChatPage(ChatPageModel model, ReactionService reactions,
+        GroupMemberContactService contacts, Govor.Mobile.Services.Interfaces.IUserListItemViewModelFactory users)
     {
+        ToggleReactionCommand = new Command<ReactionChip>(ToggleReaction);
         InitializeComponent();
+        _reactions = reactions; _contacts = contacts; _users = users;
         LongPressMessageCommand = new Command<MessagesViewModel>(OnMessageLongPressed);
         BindingContext = model;
         ChatHeader.SelectionModel = model;
         model.PropertyChanged += ModelOnPropertyChanged;
+        model.GroupAccessLost += CloseCommunity;
         UpdateSelectionModeUi(model.IsSelectionMode);
         
         CollectionView.Scrolled += CollectionView_Scrolled;
@@ -40,21 +47,47 @@ public partial class ChatPage : SmoothBackPage
     }
     protected override void OnDisappearing()
     {
+        if (BindingContext is ChatPageModel model) model.StopGroupUpdates();
+        _reactions.Changed -= ReactionsChanged;
+        _reactions.Reconnected -= ReactionsReconnected;
+        if (BindingContext is ChatPageModel m) m.MessageGroups.CollectionChanged -= ReactionGroupsChanged;
+        CloseMessageMenu(); CloseUserProfile();
         _pageVisible = false;
         _readTimer.Stop();
         base.OnDisappearing();
     }
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         _pageVisible = true;
+        _reactions.Changed += ReactionsChanged;
+        _reactions.Reconnected += ReactionsReconnected;
+        if (BindingContext is ChatPageModel m) m.MessageGroups.CollectionChanged += ReactionGroupsChanged;
+        _hydrated.Clear();
+        HydrateReactions();
         _readTimer.Start();
         if (BindingContext is ChatPageModel bc)
         {
-            if (!bc.IsLoaded)
-                _ = bc.InitAsync();
+            bc.StartGroupUpdates();
+            try { await bc.InitAsync(); }
+            catch (Govor.Mobile.Services.Api.GroupApiException ex) when
+                (bc.IsGroup && ex.Status is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.NotFound)
+            { CloseCommunity(); }
+            catch (Exception ex)
+            {
+                await DisplayAlertAsync("Чат", ex.Message, "OK");
+            }
         }
 
+        UpdateSelectionModeUi(BindingContext is ChatPageModel current && current.IsSelectionMode);
         base.OnAppearing();
+    }
+
+    private async void CloseCommunity()
+    {
+        if (!_pageVisible) return;
+        CloseMessageMenu();
+        if (BindingContext is ChatPageModel model) model.Dispose();
+        await Shell.Current.GoToAsync("//root", false);
     }
 
     private void SendMessageButtonClicked(object? sender, EventArgs e)
@@ -73,6 +106,7 @@ public partial class ChatPage : SmoothBackPage
         _firstVisible = e.FirstVisibleItemIndex;
         _lastVisible = e.LastVisibleItemIndex;
         ReadVisibleMessages();
+        RefreshVisibleReactions();
         // Показ/скрытие floating-кнопки "скролл вниз"
         try
         {
@@ -160,11 +194,12 @@ public partial class ChatPage : SmoothBackPage
 
     private void MessageTapped(object? sender, TappedEventArgs e)
     {
-        if (BindingContext is not ChatPageModel model || !model.IsSelectionMode)
-            return;
-
+        if (BindingContext is not ChatPageModel model) return;
         if (sender is BindableObject view && view.BindingContext is MessagesViewModel message)
-            model.ToggleMessageSelectionCommand.Execute(message);
+        {
+            if (model.IsSelectionMode) model.ToggleMessageSelectionCommand.Execute(message);
+            else ShowMessageMenu(message);
+        }
     }
 
     private void OnMessageLongPressed(MessagesViewModel? message)
@@ -177,11 +212,12 @@ public partial class ChatPage : SmoothBackPage
 
     private void ModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(ChatPageModel.IsSelectionMode))
+        if (e.PropertyName != nameof(ChatPageModel.IsSelectionMode) && e.PropertyName != nameof(ChatPageModel.CanWrite) && e.PropertyName != nameof(ChatPageModel.CanModerateGroup))
             return;
 
         MainThread.BeginInvokeOnMainThread(() =>
         {
+            if (e.PropertyName == nameof(ChatPageModel.CanWrite) || e.PropertyName == nameof(ChatPageModel.CanModerateGroup)) CloseMessageMenu();
             IsMessageSelectionMode = sender is ChatPageModel model && model.IsSelectionMode;
             UpdateSelectionModeUi(IsMessageSelectionMode);
         });
@@ -189,6 +225,6 @@ public partial class ChatPage : SmoothBackPage
 
     private void UpdateSelectionModeUi(bool isSelectionMode)
     {
-        MessageInput.IsVisible = !isSelectionMode;
+        MessageInput.IsVisible = !isSelectionMode && (BindingContext is not ChatPageModel model || model.CanWrite);
     }
 }

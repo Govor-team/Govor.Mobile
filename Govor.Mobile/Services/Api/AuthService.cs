@@ -16,15 +16,18 @@ public class AuthService : IAuthService
     private readonly IApiClient _apiClient;
     private readonly IJwtProviderService _jwtProvider;
     private readonly IBuilderDeviceInfoString _deviceInfoString;
+    private readonly Govor.Mobile.Services.Interfaces.Notification.IPushNotificationService _push;
 
     public AuthService(
         IApiClient apiClient,
         IJwtProviderService jwtProvider,
-        IBuilderDeviceInfoString deviceInfoString)
+        IBuilderDeviceInfoString deviceInfoString,
+        Govor.Mobile.Services.Interfaces.Notification.IPushNotificationService push)
     {
         _apiClient = apiClient;
         _jwtProvider = jwtProvider;
         _deviceInfoString = deviceInfoString;
+        _push = push;
 
         _jwtProvider.WasClearTokens += () =>
         {
@@ -96,6 +99,9 @@ public class AuthService : IAuthService
 
     public async Task LogoutAsync()
     {
+        // DELETE must run while the session still has usable credentials.
+        try { await _push.UnregisterAsync(); }
+        catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Push logout cleanup failed: {ex.Message}"); }
         var result = await _apiClient.DeleteAsync("api/session/close");
         if (result.IsSuccess)
         {

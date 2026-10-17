@@ -39,6 +39,7 @@ namespace Govor.Mobile
                 .UseLocalNotification()
                 .UseFirebasePushNotifications(options =>
                 {
+                    options.QueueFactory = new Plugin.FirebasePushNotifications.Model.Queues.PersistentQueueFactory();
                     // Создаём канал для чатов (Android) — очень важно
 #if ANDROID
                     options.Android.NotificationChannels = new[]
@@ -46,9 +47,11 @@ namespace Govor.Mobile
                         new NotificationChannelRequest
                         {
                             ChannelId          = "chat_messages",
+                            IsDefault          = true,
                             ChannelName        = "Сообщения",
                             Description        = "Уведомления о новых сообщениях в чатах",
                             Importance         = NotificationImportance.High,
+                            SoundUri           = Android.Provider.Settings.System.DefaultNotificationUri,
                             LockscreenVisibility      =  NotificationVisibility.Public,          
                             // VibrationPattern   = new long[] { 0, 250, 250, 250 },  // пример вибрации
                             // Sound              = "chat_sound",   // имя файла без расширения из Resources/raw

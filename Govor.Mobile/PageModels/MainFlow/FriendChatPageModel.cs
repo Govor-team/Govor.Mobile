@@ -13,6 +13,7 @@ namespace Govor.Mobile.PageModels.MainFlow;
 [QueryProperty(nameof(ChatIdString), "chatId")]
 [QueryProperty(nameof(IsGroup), "isGroup")]
 [QueryProperty(nameof(PeerIdString), "peerId")]
+[QueryProperty(nameof(TargetMessageIdString), "messageId")]
 public partial class ChatPageModel : ObservableObject, IInitializableViewModel, IDisposable
 {
     private readonly IMessagesListController _controller;
@@ -146,6 +147,32 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         return _controller.MarkAsReadAsync(_currentUserId, ids);
     }
     private Guid _peerUserId = Guid.Empty;
+    public Guid? TargetMessageId { get; private set; }
+    public string TargetMessageIdString { set => TargetMessageId = Guid.TryParse(value, out var id) ? id : null; }
+
+    public async Task<MessagesGroupModel?> FindPushMessageAsync(Func<bool> isVisible)
+    {
+        if (TargetMessageId is not Guid target) return null;
+        var chat = ChatId;
+        // A long offline interval can span several forward-sync pages.
+        while (isVisible() && ChatId == chat)
+        {
+            if (MessageGroups.Any(g => g.Messages.Any(m => m.Id == target))) break;
+            var newest = MessageGroups.LastOrDefault()?.Messages.LastOrDefault()?.Id;
+            await _controller.SyncAsync();
+            // Repository events queue collection updates on the UI dispatcher.
+            await Task.Yield();
+            if (MessageGroups.LastOrDefault()?.Messages.LastOrDefault()?.Id == newest) break;
+        }
+        while (isVisible() && ChatId == chat)
+        {
+            var group = MessageGroups.FirstOrDefault(g => g.Messages.Any(m => m.Id == target));
+            if (group != null) { TargetMessageId = null; return group; }
+            if (await LoadMoreAsync() == 0) break;
+        }
+        TargetMessageId = null;
+        return null;
+    }
     public string PeerIdString { set { Guid.TryParse(value, out _peerUserId); } }
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private IAsyncRelayCommand _GoBackCommand { get; }

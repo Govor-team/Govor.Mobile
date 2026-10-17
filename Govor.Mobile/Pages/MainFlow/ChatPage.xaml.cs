@@ -68,7 +68,23 @@ public partial class ChatPage : SmoothBackPage
         if (BindingContext is ChatPageModel bc)
         {
             bc.StartGroupUpdates();
-            try { await bc.InitAsync(); }
+            try
+            {
+                _firstVisible = _lastVisible = -1;
+                _hasMoreMessages = true;
+                await bc.InitAsync();
+                if (bc.TargetMessageId.HasValue)
+                {
+                    _isLoadingMore = true;
+                    try
+                    {
+                        var target = await bc.FindPushMessageAsync(() => _pageVisible);
+                        if (_pageVisible && target != null)
+                            CollectionView.ScrollTo(target, position: ScrollToPosition.Center, animate: false);
+                    }
+                    finally { _isLoadingMore = false; }
+                }
+            }
             catch (Govor.Mobile.Services.Api.GroupApiException ex) when
                 (bc.IsGroup && ex.Status is System.Net.HttpStatusCode.Forbidden or System.Net.HttpStatusCode.NotFound)
             { CloseCommunity(); }

@@ -14,8 +14,10 @@ public class PushTokenService : IPushTokenService
     
     public async Task<Result<bool>> PushToken(string token, string platform)
     {
-        if (string.IsNullOrEmpty(token) || string.IsNullOrWhiteSpace(token))
-            return Result<bool>.Failure("Push token is empty or null");
+        if (string.IsNullOrWhiteSpace(token) || token.Length > 512)
+            return Result<bool>.Failure("Push token must contain 1–512 characters");
+        if (string.IsNullOrWhiteSpace(platform) || platform.Length > 50)
+            return Result<bool>.Failure("Push platform must contain 1–50 characters");
 
         var req = new RegisterPushTokenRequest()
         {
@@ -34,5 +36,11 @@ public class PushTokenService : IPushTokenService
         {
             return Result<bool>.Failure(result.ErrorMessage);
         }
+    }
+
+    public async Task<Result<bool>> DeleteTokenAsync()
+    {
+        var result = await _apiClient.DeleteAsync("/api/pushes/token", authenticated: true);
+        return result.IsSuccess ? Result<bool>.Success(true) : Result<bool>.Failure(result.ErrorMessage);
     }
 }

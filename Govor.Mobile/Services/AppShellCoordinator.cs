@@ -112,11 +112,14 @@ public sealed class AppShellCoordinator : IAppShellCoordinator
 
         await MainThread.InvokeOnMainThreadAsync(() => PublishRootPage(shell));
 
+        await _pushNotificationService.SetShellReadyAsync(true);
+
         await RunAuthenticatedStartupAsync();
     }
 
     private async Task ShowUnauthenticatedShellAsync()
     {
+        await _pushNotificationService.SetShellReadyAsync(false);
         await _hubs.DisconnectAllAsync();
         var shell = await MainThread.InvokeOnMainThreadAsync(
             () => _serviceProvider.GetRequiredService<AuthShell>());
@@ -125,7 +128,7 @@ public sealed class AppShellCoordinator : IAppShellCoordinator
             return;
 
         await MainThread.InvokeOnMainThreadAsync(() => PublishRootPage(shell));
-        _ = UnregisterPushNotificationsAsync();
+        await UnregisterPushNotificationsAsync();
     }
 
     private void PublishRootPage(Page page)

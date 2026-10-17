@@ -210,6 +210,13 @@
 	  <GoogleServicesJson Include="Platforms\Android\google-services.json" />
 	</ItemGroup>
 
+    <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+        <CodesignEntitlements>Platforms\iOS\Entitlements.plist</CodesignEntitlements>
+    </PropertyGroup>
+    <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios' And Exists('Platforms\iOS\GoogleService-Info.plist')">
+        <BundleResource Include="Platforms\iOS\GoogleService-Info.plist" Link="GoogleService-Info.plist" />
+    </ItemGroup>
+
 	<ItemGroup>
         <Reference Include="BetterUIKit">
             <HintPath>..\libs\android\BetterUIKit.dll</HintPath>

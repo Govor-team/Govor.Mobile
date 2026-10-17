@@ -20,6 +20,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="../Govor.Mobile/Services/Api/PushTokenService.cs" Link="Production/PushTokenService.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Api/IPushTokenService.cs" Link="Production/IPushTokenService.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Implementations/Notification/PushTokenRegistration.cs" Link="Production/PushTokenRegistration.cs"/>
+        <Compile Include="../Govor.Mobile/Services/Implementations/Notification/PushMessageHistory.cs" Link="Production/PushMessageHistory.cs"/>
+        <Compile Include="../Govor.Mobile/Models/Requests/RegisterPushTokenRequest.cs" Link="Production/RegisterPushTokenRequest.cs"/>
+        <Compile Include="../Govor.Mobile/Models/ChatPushNotification.cs" Link="Production/ChatPushNotification.cs"/>
         <Compile Include="../Govor.Mobile/Services/Implementations/JwtServices/JwtProviderService.cs" Link="Production/JwtProviderService.cs"/>
         <Compile Include="../Govor.Mobile/Services/Interfaces/JwtServices/*.cs" Link="Production/%(Filename)%(Extension)"/>
         <Compile Include="../Govor.Mobile/Services/Interfaces/ServerIpProvader.cs" Link="Production/IServerIpProvider.cs"/>

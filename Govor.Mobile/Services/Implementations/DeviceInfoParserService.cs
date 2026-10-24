@@ -1,27 +1,31 @@
-﻿using Govor.Mobile.Services.Interfaces;
+using Govor.Mobile.Services.Interfaces;
 using System.Text.RegularExpressions;
 
 namespace Govor.Mobile.Services.Implementations;
 
 public class DeviceInfoParserService : IDeviceInfoParserService
 {
-    // Формат: "Имя устройства on Платформа Версия"
-    private static readonly Regex _regex = new(@"^(.*?)\s+on\s+([^\s]+)\s+([\w\.]+)$", RegexOptions.Compiled);
+    // Descriptions from older or third-party clients may be arbitrary text.
+    // Parse the current client's format when possible, but keep every session visible.
+    private static readonly Regex _regex = new(
+        @"^(?<name>.+)\s+on\s+(?<platform>\S+)\s+(?<version>\S+)$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
-    public DeviceInfoData Parse(string info)
+    public DeviceInfoData Parse(string? info)
     {
         if (string.IsNullOrWhiteSpace(info))
-            throw new ArgumentException("Info string cannot be null or empty.", nameof(info));
+            return new DeviceInfoData { DeviceName = "Неизвестное устройство" };
 
-        var match = _regex.Match(info);
+        var description = info.Trim();
+        var match = _regex.Match(description);
         if (!match.Success)
-            throw new FormatException($"Cannot parse device info string: '{info}'");
+            return new DeviceInfoData { DeviceName = description };
 
         return new DeviceInfoData
         {
-            DeviceName = match.Groups[1].Value.Trim(),
-            Platform = match.Groups[2].Value.Trim(),
-            Version = match.Groups[3].Value.Trim()
+            DeviceName = match.Groups["name"].Value.Trim(),
+            Platform = match.Groups["platform"].Value,
+            Version = match.Groups["version"].Value
         };
     }
 }

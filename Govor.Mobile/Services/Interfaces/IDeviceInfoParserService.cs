@@ -1,8 +1,8 @@
-﻿namespace Govor.Mobile.Services.Interfaces;
+namespace Govor.Mobile.Services.Interfaces;
 
 public interface IDeviceInfoParserService
 {
-    public DeviceInfoData Parse(string info);
+    public DeviceInfoData Parse(string? info);
 }
 
 public class DeviceInfoData

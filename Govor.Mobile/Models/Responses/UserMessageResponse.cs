@@ -3,6 +3,8 @@
 public class UserMessageResponse
 {
     public Guid MessageId { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool E2eeDecryptionFailed { get; set; }
     public Guid SenderId { get; set; }
     public Guid RecipientId { get; set; }
     public RecipientType RecipientType{get; set; }

@@ -5,6 +5,8 @@ using Govor.Mobile.Services.Interfaces;
 using Govor.Mobile.Services.Interfaces.JwtServices;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
+using Govor.Mobile.Services.E2ee;
+using Govor.Security;
 
 namespace Govor.Mobile.Services.Hubs;
 
@@ -14,12 +16,14 @@ public class ChatHub : IChatHub
     private readonly ILogger<ChatHub> _logger;
     private readonly IJwtProviderService _jwtProvider;
     private readonly IServerIpProvider _ipProvider;
+    private readonly E2eeClient _e2ee;
     
-    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider, IRetryPolicy retryPolicy)
+    public ChatHub(ILogger<ChatHub> logger, IJwtProviderService jwtProvider, IServerIpProvider ipProvider, IRetryPolicy retryPolicy, E2eeClient e2ee)
     {
         _logger = logger;
         _jwtProvider = jwtProvider;
         _ipProvider = ipProvider;
+        _e2ee = e2ee;
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl($"{_ipProvider.IP}/hubs/chats",
@@ -50,16 +54,18 @@ public class ChatHub : IChatHub
         });
         #region Events
 
-        _hubConnection.On("ReceiveMessage", (UserMessageResponse dto) =>
+        _hubConnection.On("ReceiveMessage", async (UserMessageResponse dto) =>
         {
+            await DecodeAsync(dto);
             if(dto.MessageId != Guid.Empty && !string.IsNullOrEmpty(dto.EncryptedContent))
                 ReceiveMessage?.Invoke(dto);
             
             _logger.LogInformation("Received message: {0}", dto.MessageId);
         });
         
-        _hubConnection.On("MessageSent", (UserMessageResponse dto) =>
+        _hubConnection.On("MessageSent", async (UserMessageResponse dto) =>
         {
+            await DecodeAsync(dto);
             if(dto.MessageId != Guid.Empty && !string.IsNullOrEmpty(dto.EncryptedContent))
                 MessageSent?.Invoke(dto);
             
@@ -73,8 +79,14 @@ public class ChatHub : IChatHub
             _logger.LogInformation("Removed message: {0}", dto.MessageId);
         });
         
-        _hubConnection.On("MessageEdited", (MessageEditResponse dto) =>
+        _hubConnection.On("MessageEdited", async (MessageEditResponse dto) =>
         {
+            try
+            {
+                dto.NewEncryptedContent = await _e2ee.DecryptAsync(dto.NewEncryptedContent, dto.MessageId,
+                    dto.RecipientId, (int)dto.RecipientType, dto.EditorId, dto.ReplyToMessageId, true);
+            }
+            catch { return; } // Never replace an authenticated local message with a failed edit.
             if(dto.MessageId != Guid.Empty && !string.IsNullOrEmpty(dto.NewEncryptedContent))
                 MessageEdited?.Invoke(dto);
             
@@ -114,12 +126,27 @@ public class ChatHub : IChatHub
     {
         try
         {
-            return await _hubConnection.InvokeAsync<HubResult<UserMessageResponse>>("Send", request);
+            HubResult<UserMessageResponse> result;
+            var attempt = 0;
+            do
+            {
+                var encrypted = await _e2ee.EncryptAsync(request.EncryptedContent, request.RecipientId,
+                    (int)request.RecipientType, request.ReplyToMessageId,
+                    request.MediaAttachments.Select(m => m.MediaId).ToArray());
+                var wire = request with { EncryptedContent = encrypted,
+                    MediaAttachments = request.MediaAttachments.Select(m => m with { EncryptedKey = string.Empty }).ToList() };
+                result = await _hubConnection.InvokeAsync<HubResult<UserMessageResponse>>("Send", wire);
+                // Retry only a definite rejection before persistence. Ambiguous
+                // network failures must not create a second message ID.
+            } while (++attempt < 2 && result.Status == HubResultStatus.BadRequest &&
+                     result.ErrorMessage == E2eeProtocol.DevicesChangedError);
+            if (result.Value is not null) await DecodeAsync(result.Value);
+            return result;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error calling Send");
-            return HubResult<UserMessageResponse>.Error("Error during sending the message");
+            return HubResult<UserMessageResponse>.Error(ex.Message);
         }
     }
 
@@ -153,6 +180,8 @@ public class ChatHub : IChatHub
     {
         try
         {
+            if (!E2eeProtocol.IsEncrypted(request.NewEncryptedContent))
+                throw new InvalidOperationException("Редактирование требует шифрования E2EE.");
             return await _hubConnection.InvokeAsync<HubResult<MessageEditResponse>>("Edit", request);
         }
         catch (Exception ex)
@@ -176,6 +205,7 @@ public class ChatHub : IChatHub
     {
         if (_hubConnection.State == HubConnectionState.Disconnected)
         {
+            await _e2ee.InitializeAsync();
             await _hubConnection.StartAsync();
             _logger.LogInformation("Connected to ProfileHub.");
         }
@@ -187,6 +217,21 @@ public class ChatHub : IChatHub
         {
             await _hubConnection.StopAsync();
             _logger.LogInformation("Disconnected from ProfileHub.");
+        }
+    }
+
+    private async Task DecodeAsync(UserMessageResponse dto)
+    {
+        try
+        {
+            dto.EncryptedContent = await _e2ee.DecryptAsync(dto.EncryptedContent, dto.MessageId,
+                dto.RecipientId, (int)dto.RecipientType, dto.SenderId, dto.ReplyToMessageId, dto.IsEdited);
+        }
+        catch
+        {
+            dto.E2eeDecryptionFailed = true;
+            dto.EncryptedContent = "[Сообщение E2EE недоступно: ключ не подтверждён, отсутствует или проверка не пройдена]";
+            dto.MediaAttachments.Clear();
         }
     }
 }

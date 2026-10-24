@@ -4,6 +4,8 @@ namespace Govor.Mobile.Models.Responses;
 public class MessageResponse
 {
     public Guid Id { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool E2eeDecryptionFailed { get; set; }
     public Guid SenderId { get; set; }
     public Guid RecipientId { get; set; } // or GroupId
     public RecipientType RecipientType { get; set; }

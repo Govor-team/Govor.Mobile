@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
@@ -30,6 +30,9 @@
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.1.1</ApplicationDisplayVersion>
+		<!-- Keep NuGet restore metadata identical across all target frameworks. -->
+		<Version>$(ApplicationDisplayVersion)</Version>
+		<PackageVersion>$(ApplicationDisplayVersion)</PackageVersion>
 		<ApplicationVersion>2</ApplicationVersion>
 
 		<!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
@@ -70,6 +73,7 @@
 
 
 	<ItemGroup>
+		<PackageReference Include="jose-jwt" Version="5.3.0" />
 		<PackageReference Include="AutoMapper" Version="12.0.1" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
 		<PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="7.0.0" />

@@ -16,6 +16,7 @@ public class MessagesRepository : IMessagesRepository
     private readonly IDbContextFactory<GovorDbContext> _contextFactory;
     private readonly IChatLoaderApi _api;
     private readonly IChatHub _hub;
+    private readonly Govor.Mobile.Services.E2ee.E2eeClient _e2ee;
     private readonly Govor.Mobile.Services.Implementations.ReactionService _reactions;
     private readonly IMapper _mapper;
     private readonly IUserProfileService _profileService;
@@ -63,7 +64,8 @@ public class MessagesRepository : IMessagesRepository
         Govor.Mobile.Services.Implementations.ReactionService reactions,
         IMapper mapper,
         IMemoryCache cache,
-        IUserProfileService profileService)
+        IUserProfileService profileService,
+        Govor.Mobile.Services.E2ee.E2eeClient e2ee)
     {
         _contextFactory = contextFactory;
         _api = api;
@@ -72,6 +74,7 @@ public class MessagesRepository : IMessagesRepository
         _mapper = mapper;
         _cache = cache;
         _profileService = profileService;
+        _e2ee = e2ee;
     }
 
     private async Task<Guid> GetMyIdAsync()
@@ -188,12 +191,18 @@ public class MessagesRepository : IMessagesRepository
 
     public async Task<bool> EditMessageAsync(Guid messageId, string newText)
     {
-        var request = new EditMessageRequest {
-            MessageId = messageId,
-            NewEncryptedContent = newText 
-        };
-
-        var result = await _hub.Edit(request);
+        await using var editContext = await _contextFactory.CreateDbContextAsync();
+        var original = await editContext.Messages.AsNoTracking().SingleAsync(m => m.Id == messageId);
+        HubResult<MessageEditResponse> result;
+        var attempt = 0;
+        do
+        {
+            var encrypted = await _e2ee.EncryptAsync(newText, original.ChatId, (int)original.RecipientType,
+                original.ReplyToMessageId, original.MediaAttachments.Select(m => m.Id).ToArray(), messageId);
+            var request = new EditMessageRequest { MessageId = messageId, NewEncryptedContent = encrypted };
+            result = await _hub.Edit(request);
+        } while (++attempt < 2 && result.Status == HubResultStatus.BadRequest &&
+                 result.ErrorMessage == Govor.Security.E2eeProtocol.DevicesChangedError);
 
         if (result.Status != HubResultStatus.Success)
         {
@@ -345,6 +354,7 @@ public class MessagesRepository : IMessagesRepository
         
         foreach (var msg in messages.DistinctBy(x => x.Id))
         {
+            if (msg.E2eeDecryptionFailed) continue;
             await _reactions.AcceptHistoryAsync(msg);
             // Избегаем дубликатов при пакетной вставке
             if (await context.Messages.AnyAsync(x => x.Id == msg.Id)) continue;
@@ -376,6 +386,7 @@ public class MessagesRepository : IMessagesRepository
     // Единый метод для сохранения входящего или отправленного (подтвержденного) сообщения
     private async Task SaveOrUpdateMessageAsync(UserMessageResponse msg)
     {
+        if (msg.E2eeDecryptionFailed) return;
         await _writeLock.WaitAsync();
         try { await SaveOrUpdateMessageCoreAsync(msg); }
         finally { _writeLock.Release(); }

@@ -68,6 +68,9 @@ internal static class ServiceRegistration
     
     public static MauiAppBuilder RegisterAppServices(this MauiAppBuilder builder)
     {
+        builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.IE2eeStorage, Govor.Mobile.Services.E2ee.E2eeSecureStorage>();
+        builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.E2eeClient>();
+        builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.IE2eeRecoveryPrompt, Govor.Mobile.Services.E2ee.E2eeRecoveryPrompt>();
         builder.Services.AddSingleton<NetworkAvailabilityService>();
         builder.Services.AddSingleton<IAppStartupOrchestrator, AppStartupOrchestrator>();
         builder.Services.AddSingleton<IAppShellCoordinator, AppShellCoordinator>();

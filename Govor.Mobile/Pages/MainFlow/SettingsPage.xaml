@@ -349,6 +349,13 @@
                     </CollectionView>
                 </VerticalStackLayout>
                 
+                <Button Text="Отпечаток ключа E2EE" Clicked="OnE2eeKeysClicked"
+                        BackgroundColor="#343746" TextColor="White" CornerRadius="16" />
+                <Button Text="Перенос истории / резервный код" Clicked="OnE2eeRecoveryClicked"
+                        BackgroundColor="#343746" TextColor="White" CornerRadius="16" />
+                <Button Text="Синхронизировать защищённую историю" Clicked="OnE2eeSyncClicked"
+                        BackgroundColor="#343746" TextColor="White" CornerRadius="16" />
+
                 <Border Style="{StaticResource ReactionGlassBorder}">
                     <sharp:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="14,8">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" MinimumHeightRequest="44">

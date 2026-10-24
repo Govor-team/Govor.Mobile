@@ -4,6 +4,7 @@ public interface IDeviceSessionManagerService
 {
     Task<bool> CloseSessionAsync(Guid sessionId);
     Task<List<DeviceSession>> LoadSessionsAsync();
+    Task<bool> IsCurrentSessionAsync(Guid sessionId);
 }
 
 public class DeviceSession

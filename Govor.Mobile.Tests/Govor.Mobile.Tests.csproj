@@ -21,6 +21,15 @@
     </ItemGroup>
 
     <ItemGroup>
+        <Compile Include="../Govor.Mobile/Utilities/SessionIdentity.cs" Link="Production/SessionIdentity.cs" />
+        <Compile Include="../Govor.Mobile/Services/Implementations/Profiles/DeviceSessionManagerService.cs" Link="Production/DeviceSessionManagerService.cs" />
+        <Compile Include="../Govor.Mobile/Services/Interfaces/Profiles/IDeviceSessionManagerService.cs" Link="Production/IDeviceSessionManagerService.cs" />
+        <Compile Include="../Govor.Mobile/Services/Interfaces/ISessionsService.cs" Link="Production/ISessionsService.cs" />
+        <Compile Include="../Govor.Mobile/Models/Responses/UserSession.cs" Link="Production/UserSession.cs" />
+        <Compile Include="../Govor.Mobile/Utilities/GalleryMediaPolicy.cs" Link="Production/GalleryMediaPolicy.cs" />
+        <Compile Include="../Govor.Mobile/Services/Implementations/MediaLoaderService.cs" Link="Production/MediaLoaderService.cs" />
+        <Compile Include="../Govor.Mobile/Services/Interfaces/IMediaLoaderService.cs" Link="Production/IMediaLoaderService.cs" />
+        <Compile Include="../Govor.Mobile/Models/Responses/DownloadMediaResponse.cs" Link="Production/DownloadMediaResponse.cs" />
         <Compile Include="../Govor.Mobile/Services/Implementations/DeviceInfoParserService.cs" Link="Production/DeviceInfoParserService.cs" />
         <Compile Include="../Govor.Mobile/Services/Interfaces/IDeviceInfoParserService.cs" Link="Production/IDeviceInfoParserService.cs" />
         <Compile Include="../Govor.Mobile/Services/Implementations/PlatformIconService.cs" Link="Production/PlatformIconService.cs" />

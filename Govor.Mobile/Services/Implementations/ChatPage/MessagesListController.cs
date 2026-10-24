@@ -167,12 +167,13 @@ public class MessagesListController : IMessagesListController, IDisposable
        return groups.ToList();
     }
 
-    public async Task<Result<bool>> SendAsync(Guid chatId, string text)
+    public async Task<Result<bool>> SendAsync(Guid chatId, string text, IReadOnlyList<Govor.Mobile.Models.MediaReference>? media = null)
     {
         var request = new MessageRequest 
         { 
             RecipientId = chatId, 
             EncryptedContent = text,
+            MediaAttachments = media?.ToList() ?? [],
             RecipientType = _isGroup ? RecipientType.Group : RecipientType.User
         };
         

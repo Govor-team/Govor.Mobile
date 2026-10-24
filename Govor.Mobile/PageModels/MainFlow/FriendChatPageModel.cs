@@ -79,6 +79,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     partial void OnIsGroupChanged(bool value) => ResetChatContext();
     private void ResetChatContext()
     {
+        ClearPendingMedia();
         IsLoaded = false;
         GroupProfile = null;
         Header = null!;
@@ -121,8 +122,11 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         IChatHeaderService headerService,
         Govor.Mobile.Services.Api.GroupsApiService groups, IServerIpProvider server,
         Govor.Mobile.Services.Implementations.GroupRealtimeService groupUpdates,
-        Govor.Mobile.Services.Implementations.GroupMediaService groupMedia)
+        Govor.Mobile.Services.Implementations.GroupMediaService groupMedia,
+        IMediaLoaderService mediaLoader)
     {
+        _mediaLoader = mediaLoader;
+        PendingMedia.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasPendingMedia));
         _groups = groups; _server = server; _groupUpdates = groupUpdates; _groupMedia = groupMedia;
         _controller = controller;
         _headerService = headerService;
@@ -315,6 +319,8 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     [RelayCommand(CanExecute = nameof(CanEditMessageCommand))]
     private void EditMessage()
     {
+        if (IsSendingMedia) return;
+        ClearPendingMedia();
         var message = SelectedMessages.SingleOrDefault();
         if (message == null)
             return;
@@ -429,7 +435,11 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     [RelayCommand]
     private async Task SendMessageAsync()
     {
-        if (string.IsNullOrWhiteSpace(MessageText) || !CanWrite) return;
+        if ((string.IsNullOrWhiteSpace(MessageText) && !HasPendingMedia) || !CanWrite || IsPickingMedia || IsSendingMedia) return;
+
+        IsSendingMedia = true;
+        try
+        {
 
         if (IsEditingMessage && EditingMessage != null)
         {
@@ -448,20 +458,51 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
             return;
         }
 
-        var textToSend = MessageText;
-        MessageText = string.Empty;
-
-        var result = await _controller.SendAsync(ChatId, textToSend);
-
-        if (!result.IsSuccess)
+        var targetChat = ChatId;
+        var targetIsGroup = IsGroup;
+        var textToSend = MessageText ?? string.Empty;
+        var files = PendingMedia.ToArray();
+        var references = new List<Govor.Mobile.Models.MediaReference>();
+        for (var i = 0; i < files.Length; i++)
         {
-            if (string.IsNullOrEmpty(MessageText)) MessageText = textToSend;
+            MediaStatus = $"Загрузка {i + 1} из {files.Length}…";
+            var file = files[i];
+            if (file.UploadedId is null)
+            {
+                await using var stream = new MemoryStream(file.Data, false);
+                var upload = await _mediaLoader.Upload(new Govor.Mobile.Models.Requests.UploadMediaRequest
+                {
+                    FileStream = stream, FileName = file.FileName, MimeType = file.MimeType,
+                    Type = file.IsVideo ? Govor.Mobile.Models.Requests.MediaType.Video : Govor.Mobile.Models.Requests.MediaType.Image
+                });
+                if (!upload.IsSuccess) throw new InvalidOperationException("Не удалось загрузить вложение. Попробуйте ещё раз.");
+                file.UploadedId = upload.Value.MediaId;
+            }
+            references.Add(new() { MediaId = file.UploadedId.Value });
+        }
+        if (ChatId != targetChat || IsGroup != targetIsGroup || !CanWrite) return;
+        MediaStatus = "Отправка…";
+        var result = await _controller.SendAsync(targetChat, textToSend, references);
+
+        if (result.IsSuccess)
+        {
+            if (MessageText == textToSend) MessageText = string.Empty;
+            foreach (var file in files) PendingMedia.Remove(file);
+        }
+        else
+        {
             if (IsGroup)
             {
                 try { await RefreshGroupAccessAsync(); } catch { }
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Сообщение", result.ErrorMessage ?? "Не удалось отправить сообщение.", "OK");
             }
+            await Shell.Current.CurrentPage.DisplayAlertAsync("Сообщение", "Не удалось отправить сообщение. Текст и вложения сохранены — можно повторить отправку.", "OK");
         }
+        }
+        catch (Exception)
+        {
+            await Shell.Current.CurrentPage.DisplayAlertAsync("Вложения", "Не удалось отправить сообщение. Проверьте соединение и повторите попытку. Выбранные файлы сохранены.", "OK");
+        }
+        finally { IsSendingMedia = false; MediaStatus = string.Empty; }
     }
 
     [RelayCommand]
@@ -495,6 +536,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
     // Очистка при закрытии страницы
     public void Dispose()
     {
+        ClearPendingMedia();
         StopGroupUpdates();
         if (_controller is IDisposable disposable) disposable.Dispose();
         UnsubscribeRealtimeEvents();

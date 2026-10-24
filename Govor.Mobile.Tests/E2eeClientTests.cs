@@ -129,6 +129,35 @@ public class E2eeClientTests
     }
 
     [Test]
+    public async Task GalleryUploadSendsOpaqueBytesAndKeepsKeyInsideEncryptedMessage()
+    {
+        var loader = new Govor.Mobile.Services.Implementations.MediaLoaderService(_api,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<Govor.Mobile.Services.Implementations.MediaLoaderService>.Instance, _client);
+        var original = "private photo with location metadata"u8.ToArray();
+        var upload = await loader.Upload(new() { FileStream = new MemoryStream(original), FileName = "sensitive-name.jpg", MimeType = "image/jpeg" });
+        Assert.That(upload.IsSuccess, Is.True, upload.ErrorMessage);
+        Assert.That(_api.UploadFields!["MimeType"], Is.EqualTo(E2eeProtocol.EncryptedMimeType));
+        Assert.That(_api.UploadFields["EncryptedKey"], Is.Empty);
+        Assert.That(_api.UploadFields["Type"], Is.EqualTo("File"));
+        Assert.That(_api.UploadName, Does.Not.Contain("sensitive-name").And.EndsWith(".bin"));
+        var secret = await _client.GetAttachmentAsync(upload.Value.MediaId);
+        Assert.That(E2eeProtocol.DecryptAttachment(_api.UploadBytes!, secret!.Key), Is.EqualTo(original));
+        var envelope = await _client.EncryptAsync("", Chat, 0, null, [upload.Value.MediaId]);
+        var plaintext = E2eeProtocol.Decrypt(envelope, _bobKeys, E2eeProtocol.Inspect(envelope).MessageId, Chat, 0, Alice);
+        Assert.That(plaintext.Text, Is.Empty);
+        Assert.That(plaintext.Attachments.Single(), Is.EqualTo(secret));
+        var download = await loader.Download(upload.Value.MediaId, encryptedOnly: true);
+        Assert.That(download.IsSuccess, Is.True, download.ErrorMessage);
+        using var resultStream = download.Value.FileStream;
+        Assert.That(await GalleryMediaPolicy.ReadAsync(resultStream), Is.EqualTo(original));
+        _api.DownloadMime = "image/jpeg";
+        Assert.That((await loader.Download(upload.Value.MediaId, encryptedOnly: true)).IsSuccess, Is.False);
+        _api.DownloadMime = E2eeProtocol.EncryptedMimeType;
+        _api.UploadBytes![^1] ^= 1;
+        Assert.That((await loader.Download(upload.Value.MediaId, encryptedOnly: true)).IsSuccess, Is.False);
+    }
+
+    [Test]
     public async Task FreshPhysicalDeviceRestoresHistoryWithoutAnotherDevicesSigningKey()
     {
         var old = await _client.EncryptAsync("history", Chat, 0, null, []);
@@ -291,6 +320,10 @@ public class E2eeClientTests
     }
     private class Api : IApiClient
     {
+        public Dictionary<string, string>? UploadFields;
+        public byte[]? UploadBytes;
+        public string? UploadName;
+        public string DownloadMime = E2eeProtocol.EncryptedMimeType;
         public DeviceKey? Registered;
         public DeviceKey Bob = null!;
         public bool RegisterOk = true;
@@ -329,7 +362,22 @@ public class E2eeClientTests
         public Task<HttpResult<T>> PostAsync<T>(string endpoint, object data, bool authenticated = true) => throw new NotSupportedException();
         public Task<HttpResult<bool>> DeleteAsync(string endpoint, bool authenticated = true) => throw new NotSupportedException();
         public Task<HttpResult<T>> PostMultipartAsync<T>(string endpoint, MultipartFormDataContent form, bool authenticated = true) => throw new NotSupportedException();
-        public Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(string endpoint, MultipartFormDataContent form, bool authenticated = true) => throw new NotSupportedException();
-        public Task<HttpResult<Govor.Mobile.Utilities.FileResult>> GetFileStreamAsync(string endpoint, bool authenticated = true) => throw new NotSupportedException();
+        public async Task<HttpResult<UploadMediaResponse>> PostMultipartAsync(string endpoint, MultipartFormDataContent form, bool authenticated = true)
+        {
+            UploadFields = new();
+            foreach (var part in form)
+            {
+                var name = part.Headers.ContentDisposition!.Name!.Trim('"');
+                if (name == "FromFile")
+                {
+                    UploadBytes = await part.ReadAsByteArrayAsync();
+                    UploadName = part.Headers.ContentDisposition.FileName!.Trim('"');
+                }
+                else UploadFields[name] = await part.ReadAsStringAsync();
+            }
+            return HttpResult<UploadMediaResponse>.Success(new() { MediaId = Guid.NewGuid(), Url = "opaque.bin" });
+        }
+        public Task<HttpResult<Govor.Mobile.Utilities.FileResult>> GetFileStreamAsync(string endpoint, bool authenticated = true) =>
+            Task.FromResult(HttpResult<Govor.Mobile.Utilities.FileResult>.Success(new(new MemoryStream(UploadBytes!, false), "opaque.bin", DownloadMime)));
     }
 }

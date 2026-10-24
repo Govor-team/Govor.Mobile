@@ -149,8 +149,8 @@ public class ApiClient : IApiClient
     {
         try
         {
-            var request = CreateRequest(HttpMethod.Get, endpoint, authenticated);
-            var response = await _httpClient.SendAsync(request);
+            using var request = CreateRequest(HttpMethod.Get, endpoint, authenticated);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -158,7 +158,11 @@ public class ApiClient : IApiClient
                 return new HttpResult<Utilities.FileResult>(error, response.StatusCode);
             }
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            const int maximum = 20_000_000;
+            if (response.Content.Headers.ContentLength > maximum)
+                throw new InvalidDataException("Слишком большой медиафайл.");
+            await using var source = await response.Content.ReadAsStreamAsync();
+            var bytes = await GalleryMediaPolicy.ReadAsync(source, maximum);
             var contentDisposition = response.Content.Headers.ContentDisposition;
 
             var fileName =
@@ -169,7 +173,7 @@ public class ApiClient : IApiClient
             var mimeType = response.Content.Headers.ContentType?.MediaType;
 
             return HttpResult<Utilities.FileResult>.Success(
-                new Utilities.FileResult(stream, fileName, mimeType));
+                new Utilities.FileResult(new MemoryStream(bytes, false), fileName, mimeType));
         }
         catch (Exception ex)
         {

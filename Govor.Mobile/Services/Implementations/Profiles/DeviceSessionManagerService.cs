@@ -8,18 +8,18 @@ public class DeviceSessionManagerService : IDeviceSessionManagerService
 {
     private readonly IDeviceInfoParserService _infoParserService;
     private readonly IPlatformIconService _iconService;
-    private readonly IBuilderDeviceInfoString _deviceInfoBuilder;
+    private readonly Govor.Mobile.Services.Interfaces.JwtServices.IJwtProviderService _jwt;
     private readonly ISessionsService _sessionsService;
 
     public DeviceSessionManagerService(
         IDeviceInfoParserService infoParserService,
         IPlatformIconService iconService,
-        IBuilderDeviceInfoString deviceInfoBuilder,
+        Govor.Mobile.Services.Interfaces.JwtServices.IJwtProviderService jwt,
         ISessionsService sessionsService)
     {
         _infoParserService = infoParserService;
         _iconService = iconService;
-        _deviceInfoBuilder = deviceInfoBuilder;
+        _jwt = jwt;
         _sessionsService = sessionsService;
     }
 
@@ -36,6 +36,9 @@ public class DeviceSessionManagerService : IDeviceSessionManagerService
         return true;
     }
 
+    public async Task<bool> IsCurrentSessionAsync(Guid sessionId) =>
+        sessionId == SessionIdentity.ReadSessionId(await _jwt.GetAccessTokenAsync());
+
     public async Task<List<DeviceSession>> LoadSessionsAsync()
     {
         List<DeviceSession> sessions = new List<DeviceSession>();
@@ -49,6 +52,7 @@ public class DeviceSessionManagerService : IDeviceSessionManagerService
 
         var newSessions = sessionResult.Value
             .OrderByDescending(s => s.createdAt).ToArray();
+        var currentSession = SessionIdentity.ReadSessionId(await _jwt.GetAccessTokenAsync());
         
         foreach (var session in newSessions)
         {
@@ -57,7 +61,7 @@ public class DeviceSessionManagerService : IDeviceSessionManagerService
                 var info = _infoParserService.Parse(session.deviceInfo);
                 var icon = _iconService.GetPlatformIcon(info.Platform);
                 
-                var isCurrent = _deviceInfoBuilder.Info == session.deviceInfo;
+                var isCurrent = currentSession == session.id;
 
                 sessions?.Add(new DeviceSession
                 {

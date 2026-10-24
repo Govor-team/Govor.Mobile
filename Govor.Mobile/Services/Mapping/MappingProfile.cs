@@ -44,7 +44,7 @@ public class MappingProfile : Profile
             // Игнорируем поля, которые заполнит MappingAction
             .ForMember(dest => dest.Time, opt => opt.Ignore())
             .ForMember(dest => dest.IsIncoming, opt => opt.Ignore())
-            //.ForMember(dest => dest.Attachments, opt => opt.Ignore())
+            .ForMember(dest => dest.Attachments, opt => opt.Ignore())
             .ForMember(dest => dest.Avatar, opt => opt.Ignore())
             // Подключаем наш Action
             .AfterMap<MessageResponseToViewModelAction>();

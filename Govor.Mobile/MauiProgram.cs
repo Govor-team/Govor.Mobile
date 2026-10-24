@@ -27,6 +27,7 @@ namespace Govor.Mobile
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Проверка совместимости платформы", Justification = "<Ожидание>")]
         public static MauiApp CreateMauiApp()
         {
+            Pages.MainFlow.GalleryMediaPage.CleanStalePreviews();
             var builder = MauiApp.CreateBuilder();
             
             builder.Services.AddMemoryCache(options =>

@@ -9,5 +9,5 @@ namespace Govor.Mobile.Services.Interfaces;
 public interface IMediaLoaderService
 {
     Task<Result<UploadMediaResponse>> Upload(UploadMediaRequest request);
-    Task<Result<DownloadMediaResponse>> Download(Guid id);
+    Task<Result<DownloadMediaResponse>> Download(Guid id, bool encryptedOnly = false);
 }

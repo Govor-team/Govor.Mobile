@@ -5,6 +5,7 @@
              xmlns:behaviors="clr-namespace:Govor.Mobile.Behaviors"
              xmlns:pages="clr-namespace:Govor.Mobile.Pages.MainFlow"
              xmlns:vm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel.Messages"
+             xmlns:mediaVm="clr-namespace:Govor.Mobile.PageModels.ContentViewsModel"
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              xmlns:local="clr-namespace:Govor.Mobile.Pages"
@@ -101,12 +102,20 @@
                                                                 NumberOfTapsRequired="2"
                                                                 Tapped="MessageDoubleTapped" />
                                                         </Border.GestureRecognizers>
-                                                        <Grid RowDefinitions="Auto,Auto,Auto" RowSpacing="5">
+                                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="5">
                                                             <Label Text="{Binding Avatar.DisplayName}" IsVisible="{Binding ShowSenderName}"
                                                                    FontSize="12" FontAttributes="Bold" TextColor="#D9C7FF"
                                                                    MaxLines="1" LineBreakMode="TailTruncation"/>
 
-                                                            <markdown:MarkdownView Grid.Row="1"
+                                                            <VerticalStackLayout Grid.Row="1" Spacing="6" IsVisible="{Binding HasAttachments}"
+                                                                                 BindableLayout.ItemsSource="{Binding Attachments}">
+                                                                <BindableLayout.ItemTemplate>
+                                                                    <DataTemplate x:DataType="mediaVm:MediaAttachmentViewModel">
+                                                                        <contentViews:MessageMediaView />
+                                                                    </DataTemplate>
+                                                                </BindableLayout.ItemTemplate>
+                                                            </VerticalStackLayout>
+                                                            <markdown:MarkdownView Grid.Row="2"
                                                                 MaximumWidthRequest="310"
                                                                 MinimumWidthRequest="67"
                                                                 HyperlinkColor="#6394B7"
@@ -117,7 +126,7 @@
 
                                                             <!-- Время внутри тела сообщения -->
                                                             <Label
-                                                                Grid.Row="2"
+                                                                Grid.Row="3"
                                                                 Text="{Binding Time}"
                                                                 FontSize="9"
                                                                 TextColor="#BFB4D2"
@@ -241,11 +250,43 @@
         <!-- INPUT -->
         <Grid Grid.Row="2"
               x:Name="MessageInput"
+              IsVisible="{Binding CanWrite}"
+              RowDefinitions="Auto,Auto,Auto"
               SafeAreaEdges="None"
               Margin="12,6,12,8"
               InputTransparent="False"
               >
-                <Border
+            <ScrollView Orientation="Horizontal" IsVisible="{Binding HasPendingMedia}" Margin="0,0,0,8">
+                <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding PendingMedia}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="mediaVm:PendingMedia">
+                            <Border Stroke="#55D9C7FF" StrokeShape="RoundRectangle 16" Background="#EE2B243D" WidthRequest="112" HeightRequest="112">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={x:Reference chatpage}, Path=BindingContext.PreviewPendingMediaCommand, x:DataType={x:Null}}"
+                                                          CommandParameter="{Binding .}" />
+                                </Border.GestureRecognizers>
+                                <Grid>
+                                    <Image Source="{Binding Preview}" Aspect="Aspect.AspectFill" />
+                                    <VerticalStackLayout VerticalOptions="End" Padding="8,4" BackgroundColor="#BB211B31" Spacing="0">
+                                        <Label Text="{Binding Label}" TextColor="White" FontSize="12" FontAttributes="Bold" />
+                                        <Label Text="{Binding Size}" TextColor="#D9C7FF" FontSize="10" />
+                                    </VerticalStackLayout>
+                                    <Button Text="×" WidthRequest="30" HeightRequest="30" Padding="0" CornerRadius="15"
+                                            FontSize="19" BackgroundColor="#DD211B31" TextColor="White" HorizontalOptions="End" VerticalOptions="Start" Margin="4"
+                                            SemanticProperties.Description="Убрать вложение"
+                                            Command="{Binding Source={x:Reference chatpage}, Path=BindingContext.RemovePendingMediaCommand, x:DataType={x:Null}}"
+                                            CommandParameter="{Binding .}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+            <HorizontalStackLayout Grid.Row="1" IsVisible="{Binding IsSendingMedia}" Spacing="8" Margin="8,0,0,6">
+                <ActivityIndicator IsRunning="{Binding IsSendingMedia}" Color="#D9C7FF" WidthRequest="18" HeightRequest="18" />
+                <Label Text="{Binding MediaStatus}" TextColor="#D9C7FF" FontSize="12" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+                <Border Grid.Row="2"
                     SafeAreaEdges="None"
                     Background="#661B172E"
                     Stroke="#55E6D8FF"
@@ -256,9 +297,16 @@
                         <Shadow Brush="#90000000" Offset="0,4" Radius="12" Opacity="0.35" />
                     </Border.Shadow>
 
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" SafeAreaEdges="None">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6" SafeAreaEdges="None">
+                    <Button Text="＋" Command="{Binding AttachMediaCommand}" IsEnabled="{Binding CanChangeMedia}"
+                            IsVisible="{Binding IsEditingMessage, Converter={StaticResource BoolInvertor}}"
+                            SemanticProperties.Description="Прикрепить фото или видео из галереи"
+                            FontSize="26" WidthRequest="40" HeightRequest="42" Padding="0" CornerRadius="20"
+                            BackgroundColor="Transparent" TextColor="#D9C7FF" VerticalOptions="End" />
 
                     <Editor
+                        Grid.Column="1"
+                        IsEnabled="{Binding CanChangeMedia}"
                         x:Name="MessageEditor"
                         Text="{Binding MessageText, Mode=TwoWay}"
                         Placeholder="Сообщение..."
@@ -273,7 +321,8 @@
                     <!-- Кнопки -->
                     <HorizontalStackLayout
                         SafeAreaEdges="None"
-                        Grid.Column="1"
+                        Grid.Column="2"
+                        IsEnabled="{Binding CanChangeMedia}"
                         Spacing="4"
                         VerticalOptions="End">
 

@@ -224,6 +224,10 @@ public class ChatHub : IChatHub
     {
         try
         {
+            if (E2eeProtocol.IsEncrypted(dto.EncryptedContent) &&
+                !E2eeProtocol.Inspect(dto.EncryptedContent).MediaIds.Order()
+                    .SequenceEqual(dto.MediaAttachments.Select(a => a.Id).Order()))
+                throw new System.Security.Cryptography.CryptographicException("Invalid attachment context.");
             dto.EncryptedContent = await _e2ee.DecryptAsync(dto.EncryptedContent, dto.MessageId,
                 dto.RecipientId, (int)dto.RecipientType, dto.SenderId, dto.ReplyToMessageId, dto.IsEdited);
         }

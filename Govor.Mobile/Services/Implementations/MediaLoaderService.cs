@@ -22,16 +22,22 @@ class MediaLoaderService : IMediaLoaderService
         _e2ee = e2ee;
     }
 
-    public async Task<Result<DownloadMediaResponse>> Download(Guid id)
+    public async Task<Result<DownloadMediaResponse>> Download(Guid id, bool encryptedOnly = false)
     {
         try
         {
+            var account = encryptedOnly ? await _e2ee.GetOwnKeyAsync() : null;
             var result = await _apiClient.GetFileStreamAsync($"api/media/download/{id}");
 
             if (!result.IsSuccess)
                 return Result<DownloadMediaResponse>.Failure(result.ErrorMessage);
             
             var response = result.Value;
+            if (encryptedOnly && response.MimeType != E2eeProtocol.EncryptedMimeType)
+            {
+                await response.Stream.DisposeAsync();
+                throw new System.Security.Cryptography.CryptographicException("Ожидалось зашифрованное вложение.");
+            }
             if (response.MimeType == E2eeProtocol.EncryptedMimeType)
             {
                 var secret = await _e2ee.GetAttachmentAsync(id)
@@ -39,6 +45,12 @@ class MediaLoaderService : IMediaLoaderService
                 await using var source = response.Stream;
                 var ciphertext = await ReadBoundedAsync(source, 19_000_028);
                 var plaintext = E2eeProtocol.DecryptAttachment(ciphertext, secret.Key);
+                if (account is not null)
+                {
+                    var current = await _e2ee.GetOwnKeyAsync();
+                    if (current.UserId != account.UserId || current.SessionId != account.SessionId)
+                        throw new UnauthorizedAccessException("Аккаунт изменился.");
+                }
                 return Result<DownloadMediaResponse>.Success(new()
                 {
                     FileStream = new MemoryStream(plaintext, writable: false),
@@ -68,6 +80,7 @@ class MediaLoaderService : IMediaLoaderService
         {
             AttachmentSecret? attachment = null;
             var isMessage = request.OwnerType == Govor.Mobile.Models.Requests.MediaOwnerType.Message;
+            var account = isMessage ? await _e2ee.GetOwnKeyAsync() : null;
             if (isMessage)
             {
                 var plaintext = await ReadBoundedAsync(request.FileStream, 19_000_000);
@@ -97,14 +110,19 @@ class MediaLoaderService : IMediaLoaderService
             // Отправляем
             var httpResult = await _apiClient.PostMultipartAsync("api/media/upload", content);
 
-            if (!httpResult.IsSuccess)
-                return Result<UploadMediaResponse>.Failure(httpResult.ErrorMessage);
-            
-            if (httpResult == null)
+            if (httpResult == null || httpResult.IsSuccess && (httpResult.Value is null || httpResult.Value.MediaId == Guid.Empty))
                 return Result<UploadMediaResponse>.Failure("Failed to deserialize server response");
 
+            if (!httpResult.IsSuccess)
+                return Result<UploadMediaResponse>.Failure(httpResult.ErrorMessage);
+
             if (attachment is not null)
+            {
+                var current = await _e2ee.GetOwnKeyAsync();
+                if (current.UserId != account!.UserId || current.SessionId != account.SessionId)
+                    throw new UnauthorizedAccessException("Аккаунт изменился.");
                 await _e2ee.RememberAttachmentAsync(attachment with { MediaId = httpResult.Value.MediaId });
+            }
 
             return Result<UploadMediaResponse>.Success(httpResult.Value);
         }

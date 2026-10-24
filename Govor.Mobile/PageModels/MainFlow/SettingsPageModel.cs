@@ -207,7 +207,7 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
     {
         var popup = new SimpleActionPopup
         {
-            Title = "Отключить текущую сессию?",
+            Title = session.IsCurrent ? "Выйти из текущей сессии?" : "Завершить выбранную сессию?",
             Text = "Это действие нельзя отменить.",
             ActionButtonText = "Удалить",
             SecondaryActionButtonText = "Отмена",
@@ -215,7 +215,7 @@ public partial class SettingsPageModel : ObservableObject, IDisposable
             {
                 await IPopupService.Current.PopAsync();
                 
-                if (session.IsCurrent)
+                if (await _sessionsService.IsCurrentSessionAsync(session.Id))
                 {
                     await _authService.LogoutAsync();
                 }

@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 namespace Govor.Mobile.Services.Mapping;
 
 public sealed class MessageResponseToViewModelAction(
-    IAvatartVMCreater avatarCreator, ILogger<MessageResponseToViewModelAction> logger)
+    IAvatartVMCreater avatarCreator, ILogger<MessageResponseToViewModelAction> logger,
+    IMediaLoaderService media, Govor.Mobile.Services.E2ee.E2eeClient e2ee)
     : IMappingAction<MessageResponse, MessagesViewModel>
 {
     public void Process(MessageResponse source, MessagesViewModel destination, ResolutionContext context)
@@ -20,6 +21,8 @@ public sealed class MessageResponseToViewModelAction(
         destination.IsIncoming = Govor.Mobile.Models.Groups.MessagePresentation.Resolve(
             destination.IsGroupChat, destination.IsChannel, destination.IsOwnMessage).Incoming;
         destination.Time = source.SentAt.ToLocalTime().ToString("HH:mm");
+        destination.Attachments = source.E2eeDecryptionFailed ? [] : source.MediaAttachments
+            .Select(a => new Govor.Mobile.PageModels.ContentViewsModel.MediaAttachmentViewModel(a.MediaFileId, media, e2ee)).ToList();
         // AutoMapper callbacks are synchronous. Observe asynchronous avatar failures explicitly.
         if (!destination.IsChannel) _ = LoadAvatarAsync(source.SenderId, destination);
     }

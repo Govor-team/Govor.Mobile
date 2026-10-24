@@ -91,7 +91,10 @@ public partial class MessagesViewModel : ObservableObject
     public Microsoft.Maui.Layouts.FlexJustify ReactionJustification =>
         IsIncoming ? Microsoft.Maui.Layouts.FlexJustify.Start : Microsoft.Maui.Layouts.FlexJustify.End;
 
-    public bool HasAttachments => false;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAttachments))]
+    private List<Govor.Mobile.PageModels.ContentViewsModel.MediaAttachmentViewModel> attachments = new();
+    public bool HasAttachments => Attachments.Count > 0;
 
     public Brush BubbleBackground
     {

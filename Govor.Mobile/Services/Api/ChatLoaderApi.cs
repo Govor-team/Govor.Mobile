@@ -80,6 +80,10 @@ public class ChatLoaderApi : IChatLoaderApi
             {
                 if (message.RecipientId != conversation || (int)message.RecipientType != type)
                     throw new System.Security.Cryptography.CryptographicException("Invalid history context.");
+                if (Govor.Security.E2eeProtocol.IsEncrypted(message.EncryptedContent) &&
+                    !Govor.Security.E2eeProtocol.Inspect(message.EncryptedContent).MediaIds.Order()
+                        .SequenceEqual(message.MediaAttachments.Select(a => a.MediaFileId).Order()))
+                    throw new System.Security.Cryptography.CryptographicException("Invalid attachment context.");
                 message.EncryptedContent = await _e2ee.DecryptAsync(message.EncryptedContent,
                     message.Id, conversation, type, message.SenderId, message.ReplyToMessageId, message.IsEdited);
             }

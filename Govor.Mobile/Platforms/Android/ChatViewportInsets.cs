@@ -74,7 +74,11 @@ internal sealed class ChatViewportInsets : Java.Lang.Object, IOnApplyWindowInset
             _originalPadding.Right + Math.Max(0, _viewLocation[0] + _view.Width
                 - (windowRight - bars.Right)) / density,
             _originalPadding.Bottom + bottom / density);
-        if (_layout.Padding != padding) _layout.Padding = padding;
+        if (_layout.Padding != padding)
+        {
+            global::Android.Util.Log.Debug("GovorViewport", $"window={windowBottom}; viewport={_viewLocation[1] + _view.Height}; navigation={bars.Bottom}; ime={ime.Bottom}; padding={padding}");
+            _layout.Padding = padding;
+        }
     }
 
     protected override void Dispose(bool disposing)

@@ -22,7 +22,7 @@ namespace Govor.Mobile.Services
             {
                 await _semaphore.WaitAsync();
                 if (Shell.Current is Shell shell)
-                    await shell.DisplayAlertAsync("Error", ex.Message, "OK");
+                    await GlassDialogs.DisplayAlertAsync("Error", ex.Message, "OK");
             }
             finally
             {

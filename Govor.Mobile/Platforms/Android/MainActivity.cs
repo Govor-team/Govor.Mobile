@@ -13,6 +13,12 @@ namespace Govor.Mobile
     [Activity(Theme = "@style/Maui.SplashTheme", WindowSoftInputMode = SoftInput.AdjustResize, HardwareAccelerated = true, MainLauncher = true, ResizeableActivity = true, LaunchMode = LaunchMode.SingleTask, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
     public class MainActivity : MauiAppCompatActivity
     {
+        protected override void OnActivityResult(int requestCode, Result resultCode, global::Android.Content.Intent? data)
+        {
+            if (Platforms.Android.MixedGalleryPicker.Complete(requestCode, resultCode, data)) return;
+            base.OnActivityResult(requestCode, resultCode, data);
+        }
+
         protected override void OnCreate(Bundle? savedInstanceState)
         {
             base.OnCreate(savedInstanceState);

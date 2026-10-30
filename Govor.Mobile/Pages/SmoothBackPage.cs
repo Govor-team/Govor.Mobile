@@ -8,6 +8,7 @@ public partial class SmoothBackPage : ContentPage
 
     protected override bool OnBackButtonPressed()
     {
+        if (GlassDialogs.Dismiss(this)) return true;
 #if ANDROID
         if (_isGoingBack)
             return true;

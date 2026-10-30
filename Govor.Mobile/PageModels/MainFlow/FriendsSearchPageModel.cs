@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -373,7 +373,7 @@ public partial class FriendsSearchPageModel : ObservableObject, IDisposable, IIn
         catch (Exception ex)
         {
             // лог + сообщение пользователю
-            await Shell.Current.DisplayAlert("Ошибка", "Не удалось загрузить результаты", "OK");
+            await GlassDialogs.DisplayAlertAsync("Ошибка", "Не удалось загрузить результаты", "OK");
         }
         finally
         {

@@ -1,4 +1,8 @@
 <Solution>
+  <Project Path="Govor.Markdown\Govor.Markdown.csproj" />
+  <Project Path="Govor.Markdown.Maui\Govor.Markdown.Maui.csproj" />
+  <Project Path="Govor.Markdown.Tests\Govor.Markdown.Tests.csproj" />
+  <Project Path="Govor.Markdown.Benchmarks\Govor.Markdown.Benchmarks.csproj" />
   <Project Path="..\..\..\RiderProjects\BetterUIKit\BetterUIKit\BetterUIKit.csproj" Type="Classic C#" />
   <Project Path="Govor.Mobile.Tests\Govor.Mobile.Tests.csproj" Type="Classic C#" />
   <Project Path="Govor.Mobile.UIKit\Govor.Mobile.UIKit.csproj" Type="Classic C#" />

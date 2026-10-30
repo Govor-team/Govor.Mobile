@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CSharpMath.Structures;
 using Govor.Mobile.PageModels.ContentViewsModel;
 using Govor.Mobile.Pages.MainFlow;
 using Govor.Mobile.Services.Interfaces.MainPage;

@@ -24,9 +24,19 @@ public partial class ChatPageModel
     private async Task AttachMediaAsync()
     {
         if (!CanWrite || IsEditingMessage || !CanChangeMedia) return;
+        var source = await GlassDialogs.AttachmentSourceAsync();
+        if (source is not null) await PickAttachmentsAsync(source == "files");
+    }
+
+    [RelayCommand]
+    private Task AttachFilesAsync() => PickAttachmentsAsync(true);
+
+    private async Task PickAttachmentsAsync(bool documents)
+    {
+        if (!CanWrite || IsEditingMessage || !CanChangeMedia) return;
         if (PendingMedia.Count >= GalleryMediaPolicy.MaxFiles)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Вложения", "Можно прикрепить до 10 файлов.", "OK");
+            await GlassDialogs.DisplayAlertAsync("Вложения", "Можно прикрепить до 10 файлов.", "OK");
             return;
         }
         IsPickingMedia = true;
@@ -34,17 +44,9 @@ public partial class ChatPageModel
         var group = IsGroup;
         try
         {
-            var choice = await Shell.Current.CurrentPage.DisplayActionSheetAsync("Прикрепить из галереи", "Отмена", null, "Фото", "Видео");
-            if (choice is not ("Фото" or "Видео")) return;
-            var options = new MediaPickerOptions
-            {
-                Title = "Выберите медиа", SelectionLimit = GalleryMediaPolicy.MaxFiles - PendingMedia.Count,
-                MaximumWidth = 4096, MaximumHeight = 4096, CompressionQuality = 90,
-                RotateImage = true, PreserveMetaData = false
-            };
-            var selected = choice == "Фото"
-                ? await MediaPicker.Default.PickPhotosAsync(options)
-                : await MediaPicker.Default.PickVideosAsync(options);
+            var selected = documents
+                ? (await FilePicker.Default.PickMultipleAsync(new PickOptions { PickerTitle = "Прикрепить файлы" }))?.Select(SelectedAttachment.FromFile).ToArray() ?? []
+                : await GalleryPicker.PickAsync(GalleryMediaPolicy.MaxFiles - PendingMedia.Count);
             if (chat != ChatId || group != IsGroup || !CanWrite) return;
             if (selected.Count + PendingMedia.Count > GalleryMediaPolicy.MaxFiles)
                 throw new InvalidDataException("Можно прикрепить до 10 файлов. Выберите меньше файлов.");
@@ -54,10 +56,13 @@ public partial class ChatPageModel
             {
                 await using var stream = await file.OpenReadAsync();
                 var bytes = await GalleryMediaPolicy.ReadAsync(stream, Math.Min(GalleryMediaPolicy.MaxFileBytes, GalleryMediaPolicy.MaxBatchBytes - total));
-                var format = GalleryMediaPolicy.Inspect(bytes);
-                if (format.IsVideo != (choice == "Видео")) throw new InvalidDataException("Тип выбранного файла не соответствует содержимому.");
-                var preview = format.IsVideo ? null : await Task.Run(() => GalleryImagePreview.Create(bytes));
-                additions.Add(new(bytes, preview));
+                if (documents) additions.Add(new(bytes, null, file.FileName));
+                else
+                {
+                    var format = GalleryMediaPolicy.Inspect(bytes);
+                    var preview = format.IsVideo ? null : await Task.Run(() => GalleryImagePreview.Create(bytes));
+                    additions.Add(new(bytes, preview));
+                }
                 total += bytes.Length;
             }
             if (chat == ChatId && group == IsGroup && CanWrite)
@@ -66,15 +71,16 @@ public partial class ChatPageModel
         catch (OperationCanceledException) { }
         catch (PermissionException)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Галерея", "Разрешите доступ к выбранным фото и видео в настройках приложения.", "OK");
+            await GlassDialogs.DisplayAlertAsync("Галерея", "Разрешите доступ к выбранным фото и видео в настройках приложения.", "OK");
         }
         catch (InvalidDataException ex)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Вложения", ex.Message, "OK");
+            await GlassDialogs.DisplayAlertAsync("Вложения", ex.Message, "OK");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Галерея", "Не удалось открыть медиа. Попробуйте выбрать другой файл.", "OK");
+            System.Diagnostics.Debug.WriteLine($"Attachment picker failed: {ex}");
+            await GlassDialogs.DisplayAlertAsync("Вложения", "Не удалось открыть выбранные файлы. Попробуйте ещё раз.", "OK");
         }
         finally { IsPickingMedia = false; }
     }
@@ -93,12 +99,17 @@ public partial class ChatPageModel
         if (!CanChangeMedia) return;
         try
         {
+            if (file.IsDocument)
+            {
+                await GlassDialogs.AlertAsync(file.FileName, $"Файл · {file.Size}\nБудет отправлен с сообщением.", "Закрыть");
+                return;
+            }
             var format = GalleryMediaPolicy.Inspect(file.Data);
             await Shell.Current.Navigation.PushModalAsync(new Govor.Mobile.Pages.MainFlow.GalleryMediaPage(file.Data, format.IsVideo, format.Extension));
         }
         catch
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Предпросмотр", "Не удалось открыть выбранное медиа.", "OK");
+            await GlassDialogs.DisplayAlertAsync("Предпросмотр", "Не удалось открыть выбранное медиа.", "OK");
         }
     }
 }

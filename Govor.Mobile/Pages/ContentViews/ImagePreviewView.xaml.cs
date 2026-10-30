@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -77,11 +77,11 @@ public partial class ImagePreviewView : Popup
             await SaveToWindowsFile(_originalStream);
 #endif
 
-            await Application.Current.MainPage.DisplayAlert("Готово", "Изображение сохранено", "Ок");
+            await GlassDialogs.DisplayAlertAsync("Готово", "Изображение сохранено", "Ок");
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Ошибка", ex.Message, "Ок");
+            await GlassDialogs.DisplayAlertAsync("Ошибка", ex.Message, "Ок");
         }
     }
 

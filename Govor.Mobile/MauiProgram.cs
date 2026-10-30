@@ -5,7 +5,6 @@ using Android.App;
 
 using CommunityToolkit.Maui;
 using CropperImage.MAUI;
-using Indiko.Maui.Controls.Markdown;
 using Sharpnado.MaterialFrame;
 using Sharpnado.Tabs;
 using SkiaSharp.Views.Maui.Controls.Hosting;
@@ -81,7 +80,6 @@ namespace Govor.Mobile
                 .UseSharpnadoMaterialFrame(false)
                 .UseSharpnadoTabs(loggerEnable: false)
                 .UseSkiaSharp()
-                .UseMarkdownView()
                 .ConfigureFonts(fonts =>
                 {
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");

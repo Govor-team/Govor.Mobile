@@ -13,6 +13,8 @@ public partial class ChatPage : SmoothBackPage
     private int _firstVisible = -1, _lastVisible = -1;
     private bool _isLoadingMore = false;
     private bool _hasMoreMessages = true;
+    private bool _stickToBottom = true;
+    private double _viewportHeight;
 
     public ICommand LongPressMessageCommand { get; }
     public ICommand ToggleReactionCommand { get; }
@@ -32,6 +34,17 @@ public partial class ChatPage : SmoothBackPage
         UpdateSelectionModeUi(model.IsSelectionMode);
         
         CollectionView.Scrolled += CollectionView_Scrolled;
+        CollectionView.SizeChanged += (_, _) =>
+        {
+            if (Math.Abs(CollectionView.Height - _viewportHeight) < 1) return;
+            _viewportHeight = CollectionView.Height;
+            if (!_stickToBottom || _isLoadingMore) return;
+            Dispatcher.Dispatch(() =>
+            {
+                if (_stickToBottom && BindingContext is ChatPageModel vm && vm.MessageGroups.LastOrDefault() is { } last)
+                    CollectionView.ScrollTo(last, position: ScrollToPosition.End, animate: false);
+            });
+        };
         model.MessageGroups.CollectionChanged += (_, _) => Dispatcher.Dispatch(ReadVisibleMessages);
         _readTimer = Dispatcher.CreateTimer();
         _readTimer.Interval = TimeSpan.FromSeconds(3);
@@ -70,8 +83,12 @@ public partial class ChatPage : SmoothBackPage
             bc.StartGroupUpdates();
             try
             {
-                _firstVisible = _lastVisible = -1;
-                _hasMoreMessages = true;
+                if (!bc.IsLoaded)
+                {
+                    _firstVisible = _lastVisible = -1;
+                    _hasMoreMessages = true;
+                    _stickToBottom = true;
+                }
                 await bc.InitAsync();
                 if (bc.TargetMessageId.HasValue)
                 {
@@ -90,7 +107,7 @@ public partial class ChatPage : SmoothBackPage
             { CloseCommunity(); }
             catch (Exception ex)
             {
-                await DisplayAlertAsync("Чат", ex.Message, "OK");
+                await GlassDialogs.DisplayAlertAsync("Чат", ex.Message, "OK");
             }
         }
 
@@ -129,6 +146,7 @@ public partial class ChatPage : SmoothBackPage
             if (CollectionView.ItemsSource is System.Collections.IList items && items.Count > 0)
             {
                 var atBottom = e.LastVisibleItemIndex >= items.Count - 1;
+                _stickToBottom = atBottom;
                 ScrollToEndButton.IsVisible = !atBottom;
             }
             else
@@ -187,8 +205,9 @@ public partial class ChatPage : SmoothBackPage
         }
     }
 
-    private void MarkdownView_OnHyperLinkClicked(object sender, Indiko.Maui.Controls.Markdown.LinkEventArgs e)
+    private void MarkdownView_OnHyperLinkClicked(object sender, Govor.Markdown.Maui.LinkEventArgs e)
     {
+        e.Handled = true;
         if (BindingContext is ChatPageModel bc)
         {
             if (bc.IsLoaded)

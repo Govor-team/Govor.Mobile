@@ -5,7 +5,7 @@
     xmlns:buttons="http://schemas.syncfusion.com/maui/toolkit"
     xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
     xmlns:sho="http://sharpnado.com"
-    xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
+    xmlns:markdown="clr-namespace:Govor.Markdown.Maui;assembly=Govor.Markdown.Maui"
     x:Class="Govor.Mobile.Pages.ContentViews.UserIncomingFriendPopup"
     AppearingAnimation="{maui:FadeInPopupAnimation Duration=300}"
     DisappearingAnimation="{maui:FadeOutPopupAnimation Duration=300}"

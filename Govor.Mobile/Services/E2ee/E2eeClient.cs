@@ -16,7 +16,8 @@ public interface IE2eeStorage
 }
 
 public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerIpProvider server,
-    IE2eeStorage storage, IE2eeRecoveryPrompt? recoveryPrompt = null, TimeProvider? clock = null)
+    IE2eeStorage storage, IE2eeRecoveryPrompt? recoveryPrompt = null, TimeProvider? clock = null,
+    PasswordAccountClient? passwords = null)
 {
     private readonly SemaphoreSlim _keyLock = new(1, 1);
     private readonly SemaphoreSlim _trustLock = new(1, 1);
@@ -27,7 +28,7 @@ public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerI
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(new Uri(server.IP).GetLeftPart(UriPartial.Authority)))) + "-" + user.ToString("N");
 
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
-    private readonly E2eeRecoveryClient _recovery = new(api, storage, recoveryPrompt);
+    private readonly E2eeRecoveryClient _recovery = new(api, storage, recoveryPrompt, passwords);
     private LocalRecovery? _cachedRecovery;
     private string? _cachedScope;
     private DateTimeOffset _nextSync;
@@ -44,6 +45,7 @@ public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerI
             var user = Guid.Parse(token.Claims.Single(c => c.Type == "userId").Value);
             var session = Guid.Parse(token.Claims.Single(c => c.Type == "sid").Value);
             var scope = Scope(user);
+            await CompletePendingResetAsync(user, scope);
             var encoded = await storage.GetAsync(scope + "-sessions");
             var sessions = encoded is null ? new List<Guid>() :
                 JsonSerializer.Deserialize<List<Guid>>(encoded, E2eeProtocol.Json)
@@ -136,7 +138,67 @@ public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerI
     public async Task<DeviceKey> GetOwnKeyAsync() => (await ReadyAsync()).Public;
     public async Task<string> GetRecoveryCodeAsync() => (await ReadyAsync(forceSync: true)).Recovery.Code;
 
-    private async Task TrustAsync(DeviceKey device, DeviceKey own, string scope)
+    public async Task ChangePasswordAsync(string oldPassword, string newPassword)
+    {
+        var state = await ReadyAsync(forceSync: true);
+        await (passwords ?? throw new InvalidOperationException("Защищённая авторизация недоступна."))
+            .ChangeAsync(state.Public.UserId, state.Recovery, oldPassword, newPassword);
+    }
+
+    private sealed record ResetJournal(LocalRecovery Recovery, SavedDevice Device, string ExpectedIdentity);
+
+    public async Task ResetEncryptionAsync()
+    {
+        if (passwords is null) throw new InvalidOperationException("Защищённая авторизация недоступна.");
+        await _keyLock.WaitAsync();
+        try
+        {
+            var token = new JwtSecurityTokenHandler().ReadJwtToken(await jwt.GetAccessTokenAsync());
+            var user = Guid.Parse(token.Claims.Single(c => c.Type == "userId").Value);
+            var session = Guid.Parse(token.Claims.Single(c => c.Type == "sid").Value);
+            var scope = Scope(user);
+            if (await CompletePendingResetAsync(user, scope)) return;
+            var previous = (await api.GetAsync<RecoveryState>("api/e2ee/recovery")).Value?.Vault
+                ?? throw new InvalidOperationException("Архив восстановления не найден.");
+            var pending = await storage.GetAsync(scope + "-reset-operation");
+            var journal = pending is null ? null : JsonSerializer.Deserialize<ResetJournal>(pending, E2eeProtocol.Json);
+            if (journal is null || journal.ExpectedIdentity != previous.IdentityKey)
+            {
+                var keys = E2eeProtocol.GenerateKeys();
+                var publicKey = E2eeProtocol.PublicKey(keys, user, session);
+                var recovery = new LocalRecovery(E2eeRecoveryProtocol.GenerateCode(), previous.Revision + 1,
+                    new(E2eeRecoveryProtocol.GenerateIdentity(), [new(publicKey.IdentityKey, keys.EncryptionKey)], []));
+                journal = new(recovery, new(session, keys, publicKey.Fingerprint, RotatedAt: _clock.GetUtcNow().ToUnixTimeSeconds()), previous.IdentityKey);
+                await storage.SetAsync(scope + "-reset-operation", JsonSerializer.Serialize(journal));
+            }
+            await passwords.ResetAsync(user, previous, journal.Recovery);
+            await CompletePendingResetAsync(user, scope);
+        }
+        finally { _keyLock.Release(); }
+    }
+
+    private async Task<bool> CompletePendingResetAsync(Guid user, string scope)
+    {
+        var json = await storage.GetAsync(scope + "-reset-operation");
+        if (json is null || json == "null") return false;
+        var journal = JsonSerializer.Deserialize<ResetJournal>(json, E2eeProtocol.Json)!;
+        var remote = await api.GetAsync<RecoveryState>("api/e2ee/recovery");
+        if (!remote.IsSuccess) throw new InvalidOperationException("Не удалось проверить завершение сброса шифрования.");
+        var vault = remote.Value?.Vault;
+        if (vault?.IdentityKey != E2eeRecoveryProtocol.PublicIdentity(journal.Recovery.Archive.IdentityPrivateKey)) return false;
+        // Verify the exact journaled secret against the authenticated remote vault
+        // before committing new local keys after an interrupted response.
+        E2eeRecoveryProtocol.Open(vault, user, journal.Recovery.Code);
+        await storage.SetAsync(scope + "-recovery", JsonSerializer.Serialize(journal.Recovery with { Revision = vault.Revision }));
+        await storage.SetAsync($"{scope}-key-{journal.Device.SessionId:N}", JsonSerializer.Serialize(journal.Device));
+        await storage.SetAsync($"{scope}-pending-{journal.Device.SessionId:N}", "null");
+        await storage.SetAsync(scope + "-sessions", JsonSerializer.Serialize(new[] { journal.Device.SessionId }));
+        await storage.SetAsync(scope + "-reset-operation", "null");
+        _cachedRecovery = null; _registered = null; _cachedScope = null;
+        return true;
+    }
+
+    private async Task TrustAsync(DeviceKey device, DeviceKey own, string scope, long? messageCreatedAt = null)
     {
         E2eeProtocol.ValidatePublicKey(device);
         if (device.UserId == own.UserId && device.Fingerprint == own.Fingerprint) return;
@@ -148,18 +210,54 @@ public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerI
             var identity = device.AccountIdentityKey
                 ?? throw new CryptographicException("Участнику нужно обновить приложение и настроить защищённую историю.");
             var pin = $"{scope}-account-{device.UserId:N}";
-            var known = await storage.GetAsync(pin);
+            var known = _cachedRecovery?.Archive.TrustedAccounts.GetValueOrDefault(device.UserId) ?? await storage.GetAsync(pin);
             if (known == identity) return;
             // Trust on first use is automatic. A signed device certificate keeps
             // this pin stable across logins, devices, and encryption key rotation.
+            long epoch = 0;
+            if (known is null && passwords is not null)
+            {
+                var lineage = await api.GetAsync<AccountIdentityChange[]>($"api/e2ee/identities/{device.UserId}/changes");
+                if (!lineage.IsSuccess || lineage.Value is null) throw new CryptographicException("Не удалось проверить ключ аккаунта.");
+                epoch = lineage.Value.Where(c => c.UserId == device.UserId && c.IdentityKey == identity)
+                    .Select(c => c.Epoch).DefaultIfEmpty(0).Max();
+            }
             if (known is not null)
-                throw new CryptographicException("Ключ аккаунта собеседника изменился. Нужна независимая сверка.");
+            {
+                var changes = await api.GetAsync<AccountIdentityChange[]>($"api/e2ee/identities/{device.UserId}/changes");
+                if (!changes.IsSuccess || changes.Value is null) throw new CryptographicException("Не удалось проверить смену ключей аккаунта.");
+                var current = known;
+                foreach (var change in changes.Value.OrderBy(c => c.Epoch))
+                {
+                    if (change.UserId != device.UserId) throw new CryptographicException("Неверный журнал смены ключей.");
+                    if (change.PreviousIdentityKey != current) continue;
+                    current = change.IdentityKey; epoch = change.Epoch;
+                    if (current == identity) break;
+                }
+                if (current != identity)
+                {
+                    // Old signatures remain valid for messages preceding a
+                    // recorded identity reset; never use old roots for sending.
+                    current = identity;
+                    foreach (var change in changes.Value.OrderBy(c => c.Epoch))
+                    {
+                        if (change.PreviousIdentityKey != current) continue;
+                        if (!messageCreatedAt.HasValue || messageCreatedAt.Value > change.ChangedAt)
+                            throw new CryptographicException("Старый ключ использован после сброса шифрования.");
+                        current = change.IdentityKey;
+                        if (current == known) return;
+                    }
+                    throw new CryptographicException("Ключ аккаунта собеседника изменился без подтверждённого сброса.");
+                }
+                if (passwords is not null) await passwords.NotifyIdentityChangedAsync(device.UserId);
+            }
             await _keyLock.WaitAsync();
             try
             {
                 if (_cachedScope != scope || _cachedRecovery is null) throw new UnauthorizedAccessException("Аккаунт изменился.");
-                if (_cachedRecovery.Archive.TrustedAccounts.TryGetValue(device.UserId, out var restored) && restored != identity)
-                    throw new CryptographicException("Ключ аккаунта не совпадает с сохранённым в архиве.");
+                var epochs = new Dictionary<Guid, long>(_cachedRecovery.Archive.IdentityEpochs ?? []);
+                epochs[device.UserId] = epoch;
+                _cachedRecovery = _cachedRecovery with { Archive = _cachedRecovery.Archive with { IdentityEpochs = epochs } };
                 _cachedRecovery.Archive.TrustedAccounts[device.UserId] = identity;
                 await storage.SetAsync(scope + "-recovery", JsonSerializer.Serialize(_cachedRecovery));
                 await storage.SetAsync(pin, identity);
@@ -229,13 +327,13 @@ public sealed class E2eeClient(IApiClient api, IJwtProviderService jwt, IServerI
             var signer = envelope.Sender;
             if (signer.AccountIdentityKey is null)
             {
-                var historical = await api.GetAsync<DeviceKey>($"api/e2ee/conversations/{type}/{conversation}/signers/{signer.SessionId}");
+                var historical = await api.GetAsync<DeviceKey>($"api/e2ee/conversations/{type}/{conversation}/signers/{signer.SessionId}?identityKey={Uri.EscapeDataString(signer.IdentityKey)}");
                 if (!historical.IsSuccess || historical.Value is not { AccountIdentityKey: not null } certified ||
                     certified.UserId != signer.UserId || certified.SessionId != signer.SessionId || certified.IdentityKey != signer.IdentityKey)
                     throw new CryptographicException("Исторический ключ ещё не подтверждён устройством автора.");
                 signer = certified;
             }
-            await TrustAsync(signer, state.Public, state.Scope);
+            await TrustAsync(signer, state.Public, state.Scope, envelope.CreatedAt);
         }
         var versionKey = $"{state.Scope}-revision-{message:N}";
         var known = await storage.GetAsync(versionKey);

@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="jose-jwt" Version="5.3.0" />
+        <PackageReference Include="srp" Version="1.0.7" />
 <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0"/>
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0"/>
@@ -27,6 +28,7 @@
         <Compile Include="../Govor.Mobile/Services/Interfaces/ISessionsService.cs" Link="Production/ISessionsService.cs" />
         <Compile Include="../Govor.Mobile/Models/Responses/UserSession.cs" Link="Production/UserSession.cs" />
         <Compile Include="../Govor.Mobile/Utilities/GalleryMediaPolicy.cs" Link="Production/GalleryMediaPolicy.cs" />
+        <Compile Include="../Govor.Mobile/Utilities/AttachmentFiles.cs" Link="Production/AttachmentFiles.cs" />
         <Compile Include="../Govor.Mobile/Services/Implementations/MediaLoaderService.cs" Link="Production/MediaLoaderService.cs" />
         <Compile Include="../Govor.Mobile/Services/Interfaces/IMediaLoaderService.cs" Link="Production/IMediaLoaderService.cs" />
         <Compile Include="../Govor.Mobile/Models/Responses/DownloadMediaResponse.cs" Link="Production/DownloadMediaResponse.cs" />
@@ -37,6 +39,10 @@
         <Compile Include="../Govor.Mobile/Services/E2ee/E2eeProtocol.cs" Link="Production/E2eeProtocol.cs" />
         <Compile Include="../Govor.Mobile/Services/E2ee/E2eeRecoveryProtocol.cs" Link="Production/E2eeRecoveryProtocol.cs" />
         <Compile Include="../Govor.Mobile/Services/E2ee/E2eeRecoveryClient.cs" Link="Production/E2eeRecoveryClient.cs" />
+        <Compile Include="../Govor.Mobile/Services/E2ee/PasswordProtocol.cs" Link="Production/PasswordProtocol.cs" />
+        <Compile Include="../Govor.Mobile/Services/E2ee/PasswordAccountClient.cs" Link="Production/PasswordAccountClient.cs" />
+        <Compile Include="../Govor.Mobile/Models/Requests/LoingRequest.cs" Link="Production/LoingRequest.cs" />
+        <Compile Include="../Govor.Mobile/Models/Responses/AuthResponse.cs" Link="Production/AuthResponse.cs" />
 <Compile Include="../Govor.Mobile/Services/E2ee/E2eeClient.cs" Link="Production/E2eeClient.cs" />
 <Compile Include="../Govor.Mobile/Services/Api/PushTokenService.cs" Link="Production/PushTokenService.cs"/>
         <Compile Include="../Govor.Mobile/Services/Api/IPushTokenService.cs" Link="Production/IPushTokenService.cs"/>

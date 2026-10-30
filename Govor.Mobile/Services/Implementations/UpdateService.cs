@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -86,7 +86,7 @@ public partial class UpdateService : IUpdateService, IConnectivityChanged
         }
         catch (Exception ex)
         {
-            await Application.Current.MainPage.DisplayAlert("Error", $"Download failed: {ex.Message}", "OK");
+            await GlassDialogs.DisplayAlertAsync("Error", $"Download failed: {ex.Message}", "OK");
         }
     }
 

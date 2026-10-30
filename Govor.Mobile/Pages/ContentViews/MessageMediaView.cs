@@ -8,7 +8,9 @@ public sealed class MessageMediaView : ContentView
     {
         var image = new Image { Aspect = Aspect.AspectFill, HeightRequest = 174 };
         image.SetBinding(Image.SourceProperty, nameof(MediaAttachmentViewModel.Preview));
-        var title = new Label { TextColor = Colors.White, FontAttributes = FontAttributes.Bold, FontSize = 15 };
+        image.SetBinding(IsVisibleProperty, nameof(MediaAttachmentViewModel.HasMediaPreview));
+        var title = new Label { TextColor = Colors.White, FontAttributes = FontAttributes.Bold, FontSize = 15,
+            MaxLines = 2, LineBreakMode = LineBreakMode.TailTruncation };
         title.SetBinding(Label.TextProperty, nameof(MediaAttachmentViewModel.Title));
         var hint = new Label { TextColor = Color.FromArgb("#CDC2E1"), FontSize = 11, MaxLines = 2 };
         hint.SetBinding(Label.TextProperty, nameof(MediaAttachmentViewModel.Hint));
@@ -18,6 +20,7 @@ public sealed class MessageMediaView : ContentView
         overlay.Add(new VerticalStackLayout { Spacing = 3, Children = { title, hint } });
         overlay.Add(spinner);
         var grid = new Grid { WidthRequest = 254, HeightRequest = 174, BackgroundColor = Color.FromArgb("#352D49") };
+        grid.SetBinding(HeightRequestProperty, nameof(MediaAttachmentViewModel.DisplayHeight));
         grid.Add(image); grid.Add(overlay);
         var border = new Border { StrokeThickness = 0, StrokeShape = new Microsoft.Maui.Controls.Shapes.RoundRectangle { CornerRadius = 14 }, Content = grid };
         var tap = new TapGestureRecognizer();

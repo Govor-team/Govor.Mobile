@@ -13,12 +13,13 @@ public interface IE2eeRecoveryPrompt
 }
 
 public sealed record AccountArchive(string IdentityPrivateKey, HistoryKey[] Keys,
-    Dictionary<Guid, string> TrustedAccounts);
+    Dictionary<Guid, string> TrustedAccounts, Dictionary<Guid, long>? IdentityEpochs = null);
 public sealed record LocalRecovery(string Code, long Revision, AccountArchive Archive);
 
 // Called under E2eeClient's account/key lock. Merge before compare-and-swap so
 // concurrent devices cannot overwrite each other's history decryption keys.
-public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2eeRecoveryPrompt? prompt)
+public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2eeRecoveryPrompt? prompt,
+    PasswordAccountClient? passwords = null)
 {
     public async Task<LocalRecovery> SynchronizeAsync(Guid user, string scope, HistoryKey[] localKeys)
     {
@@ -53,7 +54,16 @@ public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2
                     local = null;
                 if (local is not null && remote.Revision < local.Revision)
                     throw new CryptographicException("Сервер вернул устаревший архив E2EE.");
-                var code = local?.Code ?? await (prompt?.RequestCodeAsync() ?? Task.FromResult<string?>(null));
+                var rootChanged = local is not null && E2eeRecoveryProtocol.PublicIdentity(local.Archive.IdentityPrivateKey) != remote.IdentityKey;
+                if (rootChanged && passwords is not null)
+                {
+                    // A fresh login can open the new password wrapper after an
+                    // explicitly authorized reset on another device.
+                    local = null;
+                    localKeys = localKeys.TakeLast(1).ToArray();
+                }
+                var code = local?.Code ?? (passwords is null ? null : await passwords.TryRestoreCodeAsync(user))
+                    ?? await (prompt?.RequestCodeAsync() ?? Task.FromResult<string?>(null));
                 if (string.IsNullOrWhiteSpace(code))
                     throw new CryptographicException("Для нового устройства нужен код с доверенного устройства или резервный код.");
                 AccountArchive archive;
@@ -71,7 +81,11 @@ public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2
             local = local with { Archive = merged };
             await SaveAsync(scope, local);
             if (remote is not null && JsonSerializer.Serialize(merged) ==
-                E2eeRecoveryProtocol.Open(remote, user, local.Code)) return local;
+                E2eeRecoveryProtocol.Open(remote, user, local.Code))
+            {
+                if (passwords is not null) await passwords.EnsureEnvelopeAsync(user, local);
+                return local;
+            }
             var sealedVault = E2eeRecoveryProtocol.Seal(user, local.Revision + 1,
                 merged.IdentityPrivateKey, local.Code, JsonSerializer.Serialize(merged));
             var saved = await api.PutAsync<RecoveryVault>("api/e2ee/recovery", new SaveRecoveryVault(local.Revision,
@@ -80,6 +94,7 @@ public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2
             if (!saved.IsSuccess) throw new InvalidOperationException("Не удалось сохранить архив E2EE. Отправка приостановлена.");
             local = local with { Revision = sealedVault.Revision };
             await SaveAsync(scope, local);
+            if (passwords is not null) await passwords.EnsureEnvelopeAsync(user, local);
             if (created && prompt is not null && await storage.GetAsync(scope + "-code-shown") != "yes")
             {
                 await prompt.ShowCreatedAsync(local.Code);
@@ -100,13 +115,20 @@ public sealed class E2eeRecoveryClient(IApiClient api, IE2eeStorage storage, IE2
             throw new CryptographicException("Неверный архив ключей.");
         if (second is null) return first;
         var pins = new Dictionary<Guid, string>(first.TrustedAccounts);
+        var epochs = new Dictionary<Guid, long>(first.IdentityEpochs ?? []);
         foreach (var (user, identity) in second.TrustedAccounts)
         {
+            var firstEpoch = epochs.GetValueOrDefault(user);
+            var secondEpoch = second.IdentityEpochs?.GetValueOrDefault(user) ?? 0;
             if (pins.TryGetValue(user, out var known) && known != identity)
-                throw new CryptographicException("Ключ собеседника отличается на разных устройствах.");
+            {
+                if (firstEpoch == secondEpoch) throw new CryptographicException("Ключ собеседника отличается на разных устройствах.");
+                if (firstEpoch > secondEpoch) continue;
+            }
             pins[user] = identity;
+            epochs[user] = Math.Max(firstEpoch, secondEpoch);
         }
         var keys = first.Keys.Concat(second.Keys).DistinctBy(k => k.Fingerprint).OrderBy(k => k.Fingerprint).ToArray();
-        return first with { Keys = keys, TrustedAccounts = pins.OrderBy(p => p.Key).ToDictionary() };
+        return first with { Keys = keys, TrustedAccounts = pins.OrderBy(p => p.Key).ToDictionary(), IdentityEpochs = epochs.OrderBy(p => p.Key).ToDictionary() };
     }
 }

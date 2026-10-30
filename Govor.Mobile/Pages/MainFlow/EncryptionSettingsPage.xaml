@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:Govor.Mobile.Pages" xmlns:glass="http://sharpnado.com"
+    x:Class="Govor.Mobile.Pages.MainFlow.EncryptionSettingsPage"
+    ControlTemplate="{StaticResource MainPageTemplate}" BackgroundColor="#10141F"
+    Shell.NavBarIsVisible="False" SafeAreaEdges="None" Title="Защита переписки">
+    <Grid RowDefinitions="Auto,*" RowSpacing="12" Padding="12,0" SafeAreaEdges="Container">
+        <Border Style="{StaticResource ReactionGlassBorder}" Margin="0,6,0,0">
+            <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}" Padding="8,6">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <ImageButton Source="back_icon.png" Clicked="CloseClicked" WidthRequest="40" HeightRequest="40"
+                        Padding="10" BackgroundColor="Transparent" SemanticProperties.Description="Назад" />
+                    <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                        <Label Text="Защита переписки" TextColor="White" FontSize="19" FontAttributes="Bold" />
+                        <Label Text="Сквозное шифрование · E2EE" Style="{StaticResource ReactionCaption}" />
+                    </VerticalStackLayout>
+                </Grid>
+            </glass:MaterialFrame>
+        </Border>
+        <ScrollView Grid.Row="1" VerticalScrollBarVisibility="Never">
+            <VerticalStackLayout x:Name="Actions" Spacing="12" Padding="0,0,0,28">
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Ключ аккаунта" TextColor="White" FontSize="17" FontAttributes="Bold" />
+                            <Label Text="Сверьте публичный отпечаток с собеседником по доверенному каналу." Style="{StaticResource ReactionCaption}" />
+                            <Button Text="Посмотреть отпечаток" Clicked="OnE2eeKeysClicked" Style="{StaticResource ReactionActionButton}" />
+                        </VerticalStackLayout>
+                    </glass:MaterialFrame>
+                </Border>
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="История и устройства" TextColor="White" FontSize="17" FontAttributes="Bold" />
+                            <Label Text="Обычно история переносится при входе по паролю. Резервный код пригодится для восстановления доступа." Style="{StaticResource ReactionCaption}" />
+                            <Button Text="Перенос истории / резервный код" Clicked="OnE2eeRecoveryClicked" Style="{StaticResource ReactionActionButton}" />
+                            <Button Text="Синхронизировать историю" Clicked="OnE2eeSyncClicked" Style="{StaticResource ReactionActionButton}" />
+                            <Button Text="Сменить пароль" Clicked="OnChangePasswordClicked" Style="{StaticResource ReactionActionButton}" />
+                            <Label Text="При смене пароля история сохраняется, остальные сессии завершаются." Style="{StaticResource ReactionCaption}" />
+                        </VerticalStackLayout>
+                    </glass:MaterialFrame>
+                </Border>
+                <Border Style="{StaticResource ReactionGlassBorder}">
+                    <glass:MaterialFrame Style="{StaticResource ReactionGlassFrame}">
+                        <VerticalStackLayout Spacing="10">
+                            <Label Text="Новые ключи" TextColor="White" FontSize="17" FontAttributes="Bold" />
+                            <Label Text="Только если все способы восстановления потеряны. Старая зашифрованная история на этом устройстве станет недоступна." Style="{StaticResource ReactionCaption}" />
+                            <Button Text="Начать общение с новыми ключами" Clicked="OnResetEncryptionClicked"
+                                TextColor="#FFB2BE" Style="{StaticResource ReactionActionButton}" />
+                        </VerticalStackLayout>
+                    </glass:MaterialFrame>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</local:SmoothBackPage>

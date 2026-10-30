@@ -70,6 +70,8 @@ internal static class ServiceRegistration
     {
         builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.IE2eeStorage, Govor.Mobile.Services.E2ee.E2eeSecureStorage>();
         builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.E2eeClient>();
+        builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.PasswordAccountClient>();
+        builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.IPasswordAccountPrompts, Govor.Mobile.Services.E2ee.PasswordAccountPrompts>();
         builder.Services.AddSingleton<Govor.Mobile.Services.E2ee.IE2eeRecoveryPrompt, Govor.Mobile.Services.E2ee.E2eeRecoveryPrompt>();
         builder.Services.AddSingleton<NetworkAvailabilityService>();
         builder.Services.AddSingleton<IAppStartupOrchestrator, AppStartupOrchestrator>();
@@ -231,6 +233,7 @@ internal static class ServiceRegistration
         builder.Services.AddTransient<ChatPageModel>();
         builder.Services.AddTransient<ChatPage>();
         builder.Services.AddTransient<ReactionPacksPage>();
+        builder.Services.AddTransient<EncryptionSettingsPage>();
         
         builder.Services.AddTransient<AuthShell>();
         builder.Services.AddTransient<MainShell>();

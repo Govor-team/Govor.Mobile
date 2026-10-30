@@ -66,6 +66,30 @@ public class E2eeClientTests
     }
 
     [Test]
+    public async Task ExplicitResetNotifiesOnceAndPreservesEarlierCertifiedMessages()
+    {
+        var notices = new PasswordNotices();
+        var passwords = new PasswordAccountClient(_api, _tokens, new Server(), _storage, notices);
+        _client = new(_api, _tokens, new Server(), _storage, _prompt, passwords: passwords);
+        await _client.EncryptAsync("pin original account", Chat, 0, null, []);
+        var oldId = Guid.NewGuid();
+        var previous = E2eeProtocol.Encrypt(new("previous message", []), _bobKeys, _bob,
+            new ConversationKeys(Chat, 0, [Alice, Bob], [_api.Registered!, _bob]), oldId);
+        var newKeys = E2eeProtocol.GenerateKeys();
+        var newRoot = E2eeRecoveryProtocol.GenerateIdentity();
+        _api.Bob = E2eeRecoveryProtocol.Certify(E2eeProtocol.PublicKey(newKeys, Bob, Guid.NewGuid()), newRoot);
+        _api.IdentityChanges = [new(Bob, 1, _bob.AccountIdentityKey!, _api.Bob.AccountIdentityKey!, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 1)];
+        await _client.EncryptAsync("new root", Chat, 0, null, []);
+        await _client.EncryptAsync("same new root", Chat, 0, null, []);
+        Assert.That(notices.Users, Is.EqualTo(new[] { Bob }));
+        Assert.That(await _client.DecryptAsync(previous, oldId, Chat, 0, Bob, null), Is.EqualTo("previous message"));
+        // Returning the former device in the sending directory must never roll back the pin.
+        _api.Bob = _bob;
+        Assert.ThrowsAsync<CryptographicException>(() => _client.EncryptAsync("old root rejected", Chat, 0, null, []));
+        Assert.That(notices.Users, Has.Count.EqualTo(1));
+    }
+
+    [Test]
     public async Task FirstConversationNeedsNoKeyOrRosterConfirmation()
     {
         await _client.EncryptAsync("approved", Chat, 0, null, []);
@@ -128,13 +152,15 @@ public class E2eeClientTests
         Assert.That(System.Text.Encoding.UTF8.GetString(E2eeProtocol.DecryptAttachment(bytes, secret.Key)), Is.EqualTo("private bytes"));
     }
 
-    [Test]
-    public async Task GalleryUploadSendsOpaqueBytesAndKeepsKeyInsideEncryptedMessage()
+    [TestCase("sensitive-name.jpg", "image/jpeg")]
+    [TestCase("sensitive-name.txt", "text/plain")]
+    [TestCase("sensitive-name.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+    public async Task AttachmentUploadSendsOpaqueBytesAndKeepsKeyInsideEncryptedMessage(string filename, string mime)
     {
         var loader = new Govor.Mobile.Services.Implementations.MediaLoaderService(_api,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<Govor.Mobile.Services.Implementations.MediaLoaderService>.Instance, _client);
         var original = "private photo with location metadata"u8.ToArray();
-        var upload = await loader.Upload(new() { FileStream = new MemoryStream(original), FileName = "sensitive-name.jpg", MimeType = "image/jpeg" });
+        var upload = await loader.Upload(new() { FileStream = new MemoryStream(original), FileName = filename, MimeType = mime });
         Assert.That(upload.IsSuccess, Is.True, upload.ErrorMessage);
         Assert.That(_api.UploadFields!["MimeType"], Is.EqualTo(E2eeProtocol.EncryptedMimeType));
         Assert.That(_api.UploadFields["EncryptedKey"], Is.Empty);
@@ -148,6 +174,8 @@ public class E2eeClientTests
         Assert.That(plaintext.Attachments.Single(), Is.EqualTo(secret));
         var download = await loader.Download(upload.Value.MediaId, encryptedOnly: true);
         Assert.That(download.IsSuccess, Is.True, download.ErrorMessage);
+        Assert.That(download.Value.FileName, Is.EqualTo(filename));
+        Assert.That(download.Value.MimeType, Is.EqualTo(mime));
         using var resultStream = download.Value.FileStream;
         Assert.That(await GalleryMediaPolicy.ReadAsync(resultStream), Is.EqualTo(original));
         _api.DownloadMime = "image/jpeg";
@@ -305,6 +333,13 @@ public class E2eeClientTests
         public Task ShowCreatedAsync(string code) { Code = code; return Task.CompletedTask; }
     }
     private class Server : IServerIpProvider { public string IP => "https://govor.example"; }
+    private class PasswordNotices : IPasswordAccountPrompts
+    {
+        public List<Guid> Users { get; } = [];
+        public Task<string?> UpgradePasswordAsync() => Task.FromResult<string?>(null);
+        public Task<string?> CurrentPasswordAsync(string reason) => Task.FromResult<string?>(null);
+        public Task NotifyIdentityChangedAsync(Guid user) { Users.Add(user); return Task.CompletedTask; }
+    }
     private class Tokens : IJwtProviderService
     {
         public Guid Session = Guid.NewGuid();
@@ -333,8 +368,10 @@ public class E2eeClientTests
         public int CertificateWrites;
         public bool ConflictNextVaultWrite;
         public int Conflicts;
+        public AccountIdentityChange[] IdentityChanges = [];
         public Task<HttpResult<T>> GetAsync<T>(string endpoint, bool authenticated = true) =>
-            Task.FromResult(HttpResult<T>.Success((T)(object)(endpoint.Contains("/signers/") ? Bob :
+            Task.FromResult(HttpResult<T>.Success((T)(object)(endpoint.Contains("/identities/") ? IdentityChanges :
+                endpoint.Contains("/signers/") ? Bob :
                 endpoint == "api/e2ee/devices" ? HistoricalDevices ?? new[] { Registered! } :
                 endpoint == "api/e2ee/recovery" ? new RecoveryState(Vault) :
                 new ConversationKeys(Chat, 0, [Alice, E2eeClientTests.Bob], [Registered!, Bob]))));

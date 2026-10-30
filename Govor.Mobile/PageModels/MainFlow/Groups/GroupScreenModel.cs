@@ -29,6 +29,6 @@ public abstract partial class GroupScreenModel : ObservableObject
     }
     protected virtual Task AccessDeniedAsync() => Task.CompletedTask;
     protected static Task<bool> ConfirmAsync(string title, string message) =>
-        Shell.Current.CurrentPage.DisplayAlertAsync(title, message, "Подтвердить", "Отмена");
+        GlassDialogs.DisplayAlertAsync(title, message, "Подтвердить", "Отмена");
     public static Task OpenProfileAsync(Guid id) => Shell.Current.GoToAsync($"GroupProfilePage?groupId={id}", false);
 }

@@ -144,7 +144,7 @@ public partial class ChatPage
         }
         catch (Exception ex)
         {
-            await DisplayAlertAsync("Реакция", ex.Message, "OK");
+            await GlassDialogs.DisplayAlertAsync("Реакция", ex.Message, "OK");
         }
         finally
         {

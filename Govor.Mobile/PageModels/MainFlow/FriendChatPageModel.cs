@@ -371,7 +371,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
         catch (Exception ex)
         {
             if (IsGroup) { try { await RefreshGroupAccessAsync(); } catch { } }
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Удаление", ex.Message, "OK");
+            await GlassDialogs.DisplayAlertAsync("Удаление", ex.Message, "OK");
         }
     }
 
@@ -453,7 +453,7 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
             else if (IsGroup)
             {
                 try { await RefreshGroupAccessAsync(); } catch { }
-                await Shell.Current.CurrentPage.DisplayAlertAsync("Редактирование", resEdit.ErrorMessage ?? "Не удалось изменить сообщение.", "OK");
+                await GlassDialogs.DisplayAlertAsync("Редактирование", resEdit.ErrorMessage ?? "Не удалось изменить сообщение.", "OK");
             }
             return;
         }
@@ -473,7 +473,8 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
                 var upload = await _mediaLoader.Upload(new Govor.Mobile.Models.Requests.UploadMediaRequest
                 {
                     FileStream = stream, FileName = file.FileName, MimeType = file.MimeType,
-                    Type = file.IsVideo ? Govor.Mobile.Models.Requests.MediaType.Video : Govor.Mobile.Models.Requests.MediaType.Image
+                    Type = file.IsDocument ? Govor.Mobile.Models.Requests.MediaType.File
+                        : file.IsVideo ? Govor.Mobile.Models.Requests.MediaType.Video : Govor.Mobile.Models.Requests.MediaType.Image
                 });
                 if (!upload.IsSuccess) throw new InvalidOperationException("Не удалось загрузить вложение. Попробуйте ещё раз.");
                 file.UploadedId = upload.Value.MediaId;
@@ -495,12 +496,12 @@ public partial class ChatPageModel : ObservableObject, IInitializableViewModel, 
             {
                 try { await RefreshGroupAccessAsync(); } catch { }
             }
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Сообщение", "Не удалось отправить сообщение. Текст и вложения сохранены — можно повторить отправку.", "OK");
+            await GlassDialogs.DisplayAlertAsync("Сообщение", "Не удалось отправить сообщение. Текст и вложения сохранены — можно повторить отправку.", "OK");
         }
         }
         catch (Exception)
         {
-            await Shell.Current.CurrentPage.DisplayAlertAsync("Вложения", "Не удалось отправить сообщение. Проверьте соединение и повторите попытку. Выбранные файлы сохранены.", "OK");
+            await GlassDialogs.DisplayAlertAsync("Вложения", "Не удалось отправить сообщение. Проверьте соединение и повторите попытку. Выбранные файлы сохранены.", "OK");
         }
         finally { IsSendingMedia = false; MediaStatus = string.Empty; }
     }

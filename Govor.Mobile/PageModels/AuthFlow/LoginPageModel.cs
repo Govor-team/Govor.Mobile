@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Govor.Mobile.Pages.AuthFlow;
 using Govor.Mobile.Services.Api;
@@ -21,6 +21,8 @@ public partial class LoginPageModel : ObservableObject
 
     [ObservableProperty]
     private bool isBusy;
+    [ObservableProperty]
+    private bool requiresPasswordUpgrade;
 
     [ObservableProperty]
     private bool isPasswordHidden = true;
@@ -44,6 +46,7 @@ public partial class LoginPageModel : ObservableObject
         try
         {
             var result = await _authService.LoginAsync(Name.TrimEnd().TrimStart(), Password);
+            RequiresPasswordUpgrade = _authService.RequiresPasswordUpgrade;
 
             if (!result.IsSuccess)
             {
@@ -68,6 +71,25 @@ public partial class LoginPageModel : ObservableObject
         return !string.IsNullOrWhiteSpace(Name)
             && !string.IsNullOrWhiteSpace(Password)
             && !IsBusy;
+    }
+
+    [RelayCommand]
+    private async Task UpgradeAfterPasswordResetAsync()
+    {
+        if (!CanLogin() || !RequiresPasswordUpgrade) return;
+        var page = Shell.Current;
+        if (page is null || !await GlassDialogs.DisplayAlertAsync("Обновить вход?",
+                "Используйте это только для старого аккаунта или после сброса пароля администратором. " +
+                "Введите выданный пароль в поле входа. Затем понадобится выбрать новый пароль. " +
+                "Сброс пароля сам по себе не восстанавливает старую историю — для неё нужен резервный код или доверенное устройство.",
+                "Продолжить", "Отмена")) return;
+        IsBusy = true;
+        try
+        {
+            var result = await _authService.UpgradeAfterPasswordResetAsync(Name.Trim(), Password);
+            if (!result.IsSuccess) await AppShell.DisplayException(result.ErrorMessage);
+        }
+        finally { IsBusy = false; }
     }
 
     partial void OnNameChanged(string value) => LoginCommand.NotifyCanExecuteChanged();

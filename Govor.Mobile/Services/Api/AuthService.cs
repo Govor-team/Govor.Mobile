@@ -1,4 +1,4 @@
-﻿using Govor.Mobile.Models.Requests;
+using Govor.Mobile.Models.Requests;
 using Govor.Mobile.Models.Responses;
 using Govor.Mobile.Models.Results;
 using Govor.Mobile.Services.Api.Base;
@@ -10,6 +10,7 @@ namespace Govor.Mobile.Services.Api;
 public class AuthService : IAuthService
 {
     private bool _isAuthenticated;
+    public bool RequiresPasswordUpgrade { get; private set; }
 
     public event EventHandler<bool> AuthenticationStateChanged;
 
@@ -17,17 +18,20 @@ public class AuthService : IAuthService
     private readonly IJwtProviderService _jwtProvider;
     private readonly IBuilderDeviceInfoString _deviceInfoString;
     private readonly Govor.Mobile.Services.Interfaces.Notification.IPushNotificationService _push;
+    private readonly Govor.Mobile.Services.E2ee.PasswordAccountClient _passwords;
 
     public AuthService(
         IApiClient apiClient,
         IJwtProviderService jwtProvider,
         IBuilderDeviceInfoString deviceInfoString,
-        Govor.Mobile.Services.Interfaces.Notification.IPushNotificationService push)
+        Govor.Mobile.Services.Interfaces.Notification.IPushNotificationService push,
+        Govor.Mobile.Services.E2ee.PasswordAccountClient passwords)
     {
         _apiClient = apiClient;
         _jwtProvider = jwtProvider;
         _deviceInfoString = deviceInfoString;
         _push = push;
+        _passwords = passwords;
 
         _jwtProvider.WasClearTokens += () =>
         {
@@ -50,53 +54,44 @@ public class AuthService : IAuthService
 
     public async Task<Result<UserLogin>> LoginAsync(string username, string password)
     {
-        var result = await _apiClient.PostAsync<AuthResponse>("/api/auth/login",
-           new LoingRequest(username, password, _deviceInfoString.Info), 
-           authenticated: false);
-
-        if (result.IsSuccess)
+        RequiresPasswordUpgrade = false;
+        try
         {
-            await _jwtProvider.InitializeWithTokensAsync(
-                result.Value.accessToken,
-                result.Value.refreshToken);
-
+            var result = await _passwords.LoginAsync(username, password, _deviceInfoString.Info);
+            await _jwtProvider.InitializeWithTokensAsync(result.accessToken, result.refreshToken);
             IsAuthenticated = true;
-
-            return Result<UserLogin>.Success(
-                    new UserLogin(username, password, result.Value.refreshToken)
-                );
-
+            return Result<UserLogin>.Success(new UserLogin(username, string.Empty, result.refreshToken));
         }
-        else
+        catch (Exception ex)
         {
-            return Result<UserLogin>.Failure(result.ErrorMessage);
+            RequiresPasswordUpgrade = ex is Govor.Mobile.Services.E2ee.PasswordUpgradeRequiredException;
+            return Result<UserLogin>.Failure(ex.Message);
         }
     }
 
     public async Task<Result<UserLogin>> RegisterAsync(string username, string password, string invitation)
     {
-        var result = await _apiClient.PostAsync<AuthResponse>("api/auth/register",
-            new RegisterRequest(username, password, invitation, _deviceInfoString.Info), 
-            authenticated: false);
-
-        if (result.IsSuccess)
+        try
         {
-            await _jwtProvider.InitializeWithTokensAsync(
-                result.Value.accessToken,
-                result.Value.refreshToken);
-
+            var result = await _passwords.RegisterAsync(username, password, invitation, _deviceInfoString.Info);
+            await _jwtProvider.InitializeWithTokensAsync(result.accessToken, result.refreshToken);
             IsAuthenticated = true;
-
-            return Result<UserLogin>.Success(
-                    new UserLogin(username, password, result.Value.refreshToken)
-                );
+            return Result<UserLogin>.Success(new UserLogin(username, string.Empty, result.refreshToken));
         }
-        else
-        {
-            return Result<UserLogin>.Failure(result.ErrorMessage);
-        }
+        catch (Exception ex) { return Result<UserLogin>.Failure(ex.Message); }
     }
 
+    public async Task<Result<UserLogin>> UpgradeAfterPasswordResetAsync(string username, string resetPassword)
+    {
+        try
+        {
+            var result = await _passwords.UpgradeAfterPasswordResetAsync(username, resetPassword, _deviceInfoString.Info);
+            await _jwtProvider.InitializeWithTokensAsync(result.accessToken, result.refreshToken);
+            IsAuthenticated = true;
+            return Result<UserLogin>.Success(new UserLogin(username, string.Empty, result.refreshToken));
+        }
+        catch (Exception ex) { return Result<UserLogin>.Failure(ex.Message); }
+    }
     public async Task LogoutAsync()
     {
         // DELETE must run while the session still has usable credentials.

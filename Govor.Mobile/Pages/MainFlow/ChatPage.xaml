@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <local:SmoothBackPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -9,7 +9,7 @@
              xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              xmlns:contentViews="clr-namespace:Govor.Mobile.Pages.ContentViews"
              xmlns:local="clr-namespace:Govor.Mobile.Pages"
-             xmlns:markdown="clr-namespace:Indiko.Maui.Controls.Markdown;assembly=Indiko.Maui.Controls.Markdown"
+             xmlns:markdown="clr-namespace:Govor.Markdown.Maui;assembly=Govor.Markdown.Maui"
              x:Class="Govor.Mobile.Pages.MainFlow.ChatPage"
              BackgroundColor="Transparent"
              ControlTemplate="{StaticResource MainPageTemplate}"
@@ -36,7 +36,7 @@
             />
 
         <!-- CONTENT -->
-        <Grid Grid.Row="1" Margin="0,-8,0,0" Padding="4,0" SafeAreaEdges="None" HorizontalOptions="Fill">
+        <Grid Grid.Row="1" Padding="4,0" SafeAreaEdges="None" HorizontalOptions="Fill">
                 <!-- MESSAGES -->
                 <CollectionView
                     x:Name="CollectionView"
@@ -48,7 +48,7 @@
                     Margin="0,2">
 
                     <CollectionView.Footer>
-                        <Grid HeightRequest="28" />
+                        <Grid SafeAreaEdges="None" HeightRequest="8" />
                     </CollectionView.Footer>
 
                     <CollectionView.Header>
@@ -61,7 +61,7 @@
 
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="vm:MessagesGroupModel">
-                            <Grid Padding="8,5" RowDefinitions="Auto,Auto">
+                            <Grid SafeAreaEdges="None" Padding="8,5" RowDefinitions="Auto,Auto">
                                 <Border Grid.Row="0" IsVisible="{Binding ShowsDateSeparator}"
                                         HorizontalOptions="Center" Background="#A52B3448"
                                         StrokeThickness="0" StrokeShape="RoundRectangle 14"
@@ -71,17 +71,17 @@
                                 </Border>
 
                                 <!-- STACK MESSAGES -->
-                                <VerticalStackLayout
+                                <VerticalStackLayout SafeAreaEdges="None"
                                     Grid.Row="1" BindableLayout.ItemsSource="{Binding Messages}"
                                     Spacing="3">
 
                                     <BindableLayout.ItemTemplate>
                                         <DataTemplate x:DataType="vm:MessagesViewModel">
-                                            <VerticalStackLayout Spacing="2" HorizontalOptions="Fill">
+                                            <VerticalStackLayout SafeAreaEdges="None" Spacing="2" HorizontalOptions="Fill">
 
-                                                <VerticalStackLayout HorizontalOptions="Fill" Spacing="2">
+                                                <VerticalStackLayout SafeAreaEdges="None" HorizontalOptions="Fill" Spacing="2">
                                                     
-                                                <HorizontalStackLayout HorizontalOptions="{Binding BubbleAlignment}" Spacing="8">
+                                                <HorizontalStackLayout SafeAreaEdges="None" HorizontalOptions="{Binding BubbleAlignment}" Spacing="8">
                                                     <Border
                                                             Background="{Binding BubbleBackground}"
                                                             Stroke="{Binding SelectionStroke}"
@@ -102,12 +102,12 @@
                                                                 NumberOfTapsRequired="2"
                                                                 Tapped="MessageDoubleTapped" />
                                                         </Border.GestureRecognizers>
-                                                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="5">
+                                                        <Grid SafeAreaEdges="None" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="5">
                                                             <Label Text="{Binding Avatar.DisplayName}" IsVisible="{Binding ShowSenderName}"
                                                                    FontSize="12" FontAttributes="Bold" TextColor="#D9C7FF"
                                                                    MaxLines="1" LineBreakMode="TailTruncation"/>
 
-                                                            <VerticalStackLayout Grid.Row="1" Spacing="6" IsVisible="{Binding HasAttachments}"
+                                                            <VerticalStackLayout SafeAreaEdges="None" Grid.Row="1" Spacing="6" IsVisible="{Binding HasAttachments}"
                                                                                  BindableLayout.ItemsSource="{Binding Attachments}">
                                                                 <BindableLayout.ItemTemplate>
                                                                     <DataTemplate x:DataType="mediaVm:MediaAttachmentViewModel">
@@ -161,7 +161,7 @@
                                                         </Border>
                                                     </HorizontalStackLayout>
 
-                                                    <FlexLayout Direction="Row" Wrap="Wrap" AlignItems="Center"
+                                                    <FlexLayout SafeAreaEdges="None" Direction="Row" Wrap="Wrap" AlignItems="Center"
                                                         HorizontalOptions="Fill" JustifyContent="{Binding ReactionJustification}"
                                                         BindableLayout.ItemsSource="{Binding ReactionChips}">
                                                         <BindableLayout.ItemTemplate>
@@ -171,7 +171,7 @@
                                                                     <Border.Behaviors>
                                                                         <behaviors:ReactionPressBehavior TapCommand="{Binding Source={x:Reference chatpage}, Path=ToggleReactionCommand, x:DataType=pages:ChatPage}" />
                                                                     </Border.Behaviors>
-                                                                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
+                                                                    <Grid SafeAreaEdges="None" ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="4">
                                                                         <Image Source="{Binding Image}" IsVisible="{Binding HasImage}"
                                                                             WidthRequest="22" HeightRequest="22" IsAnimationPlaying="True" />
                                                                         <Label Grid.Column="1" Text="{Binding Text}" TextColor="White" FontSize="15"
@@ -185,7 +185,7 @@
                                                     </FlexLayout>
 
                                                     <!-- Avatar under the last message in a group (time moved into bubble) -->
-                                                    <HorizontalStackLayout IsVisible="{Binding ShowAvatar}" HorizontalOptions="{Binding BubbleAlignment}" Spacing="6">
+                                                    <HorizontalStackLayout SafeAreaEdges="None" IsVisible="{Binding ShowAvatar}" HorizontalOptions="{Binding BubbleAlignment}" Spacing="6">
                                                         <toolkit:AvatarView
                                                             HeightRequest="26"
                                                             WidthRequest="26"
@@ -256,8 +256,9 @@
               Margin="12,6,12,8"
               InputTransparent="False"
               >
-            <ScrollView Orientation="Horizontal" IsVisible="{Binding HasPendingMedia}" Margin="0,0,0,8">
-                <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding PendingMedia}">
+            <ScrollView Orientation="Horizontal" HeightRequest="112" SafeAreaEdges="None" IsVisible="{Binding HasPendingMedia}"
+                        HorizontalScrollBarVisibility="Never" VerticalScrollBarVisibility="Never" Margin="0,0,0,8">
+                <HorizontalStackLayout SafeAreaEdges="None" Spacing="8" BindableLayout.ItemsSource="{Binding PendingMedia}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="mediaVm:PendingMedia">
                             <Border Stroke="#55D9C7FF" StrokeShape="RoundRectangle 16" Background="#EE2B243D" WidthRequest="112" HeightRequest="112">
@@ -265,10 +266,10 @@
                                     <TapGestureRecognizer Command="{Binding Source={x:Reference chatpage}, Path=BindingContext.PreviewPendingMediaCommand, x:DataType={x:Null}}"
                                                           CommandParameter="{Binding .}" />
                                 </Border.GestureRecognizers>
-                                <Grid>
-                                    <Image Source="{Binding Preview}" Aspect="Aspect.AspectFill" />
-                                    <VerticalStackLayout VerticalOptions="End" Padding="8,4" BackgroundColor="#BB211B31" Spacing="0">
-                                        <Label Text="{Binding Label}" TextColor="White" FontSize="12" FontAttributes="Bold" />
+                                <Grid SafeAreaEdges="None">
+                                    <Image Source="{Binding Preview}" Aspect="AspectFill" />
+                                    <VerticalStackLayout SafeAreaEdges="None" VerticalOptions="End" Padding="8,4" BackgroundColor="#BB211B31" Spacing="0">
+                                        <Label Text="{Binding Label}" TextColor="White" FontSize="12" FontAttributes="Bold" MaxLines="2" LineBreakMode="TailTruncation" />
                                         <Label Text="{Binding Size}" TextColor="#D9C7FF" FontSize="10" />
                                     </VerticalStackLayout>
                                     <Button Text="×" WidthRequest="30" HeightRequest="30" Padding="0" CornerRadius="15"
@@ -282,7 +283,7 @@
                     </BindableLayout.ItemTemplate>
                 </HorizontalStackLayout>
             </ScrollView>
-            <HorizontalStackLayout Grid.Row="1" IsVisible="{Binding IsSendingMedia}" Spacing="8" Margin="8,0,0,6">
+            <HorizontalStackLayout SafeAreaEdges="None" Grid.Row="1" IsVisible="{Binding IsSendingMedia}" Spacing="8" Margin="8,0,0,6">
                 <ActivityIndicator IsRunning="{Binding IsSendingMedia}" Color="#D9C7FF" WidthRequest="18" HeightRequest="18" />
                 <Label Text="{Binding MediaStatus}" TextColor="#D9C7FF" FontSize="12" VerticalOptions="Center" />
             </HorizontalStackLayout>
@@ -300,7 +301,7 @@
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6" SafeAreaEdges="None">
                     <Button Text="＋" Command="{Binding AttachMediaCommand}" IsEnabled="{Binding CanChangeMedia}"
                             IsVisible="{Binding IsEditingMessage, Converter={StaticResource BoolInvertor}}"
-                            SemanticProperties.Description="Прикрепить фото или видео из галереи"
+                            SemanticProperties.Description="Прикрепить медиа или файлы"
                             FontSize="26" WidthRequest="40" HeightRequest="42" Padding="0" CornerRadius="20"
                             BackgroundColor="Transparent" TextColor="#D9C7FF" VerticalOptions="End" />
 

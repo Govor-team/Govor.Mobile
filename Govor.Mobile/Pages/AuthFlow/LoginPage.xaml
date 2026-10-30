@@ -133,6 +133,10 @@
                     </Label.GestureRecognizers>
                 </Label>
             </HorizontalStackLayout>
+            <Button Text="Продолжить после сброса пароля"
+                    IsVisible="{Binding RequiresPasswordUpgrade}"
+                    Command="{Binding UpgradeAfterPasswordResetCommand}"
+                    TextColor="#C3B7FF" BackgroundColor="Transparent" FontSize="13" />
         </VerticalStackLayout>
 
     </Grid>
